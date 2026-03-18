@@ -1,0 +1,6 @@
+*.pyd binary
+*.exe binary
+*.dll binary
+*.whl binary
+*.msi binary
+frontend/dist/** binary
