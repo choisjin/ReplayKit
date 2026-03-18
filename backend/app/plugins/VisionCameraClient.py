@@ -11,7 +11,7 @@ import sys
 import shutil
 import logging
 import ctypes
-from ctypes import CDLL, c_wchar_p
+from ctypes import c_wchar_p
 from pathlib import Path
 from PIL import Image
 
@@ -20,124 +20,148 @@ logger = logging.getLogger(__name__)
 # modules/ 디렉토리 (DLL 원본 위치)
 _MODULES_DIR = Path(__file__).resolve().parent.parent / "modules"
 
+# use_last_error=True 로 kernel32 로드해야 GetLastError가 정확함
+_kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
 
-def _load_dll_safe(dll_path: str):
-    """여러 방법을 시도하여 DLL 로드. 실패 시 상세 에러 메시지."""
-    modules_str = str(_MODULES_DIR)
-    errors = []
 
-    # 방법 1: SetDllDirectoryW로 검색 경로 지정 후 로드
+def _try_load_dll(dll_path: str, modules_dir: str) -> ctypes.CDLL:
+    """단계별 진단과 함께 DLL 로드를 시도한다."""
+    diag = []
+
+    # --- 진단 1: 파일 존재 확인 ---
+    if not os.path.isfile(dll_path):
+        raise FileNotFoundError(f"DLL 파일 없음: {dll_path}")
+    diag.append(f"파일 존재: OK ({os.path.getsize(dll_path)} bytes)")
+
+    # --- 진단 2: DONT_RESOLVE_DLL_REFERENCES 로 PE 유효성 확인 ---
+    # 의존성 해석 없이 DLL 파일 자체만 로드 — 파일 손상/아키텍처 불일치 검출
+    DONT_RESOLVE = 0x00000001
+    handle = _kernel32.LoadLibraryExW(dll_path, None, DONT_RESOLVE)
+    if not handle:
+        err = ctypes.get_last_error()
+        diag.append(f"PE 유효성: FAIL (LoadLibraryExW DONT_RESOLVE error={err})")
+        detail = "\n".join(diag)
+        raise OSError(
+            f"DLL 파일 자체가 유효하지 않음 (손상 또는 아키텍처 불일치).\n"
+            f"Python: {'64bit' if sys.maxsize > 2**32 else '32bit'}\n"
+            f"{detail}"
+        )
+    _kernel32.FreeLibrary(handle)
+    diag.append("PE 유효성: OK")
+
+    # --- 진단 3: SetDllDirectory 설정 후 정상 로드 시도 ---
+    _kernel32.SetDllDirectoryW(modules_dir)
     try:
-        ctypes.windll.kernel32.SetDllDirectoryW(modules_str)
-        dll = CDLL(dll_path)
-        logger.info("DLL loaded (SetDllDirectory): %s", dll_path)
+        dll = ctypes.CDLL(dll_path, winmode=0)
+        diag.append("로드: OK (SetDllDirectory + winmode=0)")
+        logger.info("DLL loaded: %s\n%s", dll_path, "\n".join(diag))
         return dll
     except Exception as e:
-        errors.append(f"SetDllDirectory: {e}")
+        err = ctypes.get_last_error()
+        diag.append(f"로드 실패: {e} (GetLastError={err})")
     finally:
-        ctypes.windll.kernel32.SetDllDirectoryW(None)  # 복원
+        _kernel32.SetDllDirectoryW(None)
 
-    # 방법 2: winmode=0 (Python 3.8+ LoadLibrary fallback)
-    try:
-        dll = CDLL(dll_path, winmode=0)
-        logger.info("DLL loaded (winmode=0): %s", dll_path)
-        return dll
-    except Exception as e:
-        errors.append(f"winmode=0: {e}")
-
-    # 방법 3: os.add_dll_directory + 기본 로드
+    # --- 진단 4: os.add_dll_directory 시도 ---
     if hasattr(os, "add_dll_directory"):
         try:
-            cookie = os.add_dll_directory(modules_str)
+            cookie = os.add_dll_directory(modules_dir)
             try:
-                dll = CDLL(dll_path)
-                logger.info("DLL loaded (add_dll_directory): %s", dll_path)
+                dll = ctypes.CDLL(dll_path)
+                diag.append("로드: OK (add_dll_directory)")
+                logger.info("DLL loaded: %s\n%s", dll_path, "\n".join(diag))
                 return dll
+            except Exception as e:
+                diag.append(f"add_dll_directory 로드 실패: {e}")
             finally:
                 cookie.close()
         except Exception as e:
-            errors.append(f"add_dll_directory: {e}")
+            diag.append(f"add_dll_directory 등록 실패: {e}")
 
-    # 방법 4: LoadLibraryW 직접 호출
-    try:
-        ctypes.windll.kernel32.SetDllDirectoryW(modules_str)
-        handle = ctypes.windll.kernel32.LoadLibraryW(dll_path)
-        ctypes.windll.kernel32.SetDllDirectoryW(None)
-        if handle:
-            logger.info("DLL loaded (LoadLibraryW): %s", dll_path)
-            # handle을 CDLL로 래핑
-            dll = CDLL(dll_path, handle=handle)
-            return dll
-        else:
-            err_code = ctypes.get_last_error()
-            errors.append(f"LoadLibraryW: Windows error code {err_code}")
-    except Exception as e:
-        errors.append(f"LoadLibraryW: {e}")
-
-    # 모든 방법 실패
-    detail = (
-        f"DLL 로드 실패: {dll_path}\n"
-        f"  modules dir: {modules_str} (exists={Path(modules_str).exists()})\n"
-        f"  Python: {sys.version} ({'64bit' if sys.maxsize > 2**32 else '32bit'})\n"
-        f"  시도한 방법:\n"
+    # 모든 방법 실패 → 상세 진단 출력
+    detail = "\n  ".join(diag)
+    raise OSError(
+        f"DLL 의존성 해석 실패: {Path(dll_path).name}\n"
+        f"  {detail}\n"
+        f"  → DLL 파일은 유효하지만 의존하는 다른 DLL을 찾을 수 없습니다.\n"
+        f"  → 테스트 PC에 GigE Vision / SVGigE SDK가 설치되어 있는지 확인하세요.\n"
+        f"  → 또는 누락된 DLL을 modules/ 디렉토리에 복사하세요."
     )
-    for err in errors:
-        detail += f"    - {err}\n"
 
-    # modules 디렉토리 내 DLL 목록
-    if Path(modules_str).exists():
-        dlls = [f.name for f in Path(modules_str).iterdir() if f.suffix.lower() == '.dll']
-        detail += f"  modules 내 DLL: {dlls}\n"
 
-    raise OSError(detail)
+def _diagnose_dependency(dll_name: str, modules_dir: str) -> str:
+    """개별 DLL 로드를 시도하고 결과를 문자열로 반환."""
+    dll_path = os.path.join(modules_dir, dll_name)
+    if not os.path.isfile(dll_path):
+        return f"{dll_name}: 파일 없음"
+
+    # PE 유효성만 확인
+    DONT_RESOLVE = 0x00000001
+    handle = _kernel32.LoadLibraryExW(dll_path, None, DONT_RESOLVE)
+    if not handle:
+        err = ctypes.get_last_error()
+        return f"{dll_name}: PE 로드 실패 (error={err}) — 아키텍처 불일치 또는 파일 손상"
+    _kernel32.FreeLibrary(handle)
+
+    # 의존성 포함 로드
+    _kernel32.SetDllDirectoryW(modules_dir)
+    handle = _kernel32.LoadLibraryW(dll_path)
+    err = ctypes.get_last_error()
+    _kernel32.SetDllDirectoryW(None)
+    if handle:
+        _kernel32.FreeLibrary(handle)
+        return f"{dll_name}: OK (로드 성공)"
+    else:
+        return f"{dll_name}: 의존성 실패 (error={err}) — 이 DLL이 필요로 하는 다른 DLL이 없음"
 
 
 class VisionCameraClient:
     """MATVisionLib.dll 기반 비전 카메라 제어."""
 
     def __init__(self, model: str, port: dict, context=None):
-        """
-        Args:
-            model: 카메라 모델명 (예: "exo264CGE")
-            port: {"Port": serial, "MACAddress": mac, "IP": ip, "Subnetmask": subnet}
-            context: 사용하지 않음 (레거시 호환)
-        """
         self._device = model
         self._isConnected = False
         self._port = port.get("Port", "")
         self._macaddress = port.get("MACAddress", "")
 
-        # DLL 로딩: MAC 주소별 복사본 생성 (동시 다중 카메라 지원)
+        modules_str = str(_MODULES_DIR)
+
+        # PATH에 modules 추가
+        path_env = os.environ.get("PATH", "")
+        if modules_str not in path_env:
+            os.environ["PATH"] = modules_str + os.pathsep + path_env
+
+        # DLL 복사본 생성
         original_dll = _MODULES_DIR / "MATVisionLib.dll"
         if not original_dll.exists():
             original_dll = Path(__file__).parent / "MATVisionLib.dll"
         if not original_dll.exists():
-            raise FileNotFoundError(f"MATVisionLib.dll not found in {_MODULES_DIR} or {Path(__file__).parent}")
+            raise FileNotFoundError(f"MATVisionLib.dll not found in {_MODULES_DIR}")
 
         self.myDllPath = str(_MODULES_DIR / f"MATVisionLib_{self._macaddress}.dll")
         if not os.path.exists(self.myDllPath):
             shutil.copyfile(str(original_dll), self.myDllPath)
 
-        # 의존 DLL 먼저 로드 시도 (LikLGATSImgLib64.dll)
-        dep_dll = _MODULES_DIR / "LikLGATSImgLib64.dll"
-        if dep_dll.exists():
-            try:
-                _load_dll_safe(str(dep_dll))
-                logger.info("Pre-loaded dependency: %s", dep_dll.name)
-            except Exception as e:
-                logger.warning("Failed to pre-load %s: %s", dep_dll.name, e)
+        # 의존 DLL 개별 진단 후 메인 DLL 로드
+        dep_results = []
+        for dll_name in ["LikLGATSImgLib64.dll", "MATVisionLib.dll"]:
+            result = _diagnose_dependency(dll_name, modules_str)
+            dep_results.append(result)
+            logger.info("[VisionCamera DLL 진단] %s", result)
 
-        # 메인 DLL 로드
-        self.myDll = _load_dll_safe(self.myDllPath)
+        try:
+            self.myDll = _try_load_dll(self.myDllPath, modules_str)
+        except OSError as e:
+            # 의존성 진단 결과를 에러 메시지에 포함
+            dep_detail = "\n  ".join(dep_results)
+            raise OSError(f"{e}\n\n[의존 DLL 진단]\n  {dep_detail}") from None
+
         self._context = context
-        logger.info("VisionCameraClient initialized: model=%s mac=%s dll=%s",
-                     model, self._macaddress, self.myDllPath)
+        logger.info("VisionCameraClient initialized: model=%s mac=%s", model, self._macaddress)
 
     def md_VisionConnect(self) -> tuple[bool, str]:
-        """카메라 연결."""
         if self._isConnected:
             return True, "[VisionCamera] Already connected"
-
         result = self.myDll.Vision_Connect(c_wchar_p(self._macaddress))
         if result == 0:
             self._isConnected = True
@@ -147,10 +171,8 @@ class VisionCameraClient:
             return False, f"[VisionCamera] Connect fail (code={result})"
 
     def md_VisionDisconnect(self) -> tuple[bool, str]:
-        """카메라 연결 해제."""
         if not self._isConnected:
             return True, "[VisionCamera] Already disconnected"
-
         result = self.myDll.Vision_Disconnect()
         if result == 0:
             self._isConnected = False
@@ -159,10 +181,8 @@ class VisionCameraClient:
             return False, f"[VisionCamera] Disconnect fail (code={result})"
 
     def md_IsConnect(self) -> tuple[bool, str]:
-        """연결 상태 확인."""
         if not self._isConnected:
             return False, "[VisionCamera] Not connected"
-
         result = self.myDll.isConnect()
         if result == 0:
             return True, "[VisionCamera] Connected"
@@ -174,10 +194,8 @@ class VisionCameraClient:
             return False, f"[VisionCamera] Error (code={result})"
 
     def md_VisionCapture(self, szPath: str, left=-1, top=-1, right=-1, bottom=-1) -> tuple[bool, str]:
-        """이미지 캡처 → szPath에 저장. 크롭 좌표 지정 시 자동 크롭."""
         if not self._isConnected:
             return False, "[VisionCamera] Not connected"
-
         result = self.myDll.Vision_Capture(c_wchar_p(szPath))
         if result == 0:
             if left >= 0 and top >= 0 and right >= 0 and bottom >= 0:
@@ -196,7 +214,6 @@ class VisionCameraClient:
         return self._isConnected
 
     def dispose(self):
-        """리소스 정리."""
         try:
             if self.myDll is not None:
                 self.md_VisionDisconnect()
