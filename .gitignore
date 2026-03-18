@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+*.pyc
+backend/screenshots/
+backend/results/
+backend/scenarios/
+backend/auxiliary_devices.json
+backend/settings.json
+Results/
+DLL_DEBUG/
+.env
