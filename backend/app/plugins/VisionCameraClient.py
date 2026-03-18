@@ -10,7 +10,7 @@ import os
 import sys
 import shutil
 import logging
-from ctypes import cdll, c_wchar_p
+from ctypes import CDLL, c_wchar_p
 from pathlib import Path
 from PIL import Image
 
@@ -75,7 +75,9 @@ class VisionCameraClient:
         if not os.path.exists(self.myDllPath):
             shutil.copyfile(str(original_dll), self.myDllPath)
 
-        self.myDll = cdll.LoadLibrary(self.myDllPath)
+        # winmode=0: Python 3.8+에서 DLL 자체 디렉토리의 의존 DLL 검색 활성화
+        # (기본값은 LOAD_LIBRARY_SEARCH_DEFAULT_DIRS로 DLL 디렉토리를 검색하지 않음)
+        self.myDll = CDLL(self.myDllPath, winmode=0)
         self._context = context
         logger.info("VisionCameraClient initialized: model=%s mac=%s dll=%s", model, self._macaddress, self.myDllPath)
 
