@@ -23,6 +23,19 @@ _MODULES_DIR = Path(__file__).resolve().parent.parent / "modules"
 # use_last_error=True 로 kernel32 로드해야 GetLastError가 정확함
 _kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
 
+# 64bit Python에서 반드시 restype/argtypes 선언 필요 (기본 c_int는 포인터 잘림)
+_kernel32.LoadLibraryExW.argtypes = [ctypes.c_wchar_p, ctypes.c_void_p, ctypes.c_uint32]
+_kernel32.LoadLibraryExW.restype = ctypes.c_void_p
+
+_kernel32.LoadLibraryW.argtypes = [ctypes.c_wchar_p]
+_kernel32.LoadLibraryW.restype = ctypes.c_void_p
+
+_kernel32.FreeLibrary.argtypes = [ctypes.c_void_p]
+_kernel32.FreeLibrary.restype = ctypes.c_int
+
+_kernel32.SetDllDirectoryW.argtypes = [ctypes.c_wchar_p]
+_kernel32.SetDllDirectoryW.restype = ctypes.c_int
+
 
 def _try_load_dll(dll_path: str, modules_dir: str) -> ctypes.CDLL:
     """단계별 진단과 함께 DLL 로드를 시도한다."""
