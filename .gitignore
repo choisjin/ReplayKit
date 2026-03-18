@@ -1,6 +1,7 @@
 venv/
 __pycache__/
 *.pyc
+*.exe
 backend/screenshots/
 backend/results/
 backend/scenarios/
