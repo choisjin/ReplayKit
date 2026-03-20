@@ -160,6 +160,42 @@ class VisionCameraClient:
             logger.error("VisionCamera capture failed: %s", e)
             return False, f"[VisionCamera] Capture fail: {e}"
 
+    def md_CaptureBytes(self, fmt: str = "jpeg") -> bytes:
+        """이미지 캡처 → 바이트로 직접 반환 (파일 I/O 없음)."""
+        if not self._isConnected or not self._ia:
+            raise RuntimeError("[VisionCamera] Not connected")
+
+        with self._ia.fetch(timeout=10) as buffer:
+            comp = buffer.payload.components[0]
+            data = comp.data
+            w, h = comp.width, comp.height
+
+            if data.ndim == 1:
+                if w * h == len(data):
+                    img_arr = data.reshape(h, w)
+                else:
+                    channels = len(data) // (w * h)
+                    img_arr = data.reshape(h, w, channels)
+            else:
+                img_arr = data
+
+            if img_arr.ndim == 2:
+                img = Image.fromarray(img_arr, 'L').convert('RGB')
+            elif img_arr.shape[2] == 1:
+                img = Image.fromarray(img_arr[:, :, 0], 'L').convert('RGB')
+            elif img_arr.shape[2] == 3:
+                img = Image.fromarray(img_arr, 'RGB')
+            else:
+                img = Image.fromarray(img_arr[:, :, :3], 'RGB')
+
+        import io
+        buf = io.BytesIO()
+        if fmt.lower() in ("jpg", "jpeg"):
+            img.save(buf, format="JPEG", quality=85)
+        else:
+            img.save(buf, format="PNG")
+        return buf.getvalue()
+
     @property
     def is_connected(self) -> bool:
         return self._isConnected
