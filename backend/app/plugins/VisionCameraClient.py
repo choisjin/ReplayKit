@@ -109,13 +109,25 @@ class VisionCameraClient:
             return
 
         error_count = 0
+        frame_count = 0
         while not self._frame_stop.is_set():
             try:
-                with self._ia.fetch(timeout=3) as buffer:
+                # try_fetch는 non-blocking — fetch와 달리 무한 블로킹 방지
+                buffer = self._ia.try_fetch(timeout=3)
+                if buffer is None:
+                    error_count += 1
+                    if error_count <= 3 or error_count % 30 == 0:
+                        logger.warning("VisionCamera fetch timeout (%d): no buffer returned", error_count)
+                    time.sleep(0.1)
+                    continue
+                with buffer:
                     comp = buffer.payload.components[0]
                     img = _component_to_pil(comp)
                     with self._frame_lock:
                         self._latest_frame = img
+                    frame_count += 1
+                    if frame_count == 1:
+                        logger.info("VisionCamera first frame received")
                     error_count = 0
             except Exception as e:
                 error_count += 1
@@ -127,7 +139,7 @@ class VisionCameraClient:
             self._ia.stop()
         except Exception:
             pass
-        logger.info("VisionCamera frame loop stopped")
+        logger.info("VisionCamera frame loop stopped (total frames: %d)", frame_count)
 
     # ------------------------------------------------------------------
     # Connection
