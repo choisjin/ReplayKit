@@ -175,7 +175,24 @@ class VisionCameraClient:
                 )
 
             self._ia = self._harvester.create(idx)
-            # ia.start()는 프레임 스레드에서 실행 (같은 스레드에서 start/fetch)
+
+            # 카메라 노드맵 설정 (free-run 모드 보장)
+            try:
+                nm = self._ia.remote_device.node_map
+                # 트리거 모드 해제 → continuous (free-run) 스트리밍
+                if hasattr(nm, 'TriggerMode'):
+                    nm.TriggerMode.value = 'Off'
+                    logger.info("VisionCamera: TriggerMode set to Off")
+                # AcquisitionMode를 Continuous로 설정
+                if hasattr(nm, 'AcquisitionMode'):
+                    nm.AcquisitionMode.value = 'Continuous'
+                    logger.info("VisionCamera: AcquisitionMode set to Continuous")
+                # 픽셀 포맷 로그
+                if hasattr(nm, 'PixelFormat'):
+                    logger.info("VisionCamera: PixelFormat=%s", nm.PixelFormat.value)
+            except Exception as e:
+                logger.warning("VisionCamera: node map config failed (non-fatal): %s", e)
+
             self._isConnected = True
 
             # 백그라운드 프레임 캡처 스레드 시작
