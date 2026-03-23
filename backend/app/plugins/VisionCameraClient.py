@@ -255,10 +255,9 @@ class VisionCameraClient:
             return False, "[VisionCamera] Not connected"
 
         with self._frame_lock:
-            img = self._latest_frame
-
-        if img is None:
-            return False, "[VisionCamera] No frame available yet"
+            if self._latest_frame is None:
+                return False, "[VisionCamera] No frame available yet"
+            img = self._latest_frame.copy()
 
         try:
             if left >= 0 and top >= 0 and right >= 0 and bottom >= 0:
@@ -275,10 +274,9 @@ class VisionCameraClient:
             raise RuntimeError("[VisionCamera] Not connected")
 
         with self._frame_lock:
-            img = self._latest_frame
-
-        if img is None:
-            raise RuntimeError("[VisionCamera] No frame available yet")
+            if self._latest_frame is None:
+                raise RuntimeError("[VisionCamera] No frame available yet")
+            img = self._latest_frame.copy()
 
         buf = io.BytesIO()
         if fmt.lower() in ("jpg", "jpeg"):
