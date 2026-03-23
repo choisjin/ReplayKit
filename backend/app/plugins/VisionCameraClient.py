@@ -12,6 +12,9 @@ import logging
 import threading
 import time
 from pathlib import Path
+
+import cv2
+import numpy as np
 from PIL import Image
 
 logger = logging.getLogger(__name__)
@@ -39,7 +42,7 @@ def _find_cti_files() -> list[str]:
     return list(set(cti_files))
 
 
-def _component_to_pil(comp) -> Image.Image:
+def _component_to_pil(comp, pixel_format: str = "") -> Image.Image:
     """harvesters component → PIL Image (RGB)."""
     data = comp.data
     w, h = comp.width, comp.height
@@ -52,6 +55,22 @@ def _component_to_pil(comp) -> Image.Image:
             img_arr = data.reshape(h, w, channels)
     else:
         img_arr = data
+
+    # Bayer 패턴 디모자이킹 (BayerRG8 등)
+    pf = pixel_format.lower()
+    if img_arr.ndim == 2 and "bayer" in pf:
+        if "rg" in pf:
+            code = cv2.COLOR_BayerRG2RGB
+        elif "gr" in pf:
+            code = cv2.COLOR_BayerGR2RGB
+        elif "gb" in pf:
+            code = cv2.COLOR_BayerGB2RGB
+        elif "bg" in pf:
+            code = cv2.COLOR_BayerBG2RGB
+        else:
+            code = cv2.COLOR_BayerRG2RGB
+        rgb = cv2.cvtColor(img_arr, code)
+        return Image.fromarray(rgb, 'RGB')
 
     if img_arr.ndim == 2:
         return Image.fromarray(img_arr, 'L').convert('RGB')
@@ -84,6 +103,7 @@ class VisionCameraClient:
         self._frame_lock = threading.Lock()
         self._latest_frame: Image.Image | None = None
 
+        self._pixel_format = ""
         self._cti_files = _find_cti_files()
         if not self._cti_files:
             raise FileNotFoundError(
@@ -120,7 +140,7 @@ class VisionCameraClient:
                     continue
                 with buffer:
                     comp = buffer.payload.components[0]
-                    img = _component_to_pil(comp)
+                    img = _component_to_pil(comp, self._pixel_format)
                     with self._frame_lock:
                         self._latest_frame = img
                     frame_count += 1
@@ -187,7 +207,8 @@ class VisionCameraClient:
                     nm.GevSCPSPacketSize.value = 1500
                     logger.info("VisionCamera: GevSCPSPacketSize set to 1500")
                 if hasattr(nm, 'PixelFormat'):
-                    logger.info("VisionCamera: PixelFormat=%s", nm.PixelFormat.value)
+                    self._pixel_format = nm.PixelFormat.value
+                    logger.info("VisionCamera: PixelFormat=%s", self._pixel_format)
                 if hasattr(nm, 'Width') and hasattr(nm, 'Height'):
                     logger.info("VisionCamera: Resolution=%dx%d",
                                 nm.Width.value, nm.Height.value)
