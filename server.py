@@ -387,17 +387,21 @@ class ServerManagerApp:
         """git pull + pip install + npm install. 메인 스레드가 아닌 곳에서 호출."""
         self._set_status("동기화 중...")
 
-        # 1) 로컬 변경 초기화 + git pull
-        log_callback("[동기화] git reset + pull ...")
-        _run_cmd(["git", "checkout", "--", "."], timeout=30)
-        _run_cmd(["git", "clean", "-fd", "--exclude=ReplayKit.exe"], timeout=30)
-        code, out = _run_cmd(["git", "pull", "origin", "main"], timeout=60)
-        if out:
-            log_callback(f"[동기화] {out}")
-        if code != 0:
-            log_callback("[동기화] git pull 실패 — 충돌을 확인하세요")
-            self._set_status("동기화 실패")
-            return False
+        # 1) 로컬 변경 초기화 + git pull (git 저장소인 경우만)
+        git_dir = os.path.join(PROJECT_ROOT, ".git")
+        if os.path.isdir(git_dir):
+            log_callback("[동기화] git reset + pull ...")
+            _run_cmd(["git", "checkout", "--", "."], timeout=30)
+            _run_cmd(["git", "clean", "-fd"], timeout=30)
+            code, out = _run_cmd(["git", "pull", "origin", "main"], timeout=60)
+            if out:
+                log_callback(f"[동기화] {out}")
+            if code != 0:
+                log_callback("[동기화] git pull 실패 — 충돌을 확인하세요")
+                self._set_status("동기화 실패")
+                return False
+        else:
+            log_callback("[동기화] git 저장소 없음 — git pull 건너뜀")
 
         # 2) pip install
         log_callback("[동기화] Python 의존성 확인 중...")
