@@ -295,8 +295,15 @@ async def capture_expected_image(req: CaptureExpectedImageRequest):
                        width=int(req.crop["width"]), height=int(req.crop["height"])) if req.crop else None
         step.expected_images.append(CropItem(image=filename, label=req.crop_label, roi=crop_roi))
     else:
-        # Single image (full or single_crop)
-        filename = f"{scenario_name}_step_{step.id:03d}.png"
+        # Single image (full or single_crop) — 타임스탬프 포함으로 캐시 충돌 방지
+        import time as _time
+        ts = int(_time.time() * 1000) % 1000000
+        filename = f"{scenario_name}_step_{step.id:03d}_{ts}.png"
+        # 이전 기대이미지 파일 삭제
+        if step.expected_image and step.expected_image != filename:
+            old_file = save_dir / step.expected_image
+            if old_file.exists():
+                old_file.unlink(missing_ok=True)
         (save_dir / filename).write_bytes(png_bytes)
         step.expected_image = filename
         if req.crop:
