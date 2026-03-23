@@ -1958,6 +1958,13 @@ static CYTHON_INLINE PyObject* __Pyx_CallUnboundCMethod1(__Pyx_CachedCFunction* 
 #define __Pyx_CallUnboundCMethod1(cfunc, self, arg)  __Pyx__CallUnboundCMethod1(cfunc, self, arg)
 #endif
 
+/* HasAttr.proto */
+#if __PYX_LIMITED_VERSION_HEX >= 0x030d0000
+#define __Pyx_HasAttr(o, n)  PyObject_HasAttrWithError(o, n)
+#else
+static CYTHON_INLINE int __Pyx_HasAttr(PyObject *, PyObject *);
+#endif
+
 /* PyObjectVectorCallKwBuilder.proto (used by PyObjectVectorCallMethodKwBuilder) */
 CYTHON_UNUSED static int __Pyx_VectorcallBuilder_AddArg_Check(PyObject *key, PyObject *value, PyObject *builder, PyObject **args, int n);
 #if CYTHON_VECTORCALL
@@ -1982,27 +1989,6 @@ static int __Pyx_VectorcallBuilder_AddArgStr(const char *key, PyObject *value, P
 #else
 static PyObject *__Pyx_Object_VectorcallMethod_CallFromBuilder(PyObject *name, PyObject *const *args, size_t nargsf, PyObject *kwnames);
 #endif
-
-/* PyObjectFormatSimple.proto */
-#if CYTHON_COMPILING_IN_PYPY
-    #define __Pyx_PyObject_FormatSimple(s, f) (\
-        likely(PyUnicode_CheckExact(s)) ? (Py_INCREF(s), s) :\
-        PyObject_Format(s, f))
-#elif CYTHON_USE_TYPE_SLOTS
-    #define __Pyx_PyObject_FormatSimple(s, f) (\
-        likely(PyUnicode_CheckExact(s)) ? (Py_INCREF(s), s) :\
-        likely(PyLong_CheckExact(s)) ? PyLong_Type.tp_repr(s) :\
-        likely(PyFloat_CheckExact(s)) ? PyFloat_Type.tp_repr(s) :\
-        PyObject_Format(s, f))
-#else
-    #define __Pyx_PyObject_FormatSimple(s, f) (\
-        likely(PyUnicode_CheckExact(s)) ? (Py_INCREF(s), s) :\
-        PyObject_Format(s, f))
-#endif
-
-/* JoinPyUnicode.export */
-static PyObject* __Pyx_PyUnicode_Join(PyObject** values, Py_ssize_t value_count, Py_ssize_t result_ulength,
-                                      Py_UCS4 max_char);
 
 /* PyLongCompare.proto */
 static CYTHON_INLINE int __Pyx_PyLong_BoolEqObjC(PyObject *op1, PyObject *op2, long intval, long inplace);
@@ -2068,6 +2054,27 @@ static CYTHON_INLINE void __Pyx_ExceptionSwap(PyObject **type, PyObject **value,
 /* PyLongCompare.proto */
 static CYTHON_INLINE int __Pyx_PyLong_BoolNeObjC(PyObject *op1, PyObject *op2, long intval, long inplace);
 
+/* PyObjectFormatSimple.proto */
+#if CYTHON_COMPILING_IN_PYPY
+    #define __Pyx_PyObject_FormatSimple(s, f) (\
+        likely(PyUnicode_CheckExact(s)) ? (Py_INCREF(s), s) :\
+        PyObject_Format(s, f))
+#elif CYTHON_USE_TYPE_SLOTS
+    #define __Pyx_PyObject_FormatSimple(s, f) (\
+        likely(PyUnicode_CheckExact(s)) ? (Py_INCREF(s), s) :\
+        likely(PyLong_CheckExact(s)) ? PyLong_Type.tp_repr(s) :\
+        likely(PyFloat_CheckExact(s)) ? PyFloat_Type.tp_repr(s) :\
+        PyObject_Format(s, f))
+#else
+    #define __Pyx_PyObject_FormatSimple(s, f) (\
+        likely(PyUnicode_CheckExact(s)) ? (Py_INCREF(s), s) :\
+        PyObject_Format(s, f))
+#endif
+
+/* JoinPyUnicode.export */
+static PyObject* __Pyx_PyUnicode_Join(PyObject** values, Py_ssize_t value_count, Py_ssize_t result_ulength,
+                                      Py_UCS4 max_char);
+
 /* RaiseUnboundLocalError.proto */
 static void __Pyx_RaiseUnboundLocalError(const char *varname);
 
@@ -2076,13 +2083,6 @@ static void __Pyx_RaiseUnboundLocalError(const char *varname);
 
 /* RaiseUnexpectedTypeError.proto */
 static int __Pyx_RaiseUnexpectedTypeError(const char *expected, PyObject *obj);
-
-/* HasAttr.proto (used by ImportImpl) */
-#if __PYX_LIMITED_VERSION_HEX >= 0x030d0000
-#define __Pyx_HasAttr(o, n)  PyObject_HasAttrWithError(o, n)
-#else
-static CYTHON_INLINE int __Pyx_HasAttr(PyObject *, PyObject *);
-#endif
 
 /* ImportImpl.export */
 static PyObject *__Pyx__Import(PyObject *name, PyObject *const *imported_names, Py_ssize_t len_imported_names, PyObject *qualname, PyObject *moddict, int level);
@@ -2460,7 +2460,7 @@ typedef struct {
   __Pyx_CachedCFunction __pyx_umethod_PyUnicode_Type__lower;
   PyObject *__pyx_tuple[11];
   PyObject *__pyx_codeobj_tab[11];
-  PyObject *__pyx_string_tab[192];
+  PyObject *__pyx_string_tab[188];
   PyObject *__pyx_number_tab[9];
 /* #### Code section: module_state_contents ### */
 /* CommonTypesMetaclass.module_state_decls */
@@ -2532,168 +2532,164 @@ static __pyx_mstatetype * const __pyx_mstate_global = &__pyx_mstate_global_stati
 #define __pyx_kp_u__4 __pyx_string_tab[27]
 #define __pyx_kp_u_add_note __pyx_string_tab[28]
 #define __pyx_kp_u_backend_app_plugins_VisionCamera_2 __pyx_string_tab[29]
-#define __pyx_kp_u_dll __pyx_string_tab[30]
-#define __pyx_kp_u_latest_bmp __pyx_string_tab[31]
-#define __pyx_kp_u_tuple_bool_str __pyx_string_tab[32]
-#define __pyx_n_u_BytesIO __pyx_string_tab[33]
-#define __pyx_n_u_Event __pyx_string_tab[34]
-#define __pyx_n_u_Image __pyx_string_tab[35]
-#define __pyx_n_u_JPEG __pyx_string_tab[36]
-#define __pyx_n_u_LoadLibrary __pyx_string_tab[37]
-#define __pyx_n_u_Lock __pyx_string_tab[38]
-#define __pyx_n_u_MACAddress __pyx_string_tab[39]
-#define __pyx_n_u_MATVisionLib __pyx_string_tab[40]
-#define __pyx_n_u_PIL __pyx_string_tab[41]
-#define __pyx_n_u_PNG __pyx_string_tab[42]
-#define __pyx_n_u_Path __pyx_string_tab[43]
-#define __pyx_n_u_Pyx_PyDict_NextRef __pyx_string_tab[44]
-#define __pyx_n_u_RGB __pyx_string_tab[45]
-#define __pyx_n_u_Thread __pyx_string_tab[46]
-#define __pyx_n_u_VisionCameraClient __pyx_string_tab[47]
-#define __pyx_n_u_VisionCameraClient___init __pyx_string_tab[48]
-#define __pyx_n_u_VisionCameraClient__cleanup __pyx_string_tab[49]
-#define __pyx_n_u_VisionCameraClient__frame_loop __pyx_string_tab[50]
-#define __pyx_n_u_VisionCameraClient_dispose __pyx_string_tab[51]
-#define __pyx_n_u_VisionCameraClient_is_connected __pyx_string_tab[52]
-#define __pyx_n_u_VisionCameraClient_md_CaptureByt __pyx_string_tab[53]
-#define __pyx_n_u_VisionCameraClient_md_IsConnect __pyx_string_tab[54]
-#define __pyx_n_u_VisionCameraClient_md_VisionCapt __pyx_string_tab[55]
-#define __pyx_n_u_VisionCameraClient_md_VisionConn __pyx_string_tab[56]
-#define __pyx_n_u_VisionCameraClient_md_VisionDisc __pyx_string_tab[57]
-#define __pyx_n_u_Vision_Capture __pyx_string_tab[58]
-#define __pyx_n_u_Vision_Connect __pyx_string_tab[59]
-#define __pyx_n_u_Vision_Disconnect __pyx_string_tab[60]
-#define __pyx_n_u_asyncio_coroutines __pyx_string_tab[61]
-#define __pyx_n_u_backend_app_plugins_VisionCamera __pyx_string_tab[62]
-#define __pyx_n_u_bool __pyx_string_tab[63]
-#define __pyx_n_u_bottom __pyx_string_tab[64]
-#define __pyx_n_u_buf __pyx_string_tab[65]
-#define __pyx_n_u_bytes __pyx_string_tab[66]
-#define __pyx_n_u_c_wchar_p __pyx_string_tab[67]
-#define __pyx_n_u_cdll __pyx_string_tab[68]
-#define __pyx_n_u_cleanup __pyx_string_tab[69]
-#define __pyx_n_u_clear __pyx_string_tab[70]
-#define __pyx_n_u_cline_in_traceback __pyx_string_tab[71]
-#define __pyx_n_u_context __pyx_string_tab[72]
-#define __pyx_n_u_convert __pyx_string_tab[73]
-#define __pyx_n_u_copyfile __pyx_string_tab[74]
-#define __pyx_n_u_crop __pyx_string_tab[75]
-#define __pyx_n_u_ctypes __pyx_string_tab[76]
-#define __pyx_n_u_d __pyx_string_tab[77]
-#define __pyx_n_u_daemon __pyx_string_tab[78]
-#define __pyx_n_u_device __pyx_string_tab[79]
-#define __pyx_n_u_dict __pyx_string_tab[80]
-#define __pyx_n_u_dispose __pyx_string_tab[81]
+#define __pyx_kp_u_latest_bmp __pyx_string_tab[30]
+#define __pyx_kp_u_tuple_bool_str __pyx_string_tab[31]
+#define __pyx_n_u_BytesIO __pyx_string_tab[32]
+#define __pyx_n_u_Event __pyx_string_tab[33]
+#define __pyx_n_u_Image __pyx_string_tab[34]
+#define __pyx_n_u_JPEG __pyx_string_tab[35]
+#define __pyx_n_u_LoadLibrary __pyx_string_tab[36]
+#define __pyx_n_u_Lock __pyx_string_tab[37]
+#define __pyx_n_u_MACAddress __pyx_string_tab[38]
+#define __pyx_n_u_PIL __pyx_string_tab[39]
+#define __pyx_n_u_PNG __pyx_string_tab[40]
+#define __pyx_n_u_Path __pyx_string_tab[41]
+#define __pyx_n_u_Pyx_PyDict_NextRef __pyx_string_tab[42]
+#define __pyx_n_u_RGB __pyx_string_tab[43]
+#define __pyx_n_u_Thread __pyx_string_tab[44]
+#define __pyx_n_u_VisionCameraClient __pyx_string_tab[45]
+#define __pyx_n_u_VisionCameraClient___init __pyx_string_tab[46]
+#define __pyx_n_u_VisionCameraClient__cleanup __pyx_string_tab[47]
+#define __pyx_n_u_VisionCameraClient__frame_loop __pyx_string_tab[48]
+#define __pyx_n_u_VisionCameraClient_dispose __pyx_string_tab[49]
+#define __pyx_n_u_VisionCameraClient_is_connected __pyx_string_tab[50]
+#define __pyx_n_u_VisionCameraClient_md_CaptureByt __pyx_string_tab[51]
+#define __pyx_n_u_VisionCameraClient_md_IsConnect __pyx_string_tab[52]
+#define __pyx_n_u_VisionCameraClient_md_VisionCapt __pyx_string_tab[53]
+#define __pyx_n_u_VisionCameraClient_md_VisionConn __pyx_string_tab[54]
+#define __pyx_n_u_VisionCameraClient_md_VisionDisc __pyx_string_tab[55]
+#define __pyx_n_u_Vision_Capture __pyx_string_tab[56]
+#define __pyx_n_u_Vision_Connect __pyx_string_tab[57]
+#define __pyx_n_u_Vision_Disconnect __pyx_string_tab[58]
+#define __pyx_n_u_add_dll_directory __pyx_string_tab[59]
+#define __pyx_n_u_asyncio_coroutines __pyx_string_tab[60]
+#define __pyx_n_u_backend_app_plugins_VisionCamera __pyx_string_tab[61]
+#define __pyx_n_u_bool __pyx_string_tab[62]
+#define __pyx_n_u_bottom __pyx_string_tab[63]
+#define __pyx_n_u_buf __pyx_string_tab[64]
+#define __pyx_n_u_bytes __pyx_string_tab[65]
+#define __pyx_n_u_c_wchar_p __pyx_string_tab[66]
+#define __pyx_n_u_cdll __pyx_string_tab[67]
+#define __pyx_n_u_cleanup __pyx_string_tab[68]
+#define __pyx_n_u_clear __pyx_string_tab[69]
+#define __pyx_n_u_cline_in_traceback __pyx_string_tab[70]
+#define __pyx_n_u_context __pyx_string_tab[71]
+#define __pyx_n_u_convert __pyx_string_tab[72]
+#define __pyx_n_u_crop __pyx_string_tab[73]
+#define __pyx_n_u_ctypes __pyx_string_tab[74]
+#define __pyx_n_u_d __pyx_string_tab[75]
+#define __pyx_n_u_daemon __pyx_string_tab[76]
+#define __pyx_n_u_device __pyx_string_tab[77]
+#define __pyx_n_u_dict __pyx_string_tab[78]
+#define __pyx_n_u_dirname __pyx_string_tab[79]
+#define __pyx_n_u_dispose __pyx_string_tab[80]
+#define __pyx_n_u_dll __pyx_string_tab[81]
 #define __pyx_n_u_dll_2 __pyx_string_tab[82]
-#define __pyx_n_u_dll_3 __pyx_string_tab[83]
-#define __pyx_n_u_dll_dir __pyx_string_tab[84]
-#define __pyx_n_u_dll_path __pyx_string_tab[85]
-#define __pyx_n_u_doc __pyx_string_tab[86]
-#define __pyx_n_u_e __pyx_string_tab[87]
-#define __pyx_n_u_enter __pyx_string_tab[88]
-#define __pyx_n_u_error_count __pyx_string_tab[89]
-#define __pyx_n_u_exist_ok __pyx_string_tab[90]
-#define __pyx_n_u_exists __pyx_string_tab[91]
-#define __pyx_n_u_exit __pyx_string_tab[92]
-#define __pyx_n_u_file __pyx_string_tab[93]
-#define __pyx_n_u_find_dll __pyx_string_tab[94]
-#define __pyx_n_u_fmt __pyx_string_tab[95]
-#define __pyx_n_u_format __pyx_string_tab[96]
-#define __pyx_n_u_frame_count __pyx_string_tab[97]
-#define __pyx_n_u_frame_lock __pyx_string_tab[98]
-#define __pyx_n_u_frame_loop __pyx_string_tab[99]
-#define __pyx_n_u_frame_stop __pyx_string_tab[100]
-#define __pyx_n_u_frame_thread __pyx_string_tab[101]
-#define __pyx_n_u_frames __pyx_string_tab[102]
-#define __pyx_n_u_func __pyx_string_tab[103]
-#define __pyx_n_u_get __pyx_string_tab[104]
-#define __pyx_n_u_getLogger __pyx_string_tab[105]
-#define __pyx_n_u_gettempdir __pyx_string_tab[106]
-#define __pyx_n_u_getvalue __pyx_string_tab[107]
-#define __pyx_n_u_img __pyx_string_tab[108]
-#define __pyx_n_u_info __pyx_string_tab[109]
-#define __pyx_n_u_init __pyx_string_tab[110]
-#define __pyx_n_u_io __pyx_string_tab[111]
-#define __pyx_n_u_isConnect __pyx_string_tab[112]
-#define __pyx_n_u_isConnected __pyx_string_tab[113]
-#define __pyx_n_u_is_alive __pyx_string_tab[114]
-#define __pyx_n_u_is_connected __pyx_string_tab[115]
-#define __pyx_n_u_is_coroutine __pyx_string_tab[116]
-#define __pyx_n_u_is_set __pyx_string_tab[117]
-#define __pyx_n_u_items __pyx_string_tab[118]
-#define __pyx_n_u_join __pyx_string_tab[119]
-#define __pyx_n_u_jpeg __pyx_string_tab[120]
-#define __pyx_n_u_jpg __pyx_string_tab[121]
-#define __pyx_n_u_latest_frame __pyx_string_tab[122]
-#define __pyx_n_u_left __pyx_string_tab[123]
-#define __pyx_n_u_logger __pyx_string_tab[124]
-#define __pyx_n_u_logging __pyx_string_tab[125]
-#define __pyx_n_u_lower __pyx_string_tab[126]
-#define __pyx_n_u_macaddress __pyx_string_tab[127]
-#define __pyx_n_u_main __pyx_string_tab[128]
-#define __pyx_n_u_md_CaptureBytes __pyx_string_tab[129]
-#define __pyx_n_u_md_IsConnect __pyx_string_tab[130]
-#define __pyx_n_u_md_VisionCapture __pyx_string_tab[131]
-#define __pyx_n_u_md_VisionConnect __pyx_string_tab[132]
-#define __pyx_n_u_md_VisionDisconnect __pyx_string_tab[133]
-#define __pyx_n_u_metaclass __pyx_string_tab[134]
-#define __pyx_n_u_mkdir __pyx_string_tab[135]
-#define __pyx_n_u_model __pyx_string_tab[136]
-#define __pyx_n_u_module __pyx_string_tab[137]
-#define __pyx_n_u_modules __pyx_string_tab[138]
-#define __pyx_n_u_name __pyx_string_tab[139]
-#define __pyx_n_u_name_2 __pyx_string_tab[140]
-#define __pyx_n_u_open __pyx_string_tab[141]
-#define __pyx_n_u_original_dll __pyx_string_tab[142]
-#define __pyx_n_u_os __pyx_string_tab[143]
-#define __pyx_n_u_parent __pyx_string_tab[144]
-#define __pyx_n_u_parents __pyx_string_tab[145]
-#define __pyx_n_u_path __pyx_string_tab[146]
-#define __pyx_n_u_pathlib __pyx_string_tab[147]
-#define __pyx_n_u_pop __pyx_string_tab[148]
-#define __pyx_n_u_port __pyx_string_tab[149]
-#define __pyx_n_u_prepare __pyx_string_tab[150]
-#define __pyx_n_u_property __pyx_string_tab[151]
-#define __pyx_n_u_quality __pyx_string_tab[152]
-#define __pyx_n_u_qualname __pyx_string_tab[153]
-#define __pyx_n_u_result __pyx_string_tab[154]
-#define __pyx_n_u_return __pyx_string_tab[155]
-#define __pyx_n_u_right __pyx_string_tab[156]
-#define __pyx_n_u_save __pyx_string_tab[157]
-#define __pyx_n_u_search_dirs __pyx_string_tab[158]
-#define __pyx_n_u_self __pyx_string_tab[159]
-#define __pyx_n_u_set __pyx_string_tab[160]
-#define __pyx_n_u_set_name __pyx_string_tab[161]
-#define __pyx_n_u_setdefault __pyx_string_tab[162]
-#define __pyx_n_u_shutil __pyx_string_tab[163]
-#define __pyx_n_u_sleep __pyx_string_tab[164]
-#define __pyx_n_u_start __pyx_string_tab[165]
-#define __pyx_n_u_str __pyx_string_tab[166]
-#define __pyx_n_u_szPath __pyx_string_tab[167]
-#define __pyx_n_u_target __pyx_string_tab[168]
-#define __pyx_n_u_tempfile __pyx_string_tab[169]
-#define __pyx_n_u_test __pyx_string_tab[170]
-#define __pyx_n_u_threading __pyx_string_tab[171]
-#define __pyx_n_u_time __pyx_string_tab[172]
-#define __pyx_n_u_timeout __pyx_string_tab[173]
-#define __pyx_n_u_tmp_dir __pyx_string_tab[174]
-#define __pyx_n_u_tmp_path __pyx_string_tab[175]
-#define __pyx_n_u_top __pyx_string_tab[176]
-#define __pyx_n_u_values __pyx_string_tab[177]
-#define __pyx_n_u_vision_camera_dll __pyx_string_tab[178]
-#define __pyx_n_u_visioncam_frame __pyx_string_tab[179]
-#define __pyx_n_u_warning __pyx_string_tab[180]
-#define __pyx_kp_b_iso88591_1_AYa_AYgXRq_AYgWHBa_Q_b_3gQ_3a __pyx_string_tab[181]
-#define __pyx_kp_b_iso88591_4q_6_T_oQiq_A_wc_w_B_1_F_t_A_fA __pyx_string_tab[182]
-#define __pyx_kp_b_iso88591_A_IQ __pyx_string_tab[183]
-#define __pyx_kp_b_iso88591_A_L_A_4_d_nIQ_e1HA_Q_Q_4q_E_1_A __pyx_string_tab[184]
-#define __pyx_kp_b_iso88591_A_e1A_3at_Rq_a_a_d_l_U_1A_7_Rt2U __pyx_string_tab[185]
-#define __pyx_kp_b_iso88591_A_t1 __pyx_string_tab[186]
-#define __pyx_kp_b_iso88591_Q_4t1_6_6_A_7_AQ __pyx_string_tab[187]
-#define __pyx_kp_b_iso88591_a_4t1_7_T_j_wc_vQ_7_A_7 __pyx_string_tab[188]
-#define __pyx_kp_b_iso88591_e_4A_4t1_aq_a_4s_aq_b_3fCt7_uAU __pyx_string_tab[189]
-#define __pyx_kp_b_iso88591_k_q_Kq_A_O4t1N_y_ax_b_vQhfIQ_M __pyx_string_tab[190]
-#define __pyx_kp_b_iso88591_uIXZ_UV_4t1_7_a_4s_7_uCr_T_Bd_2 __pyx_string_tab[191]
+#define __pyx_n_u_dll_dir __pyx_string_tab[83]
+#define __pyx_n_u_dll_path __pyx_string_tab[84]
+#define __pyx_n_u_doc __pyx_string_tab[85]
+#define __pyx_n_u_e __pyx_string_tab[86]
+#define __pyx_n_u_enter __pyx_string_tab[87]
+#define __pyx_n_u_error_count __pyx_string_tab[88]
+#define __pyx_n_u_exist_ok __pyx_string_tab[89]
+#define __pyx_n_u_exists __pyx_string_tab[90]
+#define __pyx_n_u_exit __pyx_string_tab[91]
+#define __pyx_n_u_file __pyx_string_tab[92]
+#define __pyx_n_u_find_dll __pyx_string_tab[93]
+#define __pyx_n_u_fmt __pyx_string_tab[94]
+#define __pyx_n_u_format __pyx_string_tab[95]
+#define __pyx_n_u_frame_count __pyx_string_tab[96]
+#define __pyx_n_u_frame_lock __pyx_string_tab[97]
+#define __pyx_n_u_frame_loop __pyx_string_tab[98]
+#define __pyx_n_u_frame_stop __pyx_string_tab[99]
+#define __pyx_n_u_frame_thread __pyx_string_tab[100]
+#define __pyx_n_u_func __pyx_string_tab[101]
+#define __pyx_n_u_get __pyx_string_tab[102]
+#define __pyx_n_u_getLogger __pyx_string_tab[103]
+#define __pyx_n_u_gettempdir __pyx_string_tab[104]
+#define __pyx_n_u_getvalue __pyx_string_tab[105]
+#define __pyx_n_u_img __pyx_string_tab[106]
+#define __pyx_n_u_info __pyx_string_tab[107]
+#define __pyx_n_u_init __pyx_string_tab[108]
+#define __pyx_n_u_io __pyx_string_tab[109]
+#define __pyx_n_u_isConnect __pyx_string_tab[110]
+#define __pyx_n_u_isConnected __pyx_string_tab[111]
+#define __pyx_n_u_is_alive __pyx_string_tab[112]
+#define __pyx_n_u_is_connected __pyx_string_tab[113]
+#define __pyx_n_u_is_coroutine __pyx_string_tab[114]
+#define __pyx_n_u_is_set __pyx_string_tab[115]
+#define __pyx_n_u_items __pyx_string_tab[116]
+#define __pyx_n_u_join __pyx_string_tab[117]
+#define __pyx_n_u_jpeg __pyx_string_tab[118]
+#define __pyx_n_u_jpg __pyx_string_tab[119]
+#define __pyx_n_u_latest_frame __pyx_string_tab[120]
+#define __pyx_n_u_left __pyx_string_tab[121]
+#define __pyx_n_u_logger __pyx_string_tab[122]
+#define __pyx_n_u_logging __pyx_string_tab[123]
+#define __pyx_n_u_lower __pyx_string_tab[124]
+#define __pyx_n_u_macaddress __pyx_string_tab[125]
+#define __pyx_n_u_main __pyx_string_tab[126]
+#define __pyx_n_u_md_CaptureBytes __pyx_string_tab[127]
+#define __pyx_n_u_md_IsConnect __pyx_string_tab[128]
+#define __pyx_n_u_md_VisionCapture __pyx_string_tab[129]
+#define __pyx_n_u_md_VisionConnect __pyx_string_tab[130]
+#define __pyx_n_u_md_VisionDisconnect __pyx_string_tab[131]
+#define __pyx_n_u_metaclass __pyx_string_tab[132]
+#define __pyx_n_u_mkdir __pyx_string_tab[133]
+#define __pyx_n_u_model __pyx_string_tab[134]
+#define __pyx_n_u_module __pyx_string_tab[135]
+#define __pyx_n_u_modules __pyx_string_tab[136]
+#define __pyx_n_u_name __pyx_string_tab[137]
+#define __pyx_n_u_name_2 __pyx_string_tab[138]
+#define __pyx_n_u_open __pyx_string_tab[139]
+#define __pyx_n_u_os __pyx_string_tab[140]
+#define __pyx_n_u_parent __pyx_string_tab[141]
+#define __pyx_n_u_parents __pyx_string_tab[142]
+#define __pyx_n_u_path __pyx_string_tab[143]
+#define __pyx_n_u_pathlib __pyx_string_tab[144]
+#define __pyx_n_u_pop __pyx_string_tab[145]
+#define __pyx_n_u_port __pyx_string_tab[146]
+#define __pyx_n_u_prepare __pyx_string_tab[147]
+#define __pyx_n_u_property __pyx_string_tab[148]
+#define __pyx_n_u_quality __pyx_string_tab[149]
+#define __pyx_n_u_qualname __pyx_string_tab[150]
+#define __pyx_n_u_result __pyx_string_tab[151]
+#define __pyx_n_u_return __pyx_string_tab[152]
+#define __pyx_n_u_right __pyx_string_tab[153]
+#define __pyx_n_u_save __pyx_string_tab[154]
+#define __pyx_n_u_search_dirs __pyx_string_tab[155]
+#define __pyx_n_u_self __pyx_string_tab[156]
+#define __pyx_n_u_set __pyx_string_tab[157]
+#define __pyx_n_u_set_name __pyx_string_tab[158]
+#define __pyx_n_u_setdefault __pyx_string_tab[159]
+#define __pyx_n_u_sleep __pyx_string_tab[160]
+#define __pyx_n_u_start __pyx_string_tab[161]
+#define __pyx_n_u_str __pyx_string_tab[162]
+#define __pyx_n_u_szPath __pyx_string_tab[163]
+#define __pyx_n_u_target __pyx_string_tab[164]
+#define __pyx_n_u_tempfile __pyx_string_tab[165]
+#define __pyx_n_u_test __pyx_string_tab[166]
+#define __pyx_n_u_threading __pyx_string_tab[167]
+#define __pyx_n_u_time __pyx_string_tab[168]
+#define __pyx_n_u_timeout __pyx_string_tab[169]
+#define __pyx_n_u_tmp_dir __pyx_string_tab[170]
+#define __pyx_n_u_tmp_path __pyx_string_tab[171]
+#define __pyx_n_u_top __pyx_string_tab[172]
+#define __pyx_n_u_values __pyx_string_tab[173]
+#define __pyx_n_u_vision_camera __pyx_string_tab[174]
+#define __pyx_n_u_visioncam_frame __pyx_string_tab[175]
+#define __pyx_n_u_warning __pyx_string_tab[176]
+#define __pyx_kp_b_iso88591_1_AYa_AYgXRq_AYgWHBa_Q_b_3gQ_3a __pyx_string_tab[177]
+#define __pyx_kp_b_iso88591_4q_6_T_oQiq_A_wc_w_B_1_F_t_A_fA __pyx_string_tab[178]
+#define __pyx_kp_b_iso88591_A_IQ __pyx_string_tab[179]
+#define __pyx_kp_b_iso88591_A_L_A_4_d_nIQ_e1HA_Q_Q_4q_E_1_A __pyx_string_tab[180]
+#define __pyx_kp_b_iso88591_A_e1A_3at_Rq_a_a_d_l_U_1A_7_Rt2U __pyx_string_tab[181]
+#define __pyx_kp_b_iso88591_A_t1 __pyx_string_tab[182]
+#define __pyx_kp_b_iso88591_Q_4t1_6_6_A_7_AQ __pyx_string_tab[183]
+#define __pyx_kp_b_iso88591_a_4t1_7_T_j_wc_vQ_7_A_7 __pyx_string_tab[184]
+#define __pyx_kp_b_iso88591_e_4A_4t1_aq_a_4s_aq_b_3fCt7_uAU __pyx_string_tab[185]
+#define __pyx_kp_b_iso88591_k_q_Kq_A_O4t1N_9A_E_7_4q_HD_AQ __pyx_string_tab[186]
+#define __pyx_kp_b_iso88591_uIXZ_UV_4t1_7_a_4s_7_uCr_T_Bd_2 __pyx_string_tab[187]
 #define __pyx_float_0_1 __pyx_number_tab[0]
 #define __pyx_float_0_033 __pyx_number_tab[1]
 #define __pyx_int_0 __pyx_number_tab[2]
@@ -2719,7 +2715,7 @@ static CYTHON_SMALL_CODE int __pyx_m_clear(PyObject *m) {
   #endif
   for (int i=0; i<11; ++i) { Py_CLEAR(clear_module_state->__pyx_tuple[i]); }
   for (int i=0; i<11; ++i) { Py_CLEAR(clear_module_state->__pyx_codeobj_tab[i]); }
-  for (int i=0; i<192; ++i) { Py_CLEAR(clear_module_state->__pyx_string_tab[i]); }
+  for (int i=0; i<188; ++i) { Py_CLEAR(clear_module_state->__pyx_string_tab[i]); }
   for (int i=0; i<9; ++i) { Py_CLEAR(clear_module_state->__pyx_number_tab[i]); }
 /* #### Code section: module_state_clear_contents ### */
 /* CommonTypesMetaclass.module_state_clear */
@@ -2745,7 +2741,7 @@ static CYTHON_SMALL_CODE int __pyx_m_traverse(PyObject *m, visitproc visit, void
   __Pyx_VISIT_CONST(traverse_module_state->__pyx_empty_unicode);
   for (int i=0; i<11; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_tuple[i]); }
   for (int i=0; i<11; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_codeobj_tab[i]); }
-  for (int i=0; i<192; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_string_tab[i]); }
+  for (int i=0; i<188; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_string_tab[i]); }
   for (int i=0; i<9; ++i) { __Pyx_VISIT_CONST(traverse_module_state->__pyx_number_tab[i]); }
 /* #### Code section: module_state_traverse_contents ### */
 /* CommonTypesMetaclass.module_state_traverse */
@@ -2760,7 +2756,7 @@ return 0;
 #endif
 /* #### Code section: module_code ### */
 
-/* "backend/app/plugins/VisionCameraClient.py":22
+/* "backend/app/plugins/VisionCameraClient.py":21
  * 
  * 
  * def _find_dll() -> str:             # <<<<<<<<<<<<<<
@@ -2805,7 +2801,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient__find_dll(
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_find_dll", 0);
 
-  /* "backend/app/plugins/VisionCameraClient.py":25
+  /* "backend/app/plugins/VisionCameraClient.py":24
  *     """MATVisionLib.dll  ."""
  *     search_dirs = [
  *         Path(__file__).parent,                          # plugins/             # <<<<<<<<<<<<<<
@@ -2813,9 +2809,9 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient__find_dll(
  *         Path(__file__).parent.parent.parent / "modules", # backend/modules/
 */
   __pyx_t_2 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_Path); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 25, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_Path); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 24, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_file); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 25, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_file); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 24, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_5 = 1;
   #if CYTHON_UNPACK_METHODS
@@ -2835,14 +2831,14 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient__find_dll(
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 25, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 24, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_parent); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 25, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_parent); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 24, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":26
+  /* "backend/app/plugins/VisionCameraClient.py":25
  *     search_dirs = [
  *         Path(__file__).parent,                          # plugins/
  *         Path(__file__).parent.parent / "modules",       # app/modules/             # <<<<<<<<<<<<<<
@@ -2850,9 +2846,9 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient__find_dll(
  *     ]
 */
   __pyx_t_4 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_Path); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 26, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_Path); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 25, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_file); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 26, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_file); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 25, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __pyx_t_5 = 1;
   #if CYTHON_UNPACK_METHODS
@@ -2872,20 +2868,20 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient__find_dll(
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 26, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 25, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_parent); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 26, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_parent); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 25, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_parent); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 26, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_parent); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 25, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyNumber_Divide(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_modules); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 26, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyNumber_Divide(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_modules); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 25, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":27
+  /* "backend/app/plugins/VisionCameraClient.py":26
  *         Path(__file__).parent,                          # plugins/
  *         Path(__file__).parent.parent / "modules",       # app/modules/
  *         Path(__file__).parent.parent.parent / "modules", # backend/modules/             # <<<<<<<<<<<<<<
@@ -2893,9 +2889,9 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient__find_dll(
  *     for d in search_dirs:
 */
   __pyx_t_6 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_Path); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 27, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_Path); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 26, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_file); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 27, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_file); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 26, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __pyx_t_5 = 1;
   #if CYTHON_UNPACK_METHODS
@@ -2915,44 +2911,44 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient__find_dll(
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 27, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 26, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_parent); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 27, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_parent); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 26, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_parent); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 27, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_parent); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 26, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_parent); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 27, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_parent); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 26, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyNumber_Divide(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_modules); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 27, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyNumber_Divide(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_modules); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 26, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":24
+  /* "backend/app/plugins/VisionCameraClient.py":23
  * def _find_dll() -> str:
  *     """MATVisionLib.dll  ."""
  *     search_dirs = [             # <<<<<<<<<<<<<<
  *         Path(__file__).parent,                          # plugins/
  *         Path(__file__).parent.parent / "modules",       # app/modules/
 */
-  __pyx_t_4 = PyList_New(3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 24, __pyx_L1_error)
+  __pyx_t_4 = PyList_New(3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 23, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_GIVEREF(__pyx_t_3);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 0, __pyx_t_3) != (0)) __PYX_ERR(0, 24, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 0, __pyx_t_3) != (0)) __PYX_ERR(0, 23, __pyx_L1_error);
   __Pyx_GIVEREF(__pyx_t_2);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 1, __pyx_t_2) != (0)) __PYX_ERR(0, 24, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 1, __pyx_t_2) != (0)) __PYX_ERR(0, 23, __pyx_L1_error);
   __Pyx_GIVEREF(__pyx_t_1);
-  if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 2, __pyx_t_1) != (0)) __PYX_ERR(0, 24, __pyx_L1_error);
+  if (__Pyx_PyList_SET_ITEM(__pyx_t_4, 2, __pyx_t_1) != (0)) __PYX_ERR(0, 23, __pyx_L1_error);
   __pyx_t_3 = 0;
   __pyx_t_2 = 0;
   __pyx_t_1 = 0;
   __pyx_v_search_dirs = ((PyObject*)__pyx_t_4);
   __pyx_t_4 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":29
+  /* "backend/app/plugins/VisionCameraClient.py":28
  *         Path(__file__).parent.parent.parent / "modules", # backend/modules/
  *     ]
  *     for d in search_dirs:             # <<<<<<<<<<<<<<
@@ -2965,30 +2961,30 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient__find_dll(
     {
       Py_ssize_t __pyx_temp = __Pyx_PyList_GET_SIZE(__pyx_t_4);
       #if !CYTHON_ASSUME_SAFE_SIZE
-      if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 29, __pyx_L1_error)
+      if (unlikely((__pyx_temp < 0))) __PYX_ERR(0, 28, __pyx_L1_error)
       #endif
       if (__pyx_t_8 >= __pyx_temp) break;
     }
     __pyx_t_1 = __Pyx_PyList_GetItemRefFast(__pyx_t_4, __pyx_t_8, __Pyx_ReferenceSharing_OwnStrongReference);
     ++__pyx_t_8;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 29, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 28, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_XDECREF_SET(__pyx_v_d, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "backend/app/plugins/VisionCameraClient.py":30
+    /* "backend/app/plugins/VisionCameraClient.py":29
  *     ]
  *     for d in search_dirs:
  *         dll = d / "MATVisionLib.dll"             # <<<<<<<<<<<<<<
  *         if dll.exists():
  *             return str(dll)
 */
-    __pyx_t_1 = __Pyx_PyNumber_Divide(__pyx_v_d, __pyx_mstate_global->__pyx_kp_u_MATVisionLib_dll); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 30, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyNumber_Divide(__pyx_v_d, __pyx_mstate_global->__pyx_kp_u_MATVisionLib_dll); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 29, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_XDECREF_SET(__pyx_v_dll, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "backend/app/plugins/VisionCameraClient.py":31
+    /* "backend/app/plugins/VisionCameraClient.py":30
  *     for d in search_dirs:
  *         dll = d / "MATVisionLib.dll"
  *         if dll.exists():             # <<<<<<<<<<<<<<
@@ -3002,14 +2998,14 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient__find_dll(
       PyObject *__pyx_callargs[2] = {__pyx_t_2, NULL};
       __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_exists, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 31, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 30, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
     }
-    __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_9 < 0))) __PYX_ERR(0, 31, __pyx_L1_error)
+    __pyx_t_9 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_9 < 0))) __PYX_ERR(0, 30, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     if (__pyx_t_9) {
 
-      /* "backend/app/plugins/VisionCameraClient.py":32
+      /* "backend/app/plugins/VisionCameraClient.py":31
  *         dll = d / "MATVisionLib.dll"
  *         if dll.exists():
  *             return str(dll)             # <<<<<<<<<<<<<<
@@ -3017,14 +3013,14 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient__find_dll(
  *         "MATVisionLib.dll   . "
 */
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_1 = __Pyx_PyObject_Unicode(__pyx_v_dll); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 32, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_Unicode(__pyx_v_dll); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 31, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __pyx_r = ((PyObject*)__pyx_t_1);
       __pyx_t_1 = 0;
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       goto __pyx_L0;
 
-      /* "backend/app/plugins/VisionCameraClient.py":31
+      /* "backend/app/plugins/VisionCameraClient.py":30
  *     for d in search_dirs:
  *         dll = d / "MATVisionLib.dll"
  *         if dll.exists():             # <<<<<<<<<<<<<<
@@ -3033,7 +3029,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient__find_dll(
 */
     }
 
-    /* "backend/app/plugins/VisionCameraClient.py":29
+    /* "backend/app/plugins/VisionCameraClient.py":28
  *         Path(__file__).parent.parent.parent / "modules", # backend/modules/
  *     ]
  *     for d in search_dirs:             # <<<<<<<<<<<<<<
@@ -3043,7 +3039,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient__find_dll(
   }
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":33
+  /* "backend/app/plugins/VisionCameraClient.py":32
  *         if dll.exists():
  *             return str(dll)
  *     raise FileNotFoundError(             # <<<<<<<<<<<<<<
@@ -3056,14 +3052,14 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient__find_dll(
     PyObject *__pyx_callargs[2] = {__pyx_t_1, __pyx_mstate_global->__pyx_kp_u_MATVisionLib_dll_backend_app_plu};
     __pyx_t_4 = __Pyx_PyObject_FastCall((PyObject*)(((PyTypeObject*)PyExc_FileNotFoundError)), __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
-    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 33, __pyx_L1_error)
+    if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 32, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
   }
   __Pyx_Raise(__pyx_t_4, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __PYX_ERR(0, 33, __pyx_L1_error)
+  __PYX_ERR(0, 32, __pyx_L1_error)
 
-  /* "backend/app/plugins/VisionCameraClient.py":22
+  /* "backend/app/plugins/VisionCameraClient.py":21
  * 
  * 
  * def _find_dll() -> str:             # <<<<<<<<<<<<<<
@@ -3090,7 +3086,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient__find_dll(
   return __pyx_r;
 }
 
-/* "backend/app/plugins/VisionCameraClient.py":45
+/* "backend/app/plugins/VisionCameraClient.py":44
  *     """
  * 
  *     def __init__(self, model: str, port: dict, context=None):             # <<<<<<<<<<<<<<
@@ -3140,47 +3136,47 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_self,&__pyx_mstate_global->__pyx_n_u_model,&__pyx_mstate_global->__pyx_n_u_port,&__pyx_mstate_global->__pyx_n_u_context,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 45, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 44, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  4:
         values[3] = __Pyx_ArgRef_FASTCALL(__pyx_args, 3);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 45, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 44, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  3:
         values[2] = __Pyx_ArgRef_FASTCALL(__pyx_args, 2);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 45, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 44, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  2:
         values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 45, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 44, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 45, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 44, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "__init__", 0) < (0)) __PYX_ERR(0, 45, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "__init__", 0) < (0)) __PYX_ERR(0, 44, __pyx_L3_error)
       if (!values[3]) values[3] = __Pyx_NewRef(((PyObject *)Py_None));
       for (Py_ssize_t i = __pyx_nargs; i < 3; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("__init__", 0, 3, 4, i); __PYX_ERR(0, 45, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("__init__", 0, 3, 4, i); __PYX_ERR(0, 44, __pyx_L3_error) }
       }
     } else {
       switch (__pyx_nargs) {
         case  4:
         values[3] = __Pyx_ArgRef_FASTCALL(__pyx_args, 3);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 45, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 44, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  3:
         values[2] = __Pyx_ArgRef_FASTCALL(__pyx_args, 2);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 45, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 44, __pyx_L3_error)
         values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 45, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 44, __pyx_L3_error)
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 45, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 44, __pyx_L3_error)
         break;
         default: goto __pyx_L5_argtuple_error;
       }
@@ -3193,7 +3189,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__init__", 0, 3, 4, __pyx_nargs); __PYX_ERR(0, 45, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__init__", 0, 3, 4, __pyx_nargs); __PYX_ERR(0, 44, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -3204,8 +3200,8 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_model), (&PyUnicode_Type), 0, "model", 2))) __PYX_ERR(0, 45, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_port), (&PyDict_Type), 0, "port", 2))) __PYX_ERR(0, 45, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_model), (&PyUnicode_Type), 0, "model", 2))) __PYX_ERR(0, 44, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_port), (&PyDict_Type), 0, "port", 2))) __PYX_ERR(0, 44, __pyx_L1_error)
   __pyx_r = __pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCameraClient___init__(__pyx_self, __pyx_v_self, __pyx_v_model, __pyx_v_port, __pyx_v_context);
 
   /* function exit code */
@@ -3226,7 +3222,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
 }
 
 static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCameraClient___init__(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_self, PyObject *__pyx_v_model, PyObject *__pyx_v_port, CYTHON_UNUSED PyObject *__pyx_v_context) {
-  PyObject *__pyx_v_original_dll = NULL;
+  PyObject *__pyx_v_dll_path = NULL;
   PyObject *__pyx_v_dll_dir = NULL;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
@@ -3235,56 +3231,54 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
   PyObject *__pyx_t_3 = NULL;
   size_t __pyx_t_4;
   PyObject *__pyx_t_5 = NULL;
-  PyObject *__pyx_t_6 = NULL;
+  int __pyx_t_6;
   PyObject *__pyx_t_7 = NULL;
   PyObject *__pyx_t_8 = NULL;
-  PyObject *__pyx_t_9[3];
-  int __pyx_t_10;
-  int __pyx_t_11;
+  PyObject *__pyx_t_9 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__init__", 0);
 
-  /* "backend/app/plugins/VisionCameraClient.py":46
+  /* "backend/app/plugins/VisionCameraClient.py":45
  * 
  *     def __init__(self, model: str, port: dict, context=None):
  *         self._device = model             # <<<<<<<<<<<<<<
  *         self._isConnected = False
  *         self._macaddress = port.get("MACAddress", "")
 */
-  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_device, __pyx_v_model) < (0)) __PYX_ERR(0, 46, __pyx_L1_error)
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_device, __pyx_v_model) < (0)) __PYX_ERR(0, 45, __pyx_L1_error)
 
-  /* "backend/app/plugins/VisionCameraClient.py":47
+  /* "backend/app/plugins/VisionCameraClient.py":46
  *     def __init__(self, model: str, port: dict, context=None):
  *         self._device = model
  *         self._isConnected = False             # <<<<<<<<<<<<<<
  *         self._macaddress = port.get("MACAddress", "")
  * 
 */
-  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_isConnected, Py_False) < (0)) __PYX_ERR(0, 47, __pyx_L1_error)
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_isConnected, Py_False) < (0)) __PYX_ERR(0, 46, __pyx_L1_error)
 
-  /* "backend/app/plugins/VisionCameraClient.py":48
+  /* "backend/app/plugins/VisionCameraClient.py":47
  *         self._device = model
  *         self._isConnected = False
  *         self._macaddress = port.get("MACAddress", "")             # <<<<<<<<<<<<<<
  * 
- *         # MAC DLL  (   )
+ *         # DLL  (      DLL  )
 */
-  __pyx_t_1 = __Pyx_PyDict_GetItemDefault(__pyx_v_port, __pyx_mstate_global->__pyx_n_u_MACAddress, __pyx_mstate_global->__pyx_kp_u_); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 48, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyDict_GetItemDefault(__pyx_v_port, __pyx_mstate_global->__pyx_n_u_MACAddress, __pyx_mstate_global->__pyx_kp_u_); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 47, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_macaddress, __pyx_t_1) < (0)) __PYX_ERR(0, 48, __pyx_L1_error)
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_macaddress, __pyx_t_1) < (0)) __PYX_ERR(0, 47, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":51
+  /* "backend/app/plugins/VisionCameraClient.py":50
  * 
- *         # MAC DLL  (   )
- *         original_dll = _find_dll()             # <<<<<<<<<<<<<<
- *         dll_dir = Path(tempfile.gettempdir()) / "vision_camera_dll"
- *         dll_dir.mkdir(parents=True, exist_ok=True)
+ *         # DLL  (      DLL  )
+ *         dll_path = _find_dll()             # <<<<<<<<<<<<<<
+ *         dll_dir = os.path.dirname(dll_path)
+ *         #  DLL    (Python 3.8+)
 */
   __pyx_t_2 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_find_dll); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 51, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_find_dll); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 50, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_4 = 1;
   #if CYTHON_UNPACK_METHODS
@@ -3303,254 +3297,141 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_3, __pyx_callargs+__pyx_t_4, (1-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 50, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+  }
+  __pyx_v_dll_path = __pyx_t_1;
+  __pyx_t_1 = 0;
+
+  /* "backend/app/plugins/VisionCameraClient.py":51
+ *         # DLL  (      DLL  )
+ *         dll_path = _find_dll()
+ *         dll_dir = os.path.dirname(dll_path)             # <<<<<<<<<<<<<<
+ *         #  DLL    (Python 3.8+)
+ *         if hasattr(os, 'add_dll_directory'):
+*/
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_os); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 51, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_path); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 51, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_3 = __pyx_t_5;
+  __Pyx_INCREF(__pyx_t_3);
+  __pyx_t_4 = 0;
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_3, __pyx_v_dll_path};
+    __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_dirname, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 51, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
-  __pyx_v_original_dll = __pyx_t_1;
+  __pyx_v_dll_dir = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":52
- *         # MAC DLL  (   )
- *         original_dll = _find_dll()
- *         dll_dir = Path(tempfile.gettempdir()) / "vision_camera_dll"             # <<<<<<<<<<<<<<
- *         dll_dir.mkdir(parents=True, exist_ok=True)
- *         self._dll_path = str(dll_dir / f"MATVisionLib_{self._macaddress}.dll")
-*/
-  __pyx_t_3 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_Path); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 52, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_6 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_tempfile); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 52, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_7);
-  __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_gettempdir); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 52, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_8);
-  __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  __pyx_t_4 = 1;
-  #if CYTHON_UNPACK_METHODS
-  if (unlikely(PyMethod_Check(__pyx_t_8))) {
-    __pyx_t_6 = PyMethod_GET_SELF(__pyx_t_8);
-    assert(__pyx_t_6);
-    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_8);
-    __Pyx_INCREF(__pyx_t_6);
-    __Pyx_INCREF(__pyx__function);
-    __Pyx_DECREF_SET(__pyx_t_8, __pyx__function);
-    __pyx_t_4 = 0;
-  }
-  #endif
-  {
-    PyObject *__pyx_callargs[2] = {__pyx_t_6, NULL};
-    __pyx_t_5 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_8, __pyx_callargs+__pyx_t_4, (1-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-    __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 52, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
-  }
-  __pyx_t_4 = 1;
-  #if CYTHON_UNPACK_METHODS
-  if (unlikely(PyMethod_Check(__pyx_t_2))) {
-    __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_2);
-    assert(__pyx_t_3);
-    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_2);
-    __Pyx_INCREF(__pyx_t_3);
-    __Pyx_INCREF(__pyx__function);
-    __Pyx_DECREF_SET(__pyx_t_2, __pyx__function);
-    __pyx_t_4 = 0;
-  }
-  #endif
-  {
-    PyObject *__pyx_callargs[2] = {__pyx_t_3, __pyx_t_5};
-    __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_2, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-    __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 52, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-  }
-  __pyx_t_2 = __Pyx_PyNumber_Divide(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_vision_camera_dll); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 52, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_v_dll_dir = __pyx_t_2;
-  __pyx_t_2 = 0;
-
   /* "backend/app/plugins/VisionCameraClient.py":53
- *         original_dll = _find_dll()
- *         dll_dir = Path(tempfile.gettempdir()) / "vision_camera_dll"
- *         dll_dir.mkdir(parents=True, exist_ok=True)             # <<<<<<<<<<<<<<
- *         self._dll_path = str(dll_dir / f"MATVisionLib_{self._macaddress}.dll")
- *         if not os.path.exists(self._dll_path):
+ *         dll_dir = os.path.dirname(dll_path)
+ *         #  DLL    (Python 3.8+)
+ *         if hasattr(os, 'add_dll_directory'):             # <<<<<<<<<<<<<<
+ *             os.add_dll_directory(dll_dir)
+ *         self._dll = cdll.LoadLibrary(dll_path)
 */
-  __pyx_t_1 = __pyx_v_dll_dir;
-  __Pyx_INCREF(__pyx_t_1);
-  __pyx_t_4 = 0;
-  {
-    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 2 : 0)] = {__pyx_t_1, NULL};
-    __pyx_t_5 = __Pyx_MakeVectorcallBuilderKwds(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 53, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
-    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_parents, Py_True, __pyx_t_5, __pyx_callargs+1, 0) < (0)) __PYX_ERR(0, 53, __pyx_L1_error)
-    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_exist_ok, Py_True, __pyx_t_5, __pyx_callargs+1, 1) < (0)) __PYX_ERR(0, 53, __pyx_L1_error)
-    __pyx_t_2 = __Pyx_Object_VectorcallMethod_CallFromBuilder((PyObject*)__pyx_mstate_global->__pyx_n_u_mkdir, __pyx_callargs+__pyx_t_4, (1-__pyx_t_4) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_5);
-    __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 53, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-  }
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "backend/app/plugins/VisionCameraClient.py":54
- *         dll_dir = Path(tempfile.gettempdir()) / "vision_camera_dll"
- *         dll_dir.mkdir(parents=True, exist_ok=True)
- *         self._dll_path = str(dll_dir / f"MATVisionLib_{self._macaddress}.dll")             # <<<<<<<<<<<<<<
- *         if not os.path.exists(self._dll_path):
- *             shutil.copyfile(original_dll, self._dll_path)
-*/
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_macaddress); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 54, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_5 = __Pyx_PyObject_FormatSimple(__pyx_t_2, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 54, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_9[0] = __pyx_mstate_global->__pyx_n_u_MATVisionLib;
-  __pyx_t_9[1] = __pyx_t_5;
-  __pyx_t_9[2] = __pyx_mstate_global->__pyx_kp_u_dll;
-  __pyx_t_2 = __Pyx_PyUnicode_Join(__pyx_t_9, 3, 13 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_5) + 4, 127 | __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5));
-  if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 54, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyNumber_Divide(__pyx_v_dll_dir, __pyx_t_2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 54, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyObject_Unicode(__pyx_t_5); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 54, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_dll_path, __pyx_t_2) < (0)) __PYX_ERR(0, 54, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "backend/app/plugins/VisionCameraClient.py":55
- *         dll_dir.mkdir(parents=True, exist_ok=True)
- *         self._dll_path = str(dll_dir / f"MATVisionLib_{self._macaddress}.dll")
- *         if not os.path.exists(self._dll_path):             # <<<<<<<<<<<<<<
- *             shutil.copyfile(original_dll, self._dll_path)
- *         self._dll = cdll.LoadLibrary(self._dll_path)
-*/
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_os); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 55, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_os); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 53, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_path); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 55, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
+  __pyx_t_6 = __Pyx_HasAttr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_add_dll_directory); if (unlikely(__pyx_t_6 == ((int)-1))) __PYX_ERR(0, 53, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_5 = __pyx_t_3;
-  __Pyx_INCREF(__pyx_t_5);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_dll_path); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 55, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = 0;
-  {
-    PyObject *__pyx_callargs[2] = {__pyx_t_5, __pyx_t_1};
-    __pyx_t_2 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_exists, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 55, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-  }
-  __pyx_t_10 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_10 < 0))) __PYX_ERR(0, 55, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_11 = (!__pyx_t_10);
-  if (__pyx_t_11) {
+  if (__pyx_t_6) {
 
-    /* "backend/app/plugins/VisionCameraClient.py":56
- *         self._dll_path = str(dll_dir / f"MATVisionLib_{self._macaddress}.dll")
- *         if not os.path.exists(self._dll_path):
- *             shutil.copyfile(original_dll, self._dll_path)             # <<<<<<<<<<<<<<
- *         self._dll = cdll.LoadLibrary(self._dll_path)
+    /* "backend/app/plugins/VisionCameraClient.py":54
+ *         #  DLL    (Python 3.8+)
+ *         if hasattr(os, 'add_dll_directory'):
+ *             os.add_dll_directory(dll_dir)             # <<<<<<<<<<<<<<
+ *         self._dll = cdll.LoadLibrary(dll_path)
  * 
 */
-    __pyx_t_3 = NULL;
-    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_shutil); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 56, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_copyfile); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 56, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_dll_path); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 56, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
+    __pyx_t_5 = NULL;
+    __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_os); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 54, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_add_dll_directory); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 54, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_t_4 = 1;
     #if CYTHON_UNPACK_METHODS
-    if (unlikely(PyMethod_Check(__pyx_t_5))) {
-      __pyx_t_3 = PyMethod_GET_SELF(__pyx_t_5);
-      assert(__pyx_t_3);
-      PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_5);
-      __Pyx_INCREF(__pyx_t_3);
+    if (unlikely(PyMethod_Check(__pyx_t_2))) {
+      __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_2);
+      assert(__pyx_t_5);
+      PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_2);
+      __Pyx_INCREF(__pyx_t_5);
       __Pyx_INCREF(__pyx__function);
-      __Pyx_DECREF_SET(__pyx_t_5, __pyx__function);
+      __Pyx_DECREF_SET(__pyx_t_2, __pyx__function);
       __pyx_t_4 = 0;
     }
     #endif
     {
-      PyObject *__pyx_callargs[3] = {__pyx_t_3, __pyx_v_original_dll, __pyx_t_1};
-      __pyx_t_2 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_5, __pyx_callargs+__pyx_t_4, (3-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-      __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 56, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_2);
+      PyObject *__pyx_callargs[2] = {__pyx_t_5, __pyx_v_dll_dir};
+      __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_2, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+      __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+      __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 54, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_1);
     }
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "backend/app/plugins/VisionCameraClient.py":55
- *         dll_dir.mkdir(parents=True, exist_ok=True)
- *         self._dll_path = str(dll_dir / f"MATVisionLib_{self._macaddress}.dll")
- *         if not os.path.exists(self._dll_path):             # <<<<<<<<<<<<<<
- *             shutil.copyfile(original_dll, self._dll_path)
- *         self._dll = cdll.LoadLibrary(self._dll_path)
+    /* "backend/app/plugins/VisionCameraClient.py":53
+ *         dll_dir = os.path.dirname(dll_path)
+ *         #  DLL    (Python 3.8+)
+ *         if hasattr(os, 'add_dll_directory'):             # <<<<<<<<<<<<<<
+ *             os.add_dll_directory(dll_dir)
+ *         self._dll = cdll.LoadLibrary(dll_path)
 */
   }
 
-  /* "backend/app/plugins/VisionCameraClient.py":57
- *         if not os.path.exists(self._dll_path):
- *             shutil.copyfile(original_dll, self._dll_path)
- *         self._dll = cdll.LoadLibrary(self._dll_path)             # <<<<<<<<<<<<<<
+  /* "backend/app/plugins/VisionCameraClient.py":55
+ *         if hasattr(os, 'add_dll_directory'):
+ *             os.add_dll_directory(dll_dir)
+ *         self._dll = cdll.LoadLibrary(dll_path)             # <<<<<<<<<<<<<<
  * 
  *         #
 */
-  __pyx_t_5 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_cdll); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 57, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_LoadLibrary); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 57, __pyx_L1_error)
+  __pyx_t_2 = NULL;
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_cdll); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 55, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_LoadLibrary); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 55, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_dll_path); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 57, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_t_4 = 1;
   #if CYTHON_UNPACK_METHODS
   if (unlikely(PyMethod_Check(__pyx_t_3))) {
-    __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_3);
-    assert(__pyx_t_5);
+    __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_3);
+    assert(__pyx_t_2);
     PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_3);
-    __Pyx_INCREF(__pyx_t_5);
+    __Pyx_INCREF(__pyx_t_2);
     __Pyx_INCREF(__pyx__function);
     __Pyx_DECREF_SET(__pyx_t_3, __pyx__function);
     __pyx_t_4 = 0;
   }
   #endif
   {
-    PyObject *__pyx_callargs[2] = {__pyx_t_5, __pyx_t_1};
-    __pyx_t_2 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_3, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    PyObject *__pyx_callargs[2] = {__pyx_t_2, __pyx_v_dll_path};
+    __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_3, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 57, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 55, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
   }
-  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_dll_2, __pyx_t_2) < (0)) __PYX_ERR(0, 57, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_dll, __pyx_t_1) < (0)) __PYX_ERR(0, 55, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":60
+  /* "backend/app/plugins/VisionCameraClient.py":58
  * 
  *         #
  *         self._frame_thread = None             # <<<<<<<<<<<<<<
  *         self._frame_stop = threading.Event()
  *         self._frame_lock = threading.Lock()
 */
-  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_thread, Py_None) < (0)) __PYX_ERR(0, 60, __pyx_L1_error)
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_thread, Py_None) < (0)) __PYX_ERR(0, 58, __pyx_L1_error)
 
-  /* "backend/app/plugins/VisionCameraClient.py":61
+  /* "backend/app/plugins/VisionCameraClient.py":59
  *         #
  *         self._frame_thread = None
  *         self._frame_stop = threading.Event()             # <<<<<<<<<<<<<<
@@ -3558,11 +3439,11 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
  *         self._latest_frame: Image.Image | None = None
 */
   __pyx_t_3 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_threading); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 61, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_Event); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 61, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_threading); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 59, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_Event); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 59, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_4 = 1;
   #if CYTHON_UNPACK_METHODS
   if (unlikely(PyMethod_Check(__pyx_t_5))) {
@@ -3577,123 +3458,28 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
   #endif
   {
     PyObject *__pyx_callargs[2] = {__pyx_t_3, NULL};
-    __pyx_t_2 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_5, __pyx_callargs+__pyx_t_4, (1-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_5, __pyx_callargs+__pyx_t_4, (1-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 61, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 59, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
   }
-  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_stop, __pyx_t_2) < (0)) __PYX_ERR(0, 61, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_stop, __pyx_t_1) < (0)) __PYX_ERR(0, 59, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":62
+  /* "backend/app/plugins/VisionCameraClient.py":60
  *         self._frame_thread = None
  *         self._frame_stop = threading.Event()
  *         self._frame_lock = threading.Lock()             # <<<<<<<<<<<<<<
  *         self._latest_frame: Image.Image | None = None
- *         self._tmp_dir = dll_dir / f"frames_{self._macaddress}"
+ *         self._tmp_dir = Path(tempfile.gettempdir()) / "vision_camera" / self._macaddress
 */
   __pyx_t_5 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_threading); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 62, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_threading); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 60, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_Lock); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 62, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_4 = 1;
-  #if CYTHON_UNPACK_METHODS
-  if (unlikely(PyMethod_Check(__pyx_t_1))) {
-    __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_1);
-    assert(__pyx_t_5);
-    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_1);
-    __Pyx_INCREF(__pyx_t_5);
-    __Pyx_INCREF(__pyx__function);
-    __Pyx_DECREF_SET(__pyx_t_1, __pyx__function);
-    __pyx_t_4 = 0;
-  }
-  #endif
-  {
-    PyObject *__pyx_callargs[2] = {__pyx_t_5, NULL};
-    __pyx_t_2 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_1, __pyx_callargs+__pyx_t_4, (1-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
-    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 62, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-  }
-  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_lock, __pyx_t_2) < (0)) __PYX_ERR(0, 62, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "backend/app/plugins/VisionCameraClient.py":63
- *         self._frame_stop = threading.Event()
- *         self._frame_lock = threading.Lock()
- *         self._latest_frame: Image.Image | None = None             # <<<<<<<<<<<<<<
- *         self._tmp_dir = dll_dir / f"frames_{self._macaddress}"
- *         self._tmp_dir.mkdir(parents=True, exist_ok=True)
-*/
-  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_latest_frame, Py_None) < (0)) __PYX_ERR(0, 63, __pyx_L1_error)
-
-  /* "backend/app/plugins/VisionCameraClient.py":64
- *         self._frame_lock = threading.Lock()
- *         self._latest_frame: Image.Image | None = None
- *         self._tmp_dir = dll_dir / f"frames_{self._macaddress}"             # <<<<<<<<<<<<<<
- *         self._tmp_dir.mkdir(parents=True, exist_ok=True)
- * 
-*/
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_macaddress); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 64, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = __Pyx_PyObject_FormatSimple(__pyx_t_2, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 64, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_2 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_n_u_frames, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 64, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyNumber_Divide(__pyx_v_dll_dir, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 64, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_tmp_dir, __pyx_t_1) < (0)) __PYX_ERR(0, 64, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-  /* "backend/app/plugins/VisionCameraClient.py":65
- *         self._latest_frame: Image.Image | None = None
- *         self._tmp_dir = dll_dir / f"frames_{self._macaddress}"
- *         self._tmp_dir.mkdir(parents=True, exist_ok=True)             # <<<<<<<<<<<<<<
- * 
- *         logger.info("VisionCameraClient: mac=%s, DLL=%s", self._macaddress, original_dll)
-*/
-  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_tmp_dir); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 65, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_2 = __pyx_t_5;
-  __Pyx_INCREF(__pyx_t_2);
-  __pyx_t_4 = 0;
-  {
-    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 2 : 0)] = {__pyx_t_2, NULL};
-    __pyx_t_3 = __Pyx_MakeVectorcallBuilderKwds(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 65, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_parents, Py_True, __pyx_t_3, __pyx_callargs+1, 0) < (0)) __PYX_ERR(0, 65, __pyx_L1_error)
-    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_exist_ok, Py_True, __pyx_t_3, __pyx_callargs+1, 1) < (0)) __PYX_ERR(0, 65, __pyx_L1_error)
-    __pyx_t_1 = __Pyx_Object_VectorcallMethod_CallFromBuilder((PyObject*)__pyx_mstate_global->__pyx_n_u_mkdir, __pyx_callargs+__pyx_t_4, (1-__pyx_t_4) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_3);
-    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 65, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_1);
-  }
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-  /* "backend/app/plugins/VisionCameraClient.py":67
- *         self._tmp_dir.mkdir(parents=True, exist_ok=True)
- * 
- *         logger.info("VisionCameraClient: mac=%s, DLL=%s", self._macaddress, original_dll)             # <<<<<<<<<<<<<<
- * 
- *     # ------------------------------------------------------------------
-*/
-  __pyx_t_5 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_logger); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 67, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_info); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 67, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_Lock); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 60, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_macaddress); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 67, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_4 = 1;
   #if CYTHON_UNPACK_METHODS
   if (unlikely(PyMethod_Check(__pyx_t_2))) {
@@ -3707,17 +3493,160 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
   }
   #endif
   {
-    PyObject *__pyx_callargs[4] = {__pyx_t_5, __pyx_mstate_global->__pyx_kp_u_VisionCameraClient_mac_s_DLL_s, __pyx_t_3, __pyx_v_original_dll};
-    __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_2, __pyx_callargs+__pyx_t_4, (4-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    PyObject *__pyx_callargs[2] = {__pyx_t_5, NULL};
+    __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_2, __pyx_callargs+__pyx_t_4, (1-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 67, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 60, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_lock, __pyx_t_1) < (0)) __PYX_ERR(0, 60, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":45
+  /* "backend/app/plugins/VisionCameraClient.py":61
+ *         self._frame_stop = threading.Event()
+ *         self._frame_lock = threading.Lock()
+ *         self._latest_frame: Image.Image | None = None             # <<<<<<<<<<<<<<
+ *         self._tmp_dir = Path(tempfile.gettempdir()) / "vision_camera" / self._macaddress
+ *         self._tmp_dir.mkdir(parents=True, exist_ok=True)
+*/
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_latest_frame, Py_None) < (0)) __PYX_ERR(0, 61, __pyx_L1_error)
+
+  /* "backend/app/plugins/VisionCameraClient.py":62
+ *         self._frame_lock = threading.Lock()
+ *         self._latest_frame: Image.Image | None = None
+ *         self._tmp_dir = Path(tempfile.gettempdir()) / "vision_camera" / self._macaddress             # <<<<<<<<<<<<<<
+ *         self._tmp_dir.mkdir(parents=True, exist_ok=True)
+ * 
+*/
+  __pyx_t_2 = NULL;
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_Path); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 62, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __pyx_t_7 = NULL;
+  __Pyx_GetModuleGlobalName(__pyx_t_8, __pyx_mstate_global->__pyx_n_u_tempfile); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 62, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_8);
+  __pyx_t_9 = __Pyx_PyObject_GetAttrStr(__pyx_t_8, __pyx_mstate_global->__pyx_n_u_gettempdir); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 62, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_9);
+  __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+  __pyx_t_4 = 1;
+  #if CYTHON_UNPACK_METHODS
+  if (unlikely(PyMethod_Check(__pyx_t_9))) {
+    __pyx_t_7 = PyMethod_GET_SELF(__pyx_t_9);
+    assert(__pyx_t_7);
+    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_9);
+    __Pyx_INCREF(__pyx_t_7);
+    __Pyx_INCREF(__pyx__function);
+    __Pyx_DECREF_SET(__pyx_t_9, __pyx__function);
+    __pyx_t_4 = 0;
+  }
+  #endif
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_7, NULL};
+    __pyx_t_3 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_9, __pyx_callargs+__pyx_t_4, (1-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
+    __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 62, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+  }
+  __pyx_t_4 = 1;
+  #if CYTHON_UNPACK_METHODS
+  if (unlikely(PyMethod_Check(__pyx_t_5))) {
+    __pyx_t_2 = PyMethod_GET_SELF(__pyx_t_5);
+    assert(__pyx_t_2);
+    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_5);
+    __Pyx_INCREF(__pyx_t_2);
+    __Pyx_INCREF(__pyx__function);
+    __Pyx_DECREF_SET(__pyx_t_5, __pyx__function);
+    __pyx_t_4 = 0;
+  }
+  #endif
+  {
+    PyObject *__pyx_callargs[2] = {__pyx_t_2, __pyx_t_3};
+    __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_5, __pyx_callargs+__pyx_t_4, (2-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 62, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_1);
+  }
+  __pyx_t_5 = __Pyx_PyNumber_Divide(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_vision_camera); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 62, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_macaddress); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 62, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_3 = __Pyx_PyNumber_Divide(__pyx_t_5, __pyx_t_1); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 62, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_3);
+  __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_tmp_dir, __pyx_t_3) < (0)) __PYX_ERR(0, 62, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "backend/app/plugins/VisionCameraClient.py":63
+ *         self._latest_frame: Image.Image | None = None
+ *         self._tmp_dir = Path(tempfile.gettempdir()) / "vision_camera" / self._macaddress
+ *         self._tmp_dir.mkdir(parents=True, exist_ok=True)             # <<<<<<<<<<<<<<
+ * 
+ *         logger.info("VisionCameraClient: mac=%s, DLL=%s", self._macaddress, dll_path)
+*/
+  __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_tmp_dir); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 63, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_5);
+  __pyx_t_1 = __pyx_t_5;
+  __Pyx_INCREF(__pyx_t_1);
+  __pyx_t_4 = 0;
+  {
+    PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 2 : 0)] = {__pyx_t_1, NULL};
+    __pyx_t_2 = __Pyx_MakeVectorcallBuilderKwds(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 63, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_parents, Py_True, __pyx_t_2, __pyx_callargs+1, 0) < (0)) __PYX_ERR(0, 63, __pyx_L1_error)
+    if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_exist_ok, Py_True, __pyx_t_2, __pyx_callargs+1, 1) < (0)) __PYX_ERR(0, 63, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_Object_VectorcallMethod_CallFromBuilder((PyObject*)__pyx_mstate_global->__pyx_n_u_mkdir, __pyx_callargs+__pyx_t_4, (1-__pyx_t_4) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_2);
+    __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 63, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+  }
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "backend/app/plugins/VisionCameraClient.py":65
+ *         self._tmp_dir.mkdir(parents=True, exist_ok=True)
+ * 
+ *         logger.info("VisionCameraClient: mac=%s, DLL=%s", self._macaddress, dll_path)             # <<<<<<<<<<<<<<
+ * 
+ *     # ------------------------------------------------------------------
+*/
+  __pyx_t_5 = NULL;
+  __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_logger); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 65, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_info); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 65, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_macaddress); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 65, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __pyx_t_4 = 1;
+  #if CYTHON_UNPACK_METHODS
+  if (unlikely(PyMethod_Check(__pyx_t_1))) {
+    __pyx_t_5 = PyMethod_GET_SELF(__pyx_t_1);
+    assert(__pyx_t_5);
+    PyObject* __pyx__function = PyMethod_GET_FUNCTION(__pyx_t_1);
+    __Pyx_INCREF(__pyx_t_5);
+    __Pyx_INCREF(__pyx__function);
+    __Pyx_DECREF_SET(__pyx_t_1, __pyx__function);
+    __pyx_t_4 = 0;
+  }
+  #endif
+  {
+    PyObject *__pyx_callargs[4] = {__pyx_t_5, __pyx_mstate_global->__pyx_kp_u_VisionCameraClient_mac_s_DLL_s, __pyx_t_2, __pyx_v_dll_path};
+    __pyx_t_3 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_1, __pyx_callargs+__pyx_t_4, (4-__pyx_t_4) | (__pyx_t_4*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
+    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+    if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 65, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+  }
+  __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+
+  /* "backend/app/plugins/VisionCameraClient.py":44
  *     """
  * 
  *     def __init__(self, model: str, port: dict, context=None):             # <<<<<<<<<<<<<<
@@ -3733,20 +3662,20 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
   __Pyx_XDECREF(__pyx_t_2);
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_5);
-  __Pyx_XDECREF(__pyx_t_6);
   __Pyx_XDECREF(__pyx_t_7);
   __Pyx_XDECREF(__pyx_t_8);
+  __Pyx_XDECREF(__pyx_t_9);
   __Pyx_AddTraceback("backend.app.plugins.VisionCameraClient.VisionCameraClient.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
-  __Pyx_XDECREF(__pyx_v_original_dll);
+  __Pyx_XDECREF(__pyx_v_dll_path);
   __Pyx_XDECREF(__pyx_v_dll_dir);
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "backend/app/plugins/VisionCameraClient.py":73
+/* "backend/app/plugins/VisionCameraClient.py":71
  *     # ------------------------------------------------------------------
  * 
  *     def _frame_loop(self):             # <<<<<<<<<<<<<<
@@ -3794,32 +3723,32 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_self,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 73, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 71, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 73, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 71, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "_frame_loop", 0) < (0)) __PYX_ERR(0, 73, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "_frame_loop", 0) < (0)) __PYX_ERR(0, 71, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("_frame_loop", 1, 1, 1, i); __PYX_ERR(0, 73, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("_frame_loop", 1, 1, 1, i); __PYX_ERR(0, 71, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 73, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 71, __pyx_L3_error)
     }
     __pyx_v_self = values[0];
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("_frame_loop", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 73, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("_frame_loop", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 71, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -3876,7 +3805,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_frame_loop", 0);
 
-  /* "backend/app/plugins/VisionCameraClient.py":75
+  /* "backend/app/plugins/VisionCameraClient.py":73
  *     def _frame_loop(self):
  *         """  DLL   _latest_frame ."""
  *         logger.info("VisionCamera frame loop started")             # <<<<<<<<<<<<<<
@@ -3884,9 +3813,9 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
  *         error_count = 0
 */
   __pyx_t_2 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_logger); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 75, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_logger); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 73, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_info); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 75, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_info); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 73, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_t_5 = 1;
@@ -3906,30 +3835,30 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_4, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 75, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 73, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":76
+  /* "backend/app/plugins/VisionCameraClient.py":74
  *         """  DLL   _latest_frame ."""
  *         logger.info("VisionCamera frame loop started")
  *         tmp_path = str(self._tmp_dir / "latest.bmp")             # <<<<<<<<<<<<<<
  *         error_count = 0
  *         frame_count = 0
 */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_tmp_dir); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 76, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_tmp_dir); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 74, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_4 = __Pyx_PyNumber_Divide(__pyx_t_1, __pyx_mstate_global->__pyx_kp_u_latest_bmp); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 76, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyNumber_Divide(__pyx_t_1, __pyx_mstate_global->__pyx_kp_u_latest_bmp); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 74, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Unicode(__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 76, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Unicode(__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 74, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_v_tmp_path = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":77
+  /* "backend/app/plugins/VisionCameraClient.py":75
  *         logger.info("VisionCamera frame loop started")
  *         tmp_path = str(self._tmp_dir / "latest.bmp")
  *         error_count = 0             # <<<<<<<<<<<<<<
@@ -3939,7 +3868,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
   __Pyx_INCREF(__pyx_mstate_global->__pyx_int_0);
   __pyx_v_error_count = __pyx_mstate_global->__pyx_int_0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":78
+  /* "backend/app/plugins/VisionCameraClient.py":76
  *         tmp_path = str(self._tmp_dir / "latest.bmp")
  *         error_count = 0
  *         frame_count = 0             # <<<<<<<<<<<<<<
@@ -3949,7 +3878,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
   __Pyx_INCREF(__pyx_mstate_global->__pyx_int_0);
   __pyx_v_frame_count = __pyx_mstate_global->__pyx_int_0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":80
+  /* "backend/app/plugins/VisionCameraClient.py":78
  *         frame_count = 0
  * 
  *         while not self._frame_stop.is_set():             # <<<<<<<<<<<<<<
@@ -3957,7 +3886,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
  *                 result = self._dll.Vision_Capture(c_wchar_p(tmp_path))
 */
   while (1) {
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_stop); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 80, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_stop); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 78, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __pyx_t_4 = __pyx_t_2;
     __Pyx_INCREF(__pyx_t_4);
@@ -3967,15 +3896,15 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
       __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_is_set, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 80, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 78, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
     }
-    __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 80, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 78, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __pyx_t_7 = (!__pyx_t_6);
     if (!__pyx_t_7) break;
 
-    /* "backend/app/plugins/VisionCameraClient.py":81
+    /* "backend/app/plugins/VisionCameraClient.py":79
  * 
  *         while not self._frame_stop.is_set():
  *             try:             # <<<<<<<<<<<<<<
@@ -3991,19 +3920,19 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
       __Pyx_XGOTREF(__pyx_t_10);
       /*try:*/ {
 
-        /* "backend/app/plugins/VisionCameraClient.py":82
+        /* "backend/app/plugins/VisionCameraClient.py":80
  *         while not self._frame_stop.is_set():
  *             try:
  *                 result = self._dll.Vision_Capture(c_wchar_p(tmp_path))             # <<<<<<<<<<<<<<
  *                 if result == 0 and os.path.exists(tmp_path):
  *                     img = Image.open(tmp_path).convert("RGB")
 */
-        __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_dll_2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 82, __pyx_L5_error)
+        __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_dll); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 80, __pyx_L5_error)
         __Pyx_GOTREF(__pyx_t_4);
         __pyx_t_2 = __pyx_t_4;
         __Pyx_INCREF(__pyx_t_2);
         __pyx_t_11 = NULL;
-        __Pyx_GetModuleGlobalName(__pyx_t_12, __pyx_mstate_global->__pyx_n_u_c_wchar_p); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 82, __pyx_L5_error)
+        __Pyx_GetModuleGlobalName(__pyx_t_12, __pyx_mstate_global->__pyx_n_u_c_wchar_p); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 80, __pyx_L5_error)
         __Pyx_GOTREF(__pyx_t_12);
         __pyx_t_5 = 1;
         #if CYTHON_UNPACK_METHODS
@@ -4022,7 +3951,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
           __pyx_t_3 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_12, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
           __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
           __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-          if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 82, __pyx_L5_error)
+          if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 80, __pyx_L5_error)
           __Pyx_GOTREF(__pyx_t_3);
         }
         __pyx_t_5 = 0;
@@ -4032,28 +3961,28 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
           __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 82, __pyx_L5_error)
+          if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 80, __pyx_L5_error)
           __Pyx_GOTREF(__pyx_t_1);
         }
         __Pyx_XDECREF_SET(__pyx_v_result, __pyx_t_1);
         __pyx_t_1 = 0;
 
-        /* "backend/app/plugins/VisionCameraClient.py":83
+        /* "backend/app/plugins/VisionCameraClient.py":81
  *             try:
  *                 result = self._dll.Vision_Capture(c_wchar_p(tmp_path))
  *                 if result == 0 and os.path.exists(tmp_path):             # <<<<<<<<<<<<<<
  *                     img = Image.open(tmp_path).convert("RGB")
  *                     with self._frame_lock:
 */
-        __pyx_t_6 = (__Pyx_PyLong_BoolEqObjC(__pyx_v_result, __pyx_mstate_global->__pyx_int_0, 0, 0)); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 83, __pyx_L5_error)
+        __pyx_t_6 = (__Pyx_PyLong_BoolEqObjC(__pyx_v_result, __pyx_mstate_global->__pyx_int_0, 0, 0)); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 81, __pyx_L5_error)
         if (__pyx_t_6) {
         } else {
           __pyx_t_7 = __pyx_t_6;
           goto __pyx_L14_bool_binop_done;
         }
-        __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_os); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 83, __pyx_L5_error)
+        __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_os); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 81, __pyx_L5_error)
         __Pyx_GOTREF(__pyx_t_3);
-        __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_path); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 83, __pyx_L5_error)
+        __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_path); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 81, __pyx_L5_error)
         __Pyx_GOTREF(__pyx_t_2);
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
         __pyx_t_4 = __pyx_t_2;
@@ -4064,16 +3993,16 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
           __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_exists, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-          if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 83, __pyx_L5_error)
+          if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 81, __pyx_L5_error)
           __Pyx_GOTREF(__pyx_t_1);
         }
-        __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 83, __pyx_L5_error)
+        __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 81, __pyx_L5_error)
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
         __pyx_t_7 = __pyx_t_6;
         __pyx_L14_bool_binop_done:;
         if (__pyx_t_7) {
 
-          /* "backend/app/plugins/VisionCameraClient.py":84
+          /* "backend/app/plugins/VisionCameraClient.py":82
  *                 result = self._dll.Vision_Capture(c_wchar_p(tmp_path))
  *                 if result == 0 and os.path.exists(tmp_path):
  *                     img = Image.open(tmp_path).convert("RGB")             # <<<<<<<<<<<<<<
@@ -4081,9 +4010,9 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
  *                         self._latest_frame = img
 */
           __pyx_t_3 = NULL;
-          __Pyx_GetModuleGlobalName(__pyx_t_12, __pyx_mstate_global->__pyx_n_u_Image); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 84, __pyx_L5_error)
+          __Pyx_GetModuleGlobalName(__pyx_t_12, __pyx_mstate_global->__pyx_n_u_Image); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 82, __pyx_L5_error)
           __Pyx_GOTREF(__pyx_t_12);
-          __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_t_12, __pyx_mstate_global->__pyx_n_u_open); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 84, __pyx_L5_error)
+          __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_t_12, __pyx_mstate_global->__pyx_n_u_open); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 82, __pyx_L5_error)
           __Pyx_GOTREF(__pyx_t_11);
           __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
           __pyx_t_5 = 1;
@@ -4103,7 +4032,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
             __pyx_t_4 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_11, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
             __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
             __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-            if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 84, __pyx_L5_error)
+            if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 82, __pyx_L5_error)
             __Pyx_GOTREF(__pyx_t_4);
           }
           __pyx_t_2 = __pyx_t_4;
@@ -4114,13 +4043,13 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
             __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_convert, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
             __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
             __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-            if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 84, __pyx_L5_error)
+            if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 82, __pyx_L5_error)
             __Pyx_GOTREF(__pyx_t_1);
           }
           __Pyx_XDECREF_SET(__pyx_v_img, __pyx_t_1);
           __pyx_t_1 = 0;
 
-          /* "backend/app/plugins/VisionCameraClient.py":85
+          /* "backend/app/plugins/VisionCameraClient.py":83
  *                 if result == 0 and os.path.exists(tmp_path):
  *                     img = Image.open(tmp_path).convert("RGB")
  *                     with self._frame_lock:             # <<<<<<<<<<<<<<
@@ -4128,12 +4057,12 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
  *                     frame_count += 1
 */
           /*with:*/ {
-            __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_lock); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 85, __pyx_L5_error)
+            __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_lock); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 83, __pyx_L5_error)
             __Pyx_GOTREF(__pyx_t_1);
-            __pyx_t_13 = __Pyx_PyObject_LookupSpecial(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_exit); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 85, __pyx_L5_error)
+            __pyx_t_13 = __Pyx_PyObject_LookupSpecial(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_exit); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 83, __pyx_L5_error)
             __Pyx_GOTREF(__pyx_t_13);
             __pyx_t_2 = NULL;
-            __pyx_t_11 = __Pyx_PyObject_LookupSpecial(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_enter); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 85, __pyx_L16_error)
+            __pyx_t_11 = __Pyx_PyObject_LookupSpecial(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_enter); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 83, __pyx_L16_error)
             __Pyx_GOTREF(__pyx_t_11);
             __pyx_t_5 = 1;
             #if CYTHON_UNPACK_METHODS
@@ -4152,7 +4081,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
               __pyx_t_4 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_11, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
               __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
               __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-              if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 85, __pyx_L16_error)
+              if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 83, __pyx_L16_error)
               __Pyx_GOTREF(__pyx_t_4);
             }
             __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
@@ -4167,16 +4096,16 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
                 __Pyx_XGOTREF(__pyx_t_16);
                 /*try:*/ {
 
-                  /* "backend/app/plugins/VisionCameraClient.py":86
+                  /* "backend/app/plugins/VisionCameraClient.py":84
  *                     img = Image.open(tmp_path).convert("RGB")
  *                     with self._frame_lock:
  *                         self._latest_frame = img             # <<<<<<<<<<<<<<
  *                     frame_count += 1
  *                     if frame_count == 1:
 */
-                  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_latest_frame, __pyx_v_img) < (0)) __PYX_ERR(0, 86, __pyx_L22_error)
+                  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_latest_frame, __pyx_v_img) < (0)) __PYX_ERR(0, 84, __pyx_L22_error)
 
-                  /* "backend/app/plugins/VisionCameraClient.py":85
+                  /* "backend/app/plugins/VisionCameraClient.py":83
  *                 if result == 0 and os.path.exists(tmp_path):
  *                     img = Image.open(tmp_path).convert("RGB")
  *                     with self._frame_lock:             # <<<<<<<<<<<<<<
@@ -4197,20 +4126,20 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
                 __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
                 /*except:*/ {
                   __Pyx_AddTraceback("backend.app.plugins.VisionCameraClient.VisionCameraClient._frame_loop", __pyx_clineno, __pyx_lineno, __pyx_filename);
-                  if (__Pyx_GetException(&__pyx_t_1, &__pyx_t_4, &__pyx_t_11) < 0) __PYX_ERR(0, 85, __pyx_L24_except_error)
+                  if (__Pyx_GetException(&__pyx_t_1, &__pyx_t_4, &__pyx_t_11) < 0) __PYX_ERR(0, 83, __pyx_L24_except_error)
                   __Pyx_XGOTREF(__pyx_t_1);
                   __Pyx_XGOTREF(__pyx_t_4);
                   __Pyx_XGOTREF(__pyx_t_11);
-                  __pyx_t_2 = PyTuple_Pack(3, __pyx_t_1, __pyx_t_4, __pyx_t_11); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 85, __pyx_L24_except_error)
+                  __pyx_t_2 = PyTuple_Pack(3, __pyx_t_1, __pyx_t_4, __pyx_t_11); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 83, __pyx_L24_except_error)
                   __Pyx_GOTREF(__pyx_t_2);
                   __pyx_t_17 = __Pyx_PyObject_Call(__pyx_t_13, __pyx_t_2, NULL);
                   __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
                   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-                  if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 85, __pyx_L24_except_error)
+                  if (unlikely(!__pyx_t_17)) __PYX_ERR(0, 83, __pyx_L24_except_error)
                   __Pyx_GOTREF(__pyx_t_17);
                   __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_17);
                   __Pyx_DECREF(__pyx_t_17); __pyx_t_17 = 0;
-                  if (__pyx_t_7 < (0)) __PYX_ERR(0, 85, __pyx_L24_except_error)
+                  if (__pyx_t_7 < (0)) __PYX_ERR(0, 83, __pyx_L24_except_error)
                   __pyx_t_6 = (!__pyx_t_7);
                   if (unlikely(__pyx_t_6)) {
                     __Pyx_GIVEREF(__pyx_t_1);
@@ -4218,7 +4147,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
                     __Pyx_XGIVEREF(__pyx_t_11);
                     __Pyx_ErrRestoreWithState(__pyx_t_1, __pyx_t_4, __pyx_t_11);
                     __pyx_t_1 = 0;  __pyx_t_4 = 0;  __pyx_t_11 = 0; 
-                    __PYX_ERR(0, 85, __pyx_L24_except_error)
+                    __PYX_ERR(0, 83, __pyx_L24_except_error)
                   }
                   __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
                   __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
@@ -4244,7 +4173,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
                 if (__pyx_t_13) {
                   __pyx_t_16 = __Pyx_PyObject_Call(__pyx_t_13, __pyx_mstate_global->__pyx_tuple[0], NULL);
                   __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-                  if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 85, __pyx_L5_error)
+                  if (unlikely(!__pyx_t_16)) __PYX_ERR(0, 83, __pyx_L5_error)
                   __Pyx_GOTREF(__pyx_t_16);
                   __Pyx_DECREF(__pyx_t_16); __pyx_t_16 = 0;
                 }
@@ -4259,29 +4188,29 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
             __pyx_L33:;
           }
 
-          /* "backend/app/plugins/VisionCameraClient.py":87
+          /* "backend/app/plugins/VisionCameraClient.py":85
  *                     with self._frame_lock:
  *                         self._latest_frame = img
  *                     frame_count += 1             # <<<<<<<<<<<<<<
  *                     if frame_count == 1:
  *                         logger.info("VisionCamera first frame received")
 */
-          __pyx_t_11 = __Pyx_PyLong_AddObjC(__pyx_v_frame_count, __pyx_mstate_global->__pyx_int_1, 1, 1, 0); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 87, __pyx_L5_error)
+          __pyx_t_11 = __Pyx_PyLong_AddObjC(__pyx_v_frame_count, __pyx_mstate_global->__pyx_int_1, 1, 1, 0); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 85, __pyx_L5_error)
           __Pyx_GOTREF(__pyx_t_11);
           __Pyx_DECREF_SET(__pyx_v_frame_count, __pyx_t_11);
           __pyx_t_11 = 0;
 
-          /* "backend/app/plugins/VisionCameraClient.py":88
+          /* "backend/app/plugins/VisionCameraClient.py":86
  *                         self._latest_frame = img
  *                     frame_count += 1
  *                     if frame_count == 1:             # <<<<<<<<<<<<<<
  *                         logger.info("VisionCamera first frame received")
  *                     error_count = 0
 */
-          __pyx_t_6 = (__Pyx_PyLong_BoolEqObjC(__pyx_v_frame_count, __pyx_mstate_global->__pyx_int_1, 1, 0)); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 88, __pyx_L5_error)
+          __pyx_t_6 = (__Pyx_PyLong_BoolEqObjC(__pyx_v_frame_count, __pyx_mstate_global->__pyx_int_1, 1, 0)); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 86, __pyx_L5_error)
           if (__pyx_t_6) {
 
-            /* "backend/app/plugins/VisionCameraClient.py":89
+            /* "backend/app/plugins/VisionCameraClient.py":87
  *                     frame_count += 1
  *                     if frame_count == 1:
  *                         logger.info("VisionCamera first frame received")             # <<<<<<<<<<<<<<
@@ -4289,9 +4218,9 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
  *                 else:
 */
             __pyx_t_4 = NULL;
-            __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_logger); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 89, __pyx_L5_error)
+            __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_logger); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 87, __pyx_L5_error)
             __Pyx_GOTREF(__pyx_t_1);
-            __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_info); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 89, __pyx_L5_error)
+            __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_info); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 87, __pyx_L5_error)
             __Pyx_GOTREF(__pyx_t_2);
             __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
             __pyx_t_5 = 1;
@@ -4311,12 +4240,12 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
               __pyx_t_11 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_2, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
               __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
               __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-              if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 89, __pyx_L5_error)
+              if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 87, __pyx_L5_error)
               __Pyx_GOTREF(__pyx_t_11);
             }
             __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
 
-            /* "backend/app/plugins/VisionCameraClient.py":88
+            /* "backend/app/plugins/VisionCameraClient.py":86
  *                         self._latest_frame = img
  *                     frame_count += 1
  *                     if frame_count == 1:             # <<<<<<<<<<<<<<
@@ -4325,7 +4254,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
 */
           }
 
-          /* "backend/app/plugins/VisionCameraClient.py":90
+          /* "backend/app/plugins/VisionCameraClient.py":88
  *                     if frame_count == 1:
  *                         logger.info("VisionCamera first frame received")
  *                     error_count = 0             # <<<<<<<<<<<<<<
@@ -4335,7 +4264,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
           __Pyx_INCREF(__pyx_mstate_global->__pyx_int_0);
           __Pyx_DECREF_SET(__pyx_v_error_count, __pyx_mstate_global->__pyx_int_0);
 
-          /* "backend/app/plugins/VisionCameraClient.py":83
+          /* "backend/app/plugins/VisionCameraClient.py":81
  *             try:
  *                 result = self._dll.Vision_Capture(c_wchar_p(tmp_path))
  *                 if result == 0 and os.path.exists(tmp_path):             # <<<<<<<<<<<<<<
@@ -4345,7 +4274,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
           goto __pyx_L13;
         }
 
-        /* "backend/app/plugins/VisionCameraClient.py":92
+        /* "backend/app/plugins/VisionCameraClient.py":90
  *                     error_count = 0
  *                 else:
  *                     error_count += 1             # <<<<<<<<<<<<<<
@@ -4353,35 +4282,35 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
  *                         logger.warning("VisionCamera capture failed (count=%d, code=%d)",
 */
         /*else*/ {
-          __pyx_t_11 = __Pyx_PyLong_AddObjC(__pyx_v_error_count, __pyx_mstate_global->__pyx_int_1, 1, 1, 0); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 92, __pyx_L5_error)
+          __pyx_t_11 = __Pyx_PyLong_AddObjC(__pyx_v_error_count, __pyx_mstate_global->__pyx_int_1, 1, 1, 0); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 90, __pyx_L5_error)
           __Pyx_GOTREF(__pyx_t_11);
           __Pyx_DECREF_SET(__pyx_v_error_count, __pyx_t_11);
           __pyx_t_11 = 0;
 
-          /* "backend/app/plugins/VisionCameraClient.py":93
+          /* "backend/app/plugins/VisionCameraClient.py":91
  *                 else:
  *                     error_count += 1
  *                     if error_count <= 3 or error_count % 30 == 0:             # <<<<<<<<<<<<<<
  *                         logger.warning("VisionCamera capture failed (count=%d, code=%d)",
  *                                        error_count, result)
 */
-          __pyx_t_11 = PyObject_RichCompare(__pyx_v_error_count, __pyx_mstate_global->__pyx_int_3, Py_LE); __Pyx_XGOTREF(__pyx_t_11); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 93, __pyx_L5_error)
-          __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_11); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 93, __pyx_L5_error)
+          __pyx_t_11 = PyObject_RichCompare(__pyx_v_error_count, __pyx_mstate_global->__pyx_int_3, Py_LE); __Pyx_XGOTREF(__pyx_t_11); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 91, __pyx_L5_error)
+          __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_11); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 91, __pyx_L5_error)
           __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
           if (!__pyx_t_7) {
           } else {
             __pyx_t_6 = __pyx_t_7;
             goto __pyx_L36_bool_binop_done;
           }
-          __pyx_t_11 = __Pyx_PyLong_RemainderObjC(__pyx_v_error_count, __pyx_mstate_global->__pyx_int_30, 30, 0, 0); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 93, __pyx_L5_error)
+          __pyx_t_11 = __Pyx_PyLong_RemainderObjC(__pyx_v_error_count, __pyx_mstate_global->__pyx_int_30, 30, 0, 0); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 91, __pyx_L5_error)
           __Pyx_GOTREF(__pyx_t_11);
-          __pyx_t_7 = (__Pyx_PyLong_BoolEqObjC(__pyx_t_11, __pyx_mstate_global->__pyx_int_0, 0, 0)); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 93, __pyx_L5_error)
+          __pyx_t_7 = (__Pyx_PyLong_BoolEqObjC(__pyx_t_11, __pyx_mstate_global->__pyx_int_0, 0, 0)); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 91, __pyx_L5_error)
           __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
           __pyx_t_6 = __pyx_t_7;
           __pyx_L36_bool_binop_done:;
           if (__pyx_t_6) {
 
-            /* "backend/app/plugins/VisionCameraClient.py":94
+            /* "backend/app/plugins/VisionCameraClient.py":92
  *                     error_count += 1
  *                     if error_count <= 3 or error_count % 30 == 0:
  *                         logger.warning("VisionCamera capture failed (count=%d, code=%d)",             # <<<<<<<<<<<<<<
@@ -4389,13 +4318,13 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
  *                     time.sleep(0.1)
 */
             __pyx_t_2 = NULL;
-            __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_logger); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 94, __pyx_L5_error)
+            __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_logger); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 92, __pyx_L5_error)
             __Pyx_GOTREF(__pyx_t_4);
-            __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_warning); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 94, __pyx_L5_error)
+            __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_warning); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 92, __pyx_L5_error)
             __Pyx_GOTREF(__pyx_t_1);
             __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-            /* "backend/app/plugins/VisionCameraClient.py":95
+            /* "backend/app/plugins/VisionCameraClient.py":93
  *                     if error_count <= 3 or error_count % 30 == 0:
  *                         logger.warning("VisionCamera capture failed (count=%d, code=%d)",
  *                                        error_count, result)             # <<<<<<<<<<<<<<
@@ -4419,12 +4348,12 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
               __pyx_t_11 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_1, __pyx_callargs+__pyx_t_5, (4-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
               __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
               __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-              if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 94, __pyx_L5_error)
+              if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 92, __pyx_L5_error)
               __Pyx_GOTREF(__pyx_t_11);
             }
             __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
 
-            /* "backend/app/plugins/VisionCameraClient.py":93
+            /* "backend/app/plugins/VisionCameraClient.py":91
  *                 else:
  *                     error_count += 1
  *                     if error_count <= 3 or error_count % 30 == 0:             # <<<<<<<<<<<<<<
@@ -4433,7 +4362,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
 */
           }
 
-          /* "backend/app/plugins/VisionCameraClient.py":96
+          /* "backend/app/plugins/VisionCameraClient.py":94
  *                         logger.warning("VisionCamera capture failed (count=%d, code=%d)",
  *                                        error_count, result)
  *                     time.sleep(0.1)             # <<<<<<<<<<<<<<
@@ -4441,9 +4370,9 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
  *             except Exception as e:
 */
           __pyx_t_1 = NULL;
-          __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_time); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 96, __pyx_L5_error)
+          __Pyx_GetModuleGlobalName(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_time); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 94, __pyx_L5_error)
           __Pyx_GOTREF(__pyx_t_2);
-          __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_sleep); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 96, __pyx_L5_error)
+          __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_sleep); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 94, __pyx_L5_error)
           __Pyx_GOTREF(__pyx_t_4);
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
           __pyx_t_5 = 1;
@@ -4463,12 +4392,12 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
             __pyx_t_11 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_4, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
             __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
             __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-            if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 96, __pyx_L5_error)
+            if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 94, __pyx_L5_error)
             __Pyx_GOTREF(__pyx_t_11);
           }
           __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
 
-          /* "backend/app/plugins/VisionCameraClient.py":97
+          /* "backend/app/plugins/VisionCameraClient.py":95
  *                                        error_count, result)
  *                     time.sleep(0.1)
  *                     continue             # <<<<<<<<<<<<<<
@@ -4479,7 +4408,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
         }
         __pyx_L13:;
 
-        /* "backend/app/plugins/VisionCameraClient.py":81
+        /* "backend/app/plugins/VisionCameraClient.py":79
  * 
  *         while not self._frame_stop.is_set():
  *             try:             # <<<<<<<<<<<<<<
@@ -4499,7 +4428,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
       __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-      /* "backend/app/plugins/VisionCameraClient.py":98
+      /* "backend/app/plugins/VisionCameraClient.py":96
  *                     time.sleep(0.1)
  *                     continue
  *             except Exception as e:             # <<<<<<<<<<<<<<
@@ -4509,7 +4438,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
       __pyx_t_18 = __Pyx_PyErr_ExceptionMatches(((PyObject *)(((PyTypeObject*)PyExc_Exception))));
       if (__pyx_t_18) {
         __Pyx_AddTraceback("backend.app.plugins.VisionCameraClient.VisionCameraClient._frame_loop", __pyx_clineno, __pyx_lineno, __pyx_filename);
-        if (__Pyx_GetException(&__pyx_t_11, &__pyx_t_4, &__pyx_t_1) < 0) __PYX_ERR(0, 98, __pyx_L7_except_error)
+        if (__Pyx_GetException(&__pyx_t_11, &__pyx_t_4, &__pyx_t_1) < 0) __PYX_ERR(0, 96, __pyx_L7_except_error)
         __Pyx_XGOTREF(__pyx_t_11);
         __Pyx_XGOTREF(__pyx_t_4);
         __Pyx_XGOTREF(__pyx_t_1);
@@ -4517,42 +4446,42 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
         __pyx_v_e = __pyx_t_4;
         /*try:*/ {
 
-          /* "backend/app/plugins/VisionCameraClient.py":99
+          /* "backend/app/plugins/VisionCameraClient.py":97
  *                     continue
  *             except Exception as e:
  *                 error_count += 1             # <<<<<<<<<<<<<<
  *                 if error_count <= 3 or error_count % 30 == 0:
  *                     logger.warning("VisionCamera frame error (%d): %s", error_count, e)
 */
-          __pyx_t_2 = __Pyx_PyLong_AddObjC(__pyx_v_error_count, __pyx_mstate_global->__pyx_int_1, 1, 1, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 99, __pyx_L43_error)
+          __pyx_t_2 = __Pyx_PyLong_AddObjC(__pyx_v_error_count, __pyx_mstate_global->__pyx_int_1, 1, 1, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 97, __pyx_L43_error)
           __Pyx_GOTREF(__pyx_t_2);
           __Pyx_DECREF_SET(__pyx_v_error_count, __pyx_t_2);
           __pyx_t_2 = 0;
 
-          /* "backend/app/plugins/VisionCameraClient.py":100
+          /* "backend/app/plugins/VisionCameraClient.py":98
  *             except Exception as e:
  *                 error_count += 1
  *                 if error_count <= 3 or error_count % 30 == 0:             # <<<<<<<<<<<<<<
  *                     logger.warning("VisionCamera frame error (%d): %s", error_count, e)
  *                 time.sleep(0.1)
 */
-          __pyx_t_2 = PyObject_RichCompare(__pyx_v_error_count, __pyx_mstate_global->__pyx_int_3, Py_LE); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 100, __pyx_L43_error)
-          __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 100, __pyx_L43_error)
+          __pyx_t_2 = PyObject_RichCompare(__pyx_v_error_count, __pyx_mstate_global->__pyx_int_3, Py_LE); __Pyx_XGOTREF(__pyx_t_2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 98, __pyx_L43_error)
+          __pyx_t_7 = __Pyx_PyObject_IsTrue(__pyx_t_2); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 98, __pyx_L43_error)
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
           if (!__pyx_t_7) {
           } else {
             __pyx_t_6 = __pyx_t_7;
             goto __pyx_L46_bool_binop_done;
           }
-          __pyx_t_2 = __Pyx_PyLong_RemainderObjC(__pyx_v_error_count, __pyx_mstate_global->__pyx_int_30, 30, 0, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 100, __pyx_L43_error)
+          __pyx_t_2 = __Pyx_PyLong_RemainderObjC(__pyx_v_error_count, __pyx_mstate_global->__pyx_int_30, 30, 0, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 98, __pyx_L43_error)
           __Pyx_GOTREF(__pyx_t_2);
-          __pyx_t_7 = (__Pyx_PyLong_BoolEqObjC(__pyx_t_2, __pyx_mstate_global->__pyx_int_0, 0, 0)); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 100, __pyx_L43_error)
+          __pyx_t_7 = (__Pyx_PyLong_BoolEqObjC(__pyx_t_2, __pyx_mstate_global->__pyx_int_0, 0, 0)); if (unlikely((__pyx_t_7 < 0))) __PYX_ERR(0, 98, __pyx_L43_error)
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
           __pyx_t_6 = __pyx_t_7;
           __pyx_L46_bool_binop_done:;
           if (__pyx_t_6) {
 
-            /* "backend/app/plugins/VisionCameraClient.py":101
+            /* "backend/app/plugins/VisionCameraClient.py":99
  *                 error_count += 1
  *                 if error_count <= 3 or error_count % 30 == 0:
  *                     logger.warning("VisionCamera frame error (%d): %s", error_count, e)             # <<<<<<<<<<<<<<
@@ -4560,9 +4489,9 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
  * 
 */
             __pyx_t_3 = NULL;
-            __Pyx_GetModuleGlobalName(__pyx_t_12, __pyx_mstate_global->__pyx_n_u_logger); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 101, __pyx_L43_error)
+            __Pyx_GetModuleGlobalName(__pyx_t_12, __pyx_mstate_global->__pyx_n_u_logger); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 99, __pyx_L43_error)
             __Pyx_GOTREF(__pyx_t_12);
-            __pyx_t_19 = __Pyx_PyObject_GetAttrStr(__pyx_t_12, __pyx_mstate_global->__pyx_n_u_warning); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 101, __pyx_L43_error)
+            __pyx_t_19 = __Pyx_PyObject_GetAttrStr(__pyx_t_12, __pyx_mstate_global->__pyx_n_u_warning); if (unlikely(!__pyx_t_19)) __PYX_ERR(0, 99, __pyx_L43_error)
             __Pyx_GOTREF(__pyx_t_19);
             __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
             __pyx_t_5 = 1;
@@ -4582,12 +4511,12 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
               __pyx_t_2 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_19, __pyx_callargs+__pyx_t_5, (4-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
               __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
               __Pyx_DECREF(__pyx_t_19); __pyx_t_19 = 0;
-              if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 101, __pyx_L43_error)
+              if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 99, __pyx_L43_error)
               __Pyx_GOTREF(__pyx_t_2);
             }
             __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-            /* "backend/app/plugins/VisionCameraClient.py":100
+            /* "backend/app/plugins/VisionCameraClient.py":98
  *             except Exception as e:
  *                 error_count += 1
  *                 if error_count <= 3 or error_count % 30 == 0:             # <<<<<<<<<<<<<<
@@ -4596,7 +4525,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
 */
           }
 
-          /* "backend/app/plugins/VisionCameraClient.py":102
+          /* "backend/app/plugins/VisionCameraClient.py":100
  *                 if error_count <= 3 or error_count % 30 == 0:
  *                     logger.warning("VisionCamera frame error (%d): %s", error_count, e)
  *                 time.sleep(0.1)             # <<<<<<<<<<<<<<
@@ -4604,9 +4533,9 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
  *             #   (~30fps )
 */
           __pyx_t_19 = NULL;
-          __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_time); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 102, __pyx_L43_error)
+          __Pyx_GetModuleGlobalName(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_time); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 100, __pyx_L43_error)
           __Pyx_GOTREF(__pyx_t_3);
-          __pyx_t_12 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_sleep); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 102, __pyx_L43_error)
+          __pyx_t_12 = __Pyx_PyObject_GetAttrStr(__pyx_t_3, __pyx_mstate_global->__pyx_n_u_sleep); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 100, __pyx_L43_error)
           __Pyx_GOTREF(__pyx_t_12);
           __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
           __pyx_t_5 = 1;
@@ -4626,13 +4555,13 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
             __pyx_t_2 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_12, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
             __Pyx_XDECREF(__pyx_t_19); __pyx_t_19 = 0;
             __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-            if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 102, __pyx_L43_error)
+            if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 100, __pyx_L43_error)
             __Pyx_GOTREF(__pyx_t_2);
           }
           __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
         }
 
-        /* "backend/app/plugins/VisionCameraClient.py":98
+        /* "backend/app/plugins/VisionCameraClient.py":96
  *                     time.sleep(0.1)
  *                     continue
  *             except Exception as e:             # <<<<<<<<<<<<<<
@@ -4686,7 +4615,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
       }
       goto __pyx_L7_except_error;
 
-      /* "backend/app/plugins/VisionCameraClient.py":81
+      /* "backend/app/plugins/VisionCameraClient.py":79
  * 
  *         while not self._frame_stop.is_set():
  *             try:             # <<<<<<<<<<<<<<
@@ -4713,7 +4642,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
       __pyx_L12_try_end:;
     }
 
-    /* "backend/app/plugins/VisionCameraClient.py":105
+    /* "backend/app/plugins/VisionCameraClient.py":103
  * 
  *             #   (~30fps )
  *             time.sleep(0.033)             # <<<<<<<<<<<<<<
@@ -4721,9 +4650,9 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
  *         logger.info("VisionCamera frame loop stopped (total frames: %d)", frame_count)
 */
     __pyx_t_4 = NULL;
-    __Pyx_GetModuleGlobalName(__pyx_t_11, __pyx_mstate_global->__pyx_n_u_time); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 105, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_11, __pyx_mstate_global->__pyx_n_u_time); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 103, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_11);
-    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_11, __pyx_mstate_global->__pyx_n_u_sleep); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 105, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_t_11, __pyx_mstate_global->__pyx_n_u_sleep); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 103, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
     __pyx_t_5 = 1;
@@ -4743,14 +4672,14 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
       __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_2, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 105, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 103, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
     }
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __pyx_L3_continue:;
   }
 
-  /* "backend/app/plugins/VisionCameraClient.py":107
+  /* "backend/app/plugins/VisionCameraClient.py":105
  *             time.sleep(0.033)
  * 
  *         logger.info("VisionCamera frame loop stopped (total frames: %d)", frame_count)             # <<<<<<<<<<<<<<
@@ -4758,9 +4687,9 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
  *     # ------------------------------------------------------------------
 */
   __pyx_t_2 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_logger); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 107, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_logger); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 105, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_info); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 107, __pyx_L1_error)
+  __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_info); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 105, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_11);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_5 = 1;
@@ -4780,12 +4709,12 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_11, __pyx_callargs+__pyx_t_5, (3-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 107, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 105, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":73
+  /* "backend/app/plugins/VisionCameraClient.py":71
  *     # ------------------------------------------------------------------
  * 
  *     def _frame_loop(self):             # <<<<<<<<<<<<<<
@@ -4818,7 +4747,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
   return __pyx_r;
 }
 
-/* "backend/app/plugins/VisionCameraClient.py":113
+/* "backend/app/plugins/VisionCameraClient.py":111
  *     # ------------------------------------------------------------------
  * 
  *     def md_VisionConnect(self) -> tuple[bool, str]:             # <<<<<<<<<<<<<<
@@ -4866,32 +4795,32 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_self,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 113, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 111, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 113, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 111, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "md_VisionConnect", 0) < (0)) __PYX_ERR(0, 113, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "md_VisionConnect", 0) < (0)) __PYX_ERR(0, 111, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("md_VisionConnect", 1, 1, 1, i); __PYX_ERR(0, 113, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("md_VisionConnect", 1, 1, 1, i); __PYX_ERR(0, 111, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 113, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 111, __pyx_L3_error)
     }
     __pyx_v_self = values[0];
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("md_VisionConnect", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 113, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("md_VisionConnect", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 111, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -4945,20 +4874,20 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("md_VisionConnect", 0);
 
-  /* "backend/app/plugins/VisionCameraClient.py":115
+  /* "backend/app/plugins/VisionCameraClient.py":113
  *     def md_VisionConnect(self) -> tuple[bool, str]:
  *         """  +   ."""
  *         if self._isConnected:             # <<<<<<<<<<<<<<
  *             return True, "[VisionCamera] Already connected"
  * 
 */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_isConnected); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 115, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_isConnected); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 113, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 115, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 113, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_2) {
 
-    /* "backend/app/plugins/VisionCameraClient.py":116
+    /* "backend/app/plugins/VisionCameraClient.py":114
  *         """  +   ."""
  *         if self._isConnected:
  *             return True, "[VisionCamera] Already connected"             # <<<<<<<<<<<<<<
@@ -4970,7 +4899,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     __pyx_r = __pyx_mstate_global->__pyx_tuple[1];
     goto __pyx_L0;
 
-    /* "backend/app/plugins/VisionCameraClient.py":115
+    /* "backend/app/plugins/VisionCameraClient.py":113
  *     def md_VisionConnect(self) -> tuple[bool, str]:
  *         """  +   ."""
  *         if self._isConnected:             # <<<<<<<<<<<<<<
@@ -4979,7 +4908,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
 */
   }
 
-  /* "backend/app/plugins/VisionCameraClient.py":118
+  /* "backend/app/plugins/VisionCameraClient.py":116
  *             return True, "[VisionCamera] Already connected"
  * 
  *         try:             # <<<<<<<<<<<<<<
@@ -4995,21 +4924,21 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     __Pyx_XGOTREF(__pyx_t_5);
     /*try:*/ {
 
-      /* "backend/app/plugins/VisionCameraClient.py":119
+      /* "backend/app/plugins/VisionCameraClient.py":117
  * 
  *         try:
  *             result = self._dll.Vision_Connect(c_wchar_p(self._macaddress))             # <<<<<<<<<<<<<<
  *             if result != 0:
  *                 return False, f"[VisionCamera] Connect fail (code={result})"
 */
-      __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_dll_2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 119, __pyx_L4_error)
+      __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_dll); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 117, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_7);
       __pyx_t_6 = __pyx_t_7;
       __Pyx_INCREF(__pyx_t_6);
       __pyx_t_9 = NULL;
-      __Pyx_GetModuleGlobalName(__pyx_t_10, __pyx_mstate_global->__pyx_n_u_c_wchar_p); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 119, __pyx_L4_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_10, __pyx_mstate_global->__pyx_n_u_c_wchar_p); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 117, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_10);
-      __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_macaddress); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 119, __pyx_L4_error)
+      __pyx_t_11 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_macaddress); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 117, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_11);
       __pyx_t_12 = 1;
       #if CYTHON_UNPACK_METHODS
@@ -5029,7 +4958,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
         __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
         __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
         __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-        if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 119, __pyx_L4_error)
+        if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 117, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_8);
       }
       __pyx_t_12 = 0;
@@ -5039,23 +4968,23 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
         __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
         __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
         __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 119, __pyx_L4_error)
+        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 117, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_1);
       }
       __pyx_v_result = __pyx_t_1;
       __pyx_t_1 = 0;
 
-      /* "backend/app/plugins/VisionCameraClient.py":120
+      /* "backend/app/plugins/VisionCameraClient.py":118
  *         try:
  *             result = self._dll.Vision_Connect(c_wchar_p(self._macaddress))
  *             if result != 0:             # <<<<<<<<<<<<<<
  *                 return False, f"[VisionCamera] Connect fail (code={result})"
  * 
 */
-      __pyx_t_2 = (__Pyx_PyLong_BoolNeObjC(__pyx_v_result, __pyx_mstate_global->__pyx_int_0, 0, 0)); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 120, __pyx_L4_error)
+      __pyx_t_2 = (__Pyx_PyLong_BoolNeObjC(__pyx_v_result, __pyx_mstate_global->__pyx_int_0, 0, 0)); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 118, __pyx_L4_error)
       if (__pyx_t_2) {
 
-        /* "backend/app/plugins/VisionCameraClient.py":121
+        /* "backend/app/plugins/VisionCameraClient.py":119
  *             result = self._dll.Vision_Connect(c_wchar_p(self._macaddress))
  *             if result != 0:
  *                 return False, f"[VisionCamera] Connect fail (code={result})"             # <<<<<<<<<<<<<<
@@ -5063,28 +4992,28 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
  *             self._isConnected = True
 */
         __Pyx_XDECREF(__pyx_r);
-        __pyx_t_1 = __Pyx_PyObject_FormatSimple(__pyx_v_result, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 121, __pyx_L4_error)
+        __pyx_t_1 = __Pyx_PyObject_FormatSimple(__pyx_v_result, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 119, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_1);
         __pyx_t_13[0] = __pyx_mstate_global->__pyx_kp_u_VisionCamera_Connect_fail_code;
         __pyx_t_13[1] = __pyx_t_1;
         __pyx_t_13[2] = __pyx_mstate_global->__pyx_kp_u__2;
         __pyx_t_7 = __Pyx_PyUnicode_Join(__pyx_t_13, 3, 34 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_1) + 1, 127 | __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_1));
-        if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 121, __pyx_L4_error)
+        if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 119, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_7);
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-        __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 121, __pyx_L4_error)
+        __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 119, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_1);
         __Pyx_INCREF(Py_False);
         __Pyx_GIVEREF(Py_False);
-        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 0, Py_False) != (0)) __PYX_ERR(0, 121, __pyx_L4_error);
+        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 0, Py_False) != (0)) __PYX_ERR(0, 119, __pyx_L4_error);
         __Pyx_GIVEREF(__pyx_t_7);
-        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_t_7) != (0)) __PYX_ERR(0, 121, __pyx_L4_error);
+        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_t_7) != (0)) __PYX_ERR(0, 119, __pyx_L4_error);
         __pyx_t_7 = 0;
         __pyx_r = ((PyObject*)__pyx_t_1);
         __pyx_t_1 = 0;
         goto __pyx_L8_try_return;
 
-        /* "backend/app/plugins/VisionCameraClient.py":120
+        /* "backend/app/plugins/VisionCameraClient.py":118
  *         try:
  *             result = self._dll.Vision_Connect(c_wchar_p(self._macaddress))
  *             if result != 0:             # <<<<<<<<<<<<<<
@@ -5093,23 +5022,23 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
 */
       }
 
-      /* "backend/app/plugins/VisionCameraClient.py":123
+      /* "backend/app/plugins/VisionCameraClient.py":121
  *                 return False, f"[VisionCamera] Connect fail (code={result})"
  * 
  *             self._isConnected = True             # <<<<<<<<<<<<<<
  * 
  *             #
 */
-      if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_isConnected, Py_True) < (0)) __PYX_ERR(0, 123, __pyx_L4_error)
+      if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_isConnected, Py_True) < (0)) __PYX_ERR(0, 121, __pyx_L4_error)
 
-      /* "backend/app/plugins/VisionCameraClient.py":126
+      /* "backend/app/plugins/VisionCameraClient.py":124
  * 
  *             #
  *             self._frame_stop.clear()             # <<<<<<<<<<<<<<
  *             self._frame_thread = threading.Thread(
  *                 target=self._frame_loop, name="visioncam_frame", daemon=True
 */
-      __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_stop); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 126, __pyx_L4_error)
+      __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_stop); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 124, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_8);
       __pyx_t_7 = __pyx_t_8;
       __Pyx_INCREF(__pyx_t_7);
@@ -5119,12 +5048,12 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
         __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_clear, __pyx_callargs+__pyx_t_12, (1-__pyx_t_12) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
         __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 126, __pyx_L4_error)
+        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 124, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_1);
       }
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "backend/app/plugins/VisionCameraClient.py":127
+      /* "backend/app/plugins/VisionCameraClient.py":125
  *             #
  *             self._frame_stop.clear()
  *             self._frame_thread = threading.Thread(             # <<<<<<<<<<<<<<
@@ -5132,20 +5061,20 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
  *             )
 */
       __pyx_t_8 = NULL;
-      __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_threading); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 127, __pyx_L4_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_threading); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 125, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_7);
-      __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_Thread); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 127, __pyx_L4_error)
+      __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_mstate_global->__pyx_n_u_Thread); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 125, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-      /* "backend/app/plugins/VisionCameraClient.py":128
+      /* "backend/app/plugins/VisionCameraClient.py":126
  *             self._frame_stop.clear()
  *             self._frame_thread = threading.Thread(
  *                 target=self._frame_loop, name="visioncam_frame", daemon=True             # <<<<<<<<<<<<<<
  *             )
  *             self._frame_thread.start()
 */
-      __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_loop); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 128, __pyx_L4_error)
+      __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_loop); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 126, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_7);
       __pyx_t_12 = 1;
       #if CYTHON_UNPACK_METHODS
@@ -5161,38 +5090,38 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
       #endif
       {
         PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 3 : 0)] = {__pyx_t_8, NULL};
-        __pyx_t_10 = __Pyx_MakeVectorcallBuilderKwds(3); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 127, __pyx_L4_error)
+        __pyx_t_10 = __Pyx_MakeVectorcallBuilderKwds(3); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 125, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_10);
-        if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_target, __pyx_t_7, __pyx_t_10, __pyx_callargs+1, 0) < (0)) __PYX_ERR(0, 127, __pyx_L4_error)
-        if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_name, __pyx_mstate_global->__pyx_n_u_visioncam_frame, __pyx_t_10, __pyx_callargs+1, 1) < (0)) __PYX_ERR(0, 127, __pyx_L4_error)
-        if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_daemon, Py_True, __pyx_t_10, __pyx_callargs+1, 2) < (0)) __PYX_ERR(0, 127, __pyx_L4_error)
+        if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_target, __pyx_t_7, __pyx_t_10, __pyx_callargs+1, 0) < (0)) __PYX_ERR(0, 125, __pyx_L4_error)
+        if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_name, __pyx_mstate_global->__pyx_n_u_visioncam_frame, __pyx_t_10, __pyx_callargs+1, 1) < (0)) __PYX_ERR(0, 125, __pyx_L4_error)
+        if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_daemon, Py_True, __pyx_t_10, __pyx_callargs+1, 2) < (0)) __PYX_ERR(0, 125, __pyx_L4_error)
         __pyx_t_1 = __Pyx_Object_Vectorcall_CallFromBuilder((PyObject*)__pyx_t_6, __pyx_callargs+__pyx_t_12, (1-__pyx_t_12) | (__pyx_t_12*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_10);
         __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
         __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
         __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 127, __pyx_L4_error)
+        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 125, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_1);
       }
 
-      /* "backend/app/plugins/VisionCameraClient.py":127
+      /* "backend/app/plugins/VisionCameraClient.py":125
  *             #
  *             self._frame_stop.clear()
  *             self._frame_thread = threading.Thread(             # <<<<<<<<<<<<<<
  *                 target=self._frame_loop, name="visioncam_frame", daemon=True
  *             )
 */
-      if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_thread, __pyx_t_1) < (0)) __PYX_ERR(0, 127, __pyx_L4_error)
+      if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_thread, __pyx_t_1) < (0)) __PYX_ERR(0, 125, __pyx_L4_error)
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "backend/app/plugins/VisionCameraClient.py":130
+      /* "backend/app/plugins/VisionCameraClient.py":128
  *                 target=self._frame_loop, name="visioncam_frame", daemon=True
  *             )
  *             self._frame_thread.start()             # <<<<<<<<<<<<<<
  * 
  *             logger.info("VisionCamera connected: %s", self._macaddress)
 */
-      __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_thread); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 130, __pyx_L4_error)
+      __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_thread); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 128, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_10);
       __pyx_t_6 = __pyx_t_10;
       __Pyx_INCREF(__pyx_t_6);
@@ -5202,12 +5131,12 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
         __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_start, __pyx_callargs+__pyx_t_12, (1-__pyx_t_12) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
         __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 130, __pyx_L4_error)
+        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 128, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_1);
       }
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "backend/app/plugins/VisionCameraClient.py":132
+      /* "backend/app/plugins/VisionCameraClient.py":130
  *             self._frame_thread.start()
  * 
  *             logger.info("VisionCamera connected: %s", self._macaddress)             # <<<<<<<<<<<<<<
@@ -5215,12 +5144,12 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
  * 
 */
       __pyx_t_10 = NULL;
-      __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_logger); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 132, __pyx_L4_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_logger); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 130, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_info); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 132, __pyx_L4_error)
+      __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_info); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 130, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_macaddress); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 132, __pyx_L4_error)
+      __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_macaddress); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 130, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_6);
       __pyx_t_12 = 1;
       #if CYTHON_UNPACK_METHODS
@@ -5240,12 +5169,12 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
         __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
         __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 132, __pyx_L4_error)
+        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 130, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_1);
       }
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "backend/app/plugins/VisionCameraClient.py":133
+      /* "backend/app/plugins/VisionCameraClient.py":131
  * 
  *             logger.info("VisionCamera connected: %s", self._macaddress)
  *             return True, f"[VisionCamera] Connect OK ({self._macaddress})"             # <<<<<<<<<<<<<<
@@ -5253,31 +5182,31 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
  *         except Exception as e:
 */
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_macaddress); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 133, __pyx_L4_error)
+      __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_macaddress); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 131, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_1);
-      __pyx_t_7 = __Pyx_PyObject_FormatSimple(__pyx_t_1, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 133, __pyx_L4_error)
+      __pyx_t_7 = __Pyx_PyObject_FormatSimple(__pyx_t_1, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 131, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
       __pyx_t_13[0] = __pyx_mstate_global->__pyx_kp_u_VisionCamera_Connect_OK;
       __pyx_t_13[1] = __pyx_t_7;
       __pyx_t_13[2] = __pyx_mstate_global->__pyx_kp_u__2;
       __pyx_t_1 = __Pyx_PyUnicode_Join(__pyx_t_13, 3, 27 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_7) + 1, 127 | __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_7));
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 133, __pyx_L4_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 131, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-      __pyx_t_7 = PyTuple_New(2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 133, __pyx_L4_error)
+      __pyx_t_7 = PyTuple_New(2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 131, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_INCREF(Py_True);
       __Pyx_GIVEREF(Py_True);
-      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_7, 0, Py_True) != (0)) __PYX_ERR(0, 133, __pyx_L4_error);
+      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_7, 0, Py_True) != (0)) __PYX_ERR(0, 131, __pyx_L4_error);
       __Pyx_GIVEREF(__pyx_t_1);
-      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_7, 1, __pyx_t_1) != (0)) __PYX_ERR(0, 133, __pyx_L4_error);
+      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_7, 1, __pyx_t_1) != (0)) __PYX_ERR(0, 131, __pyx_L4_error);
       __pyx_t_1 = 0;
       __pyx_r = ((PyObject*)__pyx_t_7);
       __pyx_t_7 = 0;
       goto __pyx_L8_try_return;
 
-      /* "backend/app/plugins/VisionCameraClient.py":118
+      /* "backend/app/plugins/VisionCameraClient.py":116
  *             return True, "[VisionCamera] Already connected"
  * 
  *         try:             # <<<<<<<<<<<<<<
@@ -5294,7 +5223,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
     __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
 
-    /* "backend/app/plugins/VisionCameraClient.py":135
+    /* "backend/app/plugins/VisionCameraClient.py":133
  *             return True, f"[VisionCamera] Connect OK ({self._macaddress})"
  * 
  *         except Exception as e:             # <<<<<<<<<<<<<<
@@ -5304,7 +5233,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     __pyx_t_14 = __Pyx_PyErr_ExceptionMatches(((PyObject *)(((PyTypeObject*)PyExc_Exception))));
     if (__pyx_t_14) {
       __Pyx_AddTraceback("backend.app.plugins.VisionCameraClient.VisionCameraClient.md_VisionConnect", __pyx_clineno, __pyx_lineno, __pyx_filename);
-      if (__Pyx_GetException(&__pyx_t_7, &__pyx_t_1, &__pyx_t_6) < 0) __PYX_ERR(0, 135, __pyx_L6_except_error)
+      if (__Pyx_GetException(&__pyx_t_7, &__pyx_t_1, &__pyx_t_6) < 0) __PYX_ERR(0, 133, __pyx_L6_except_error)
       __Pyx_XGOTREF(__pyx_t_7);
       __Pyx_XGOTREF(__pyx_t_1);
       __Pyx_XGOTREF(__pyx_t_6);
@@ -5312,16 +5241,16 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
       __pyx_v_e = __pyx_t_1;
       /*try:*/ {
 
-        /* "backend/app/plugins/VisionCameraClient.py":136
+        /* "backend/app/plugins/VisionCameraClient.py":134
  * 
  *         except Exception as e:
  *             self._isConnected = False             # <<<<<<<<<<<<<<
  *             return False, f"[VisionCamera] Connect fail: {e}"
  * 
 */
-        if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_isConnected, Py_False) < (0)) __PYX_ERR(0, 136, __pyx_L16_error)
+        if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_isConnected, Py_False) < (0)) __PYX_ERR(0, 134, __pyx_L16_error)
 
-        /* "backend/app/plugins/VisionCameraClient.py":137
+        /* "backend/app/plugins/VisionCameraClient.py":135
  *         except Exception as e:
  *             self._isConnected = False
  *             return False, f"[VisionCamera] Connect fail: {e}"             # <<<<<<<<<<<<<<
@@ -5329,18 +5258,18 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
  *     def md_VisionDisconnect(self) -> tuple[bool, str]:
 */
         __Pyx_XDECREF(__pyx_r);
-        __pyx_t_10 = __Pyx_PyObject_FormatSimple(__pyx_v_e, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 137, __pyx_L16_error)
+        __pyx_t_10 = __Pyx_PyObject_FormatSimple(__pyx_v_e, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 135, __pyx_L16_error)
         __Pyx_GOTREF(__pyx_t_10);
-        __pyx_t_8 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_VisionCamera_Connect_fail, __pyx_t_10); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 137, __pyx_L16_error)
+        __pyx_t_8 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_VisionCamera_Connect_fail, __pyx_t_10); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 135, __pyx_L16_error)
         __Pyx_GOTREF(__pyx_t_8);
         __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
-        __pyx_t_10 = PyTuple_New(2); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 137, __pyx_L16_error)
+        __pyx_t_10 = PyTuple_New(2); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 135, __pyx_L16_error)
         __Pyx_GOTREF(__pyx_t_10);
         __Pyx_INCREF(Py_False);
         __Pyx_GIVEREF(Py_False);
-        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_10, 0, Py_False) != (0)) __PYX_ERR(0, 137, __pyx_L16_error);
+        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_10, 0, Py_False) != (0)) __PYX_ERR(0, 135, __pyx_L16_error);
         __Pyx_GIVEREF(__pyx_t_8);
-        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_10, 1, __pyx_t_8) != (0)) __PYX_ERR(0, 137, __pyx_L16_error);
+        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_10, 1, __pyx_t_8) != (0)) __PYX_ERR(0, 135, __pyx_L16_error);
         __pyx_t_8 = 0;
         __pyx_r = ((PyObject*)__pyx_t_10);
         __pyx_t_10 = 0;
@@ -5350,7 +5279,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
         goto __pyx_L15_return;
       }
 
-      /* "backend/app/plugins/VisionCameraClient.py":135
+      /* "backend/app/plugins/VisionCameraClient.py":133
  *             return True, f"[VisionCamera] Connect OK ({self._macaddress})"
  * 
  *         except Exception as e:             # <<<<<<<<<<<<<<
@@ -5403,7 +5332,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     }
     goto __pyx_L6_except_error;
 
-    /* "backend/app/plugins/VisionCameraClient.py":118
+    /* "backend/app/plugins/VisionCameraClient.py":116
  *             return True, "[VisionCamera] Already connected"
  * 
  *         try:             # <<<<<<<<<<<<<<
@@ -5430,7 +5359,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     goto __pyx_L0;
   }
 
-  /* "backend/app/plugins/VisionCameraClient.py":113
+  /* "backend/app/plugins/VisionCameraClient.py":111
  *     # ------------------------------------------------------------------
  * 
  *     def md_VisionConnect(self) -> tuple[bool, str]:             # <<<<<<<<<<<<<<
@@ -5457,7 +5386,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
   return __pyx_r;
 }
 
-/* "backend/app/plugins/VisionCameraClient.py":139
+/* "backend/app/plugins/VisionCameraClient.py":137
  *             return False, f"[VisionCamera] Connect fail: {e}"
  * 
  *     def md_VisionDisconnect(self) -> tuple[bool, str]:             # <<<<<<<<<<<<<<
@@ -5504,32 +5433,32 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_self,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 139, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 137, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 139, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 137, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "md_VisionDisconnect", 0) < (0)) __PYX_ERR(0, 139, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "md_VisionDisconnect", 0) < (0)) __PYX_ERR(0, 137, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("md_VisionDisconnect", 1, 1, 1, i); __PYX_ERR(0, 139, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("md_VisionDisconnect", 1, 1, 1, i); __PYX_ERR(0, 137, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 139, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 137, __pyx_L3_error)
     }
     __pyx_v_self = values[0];
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("md_VisionDisconnect", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 139, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("md_VisionDisconnect", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 137, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -5580,21 +5509,21 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("md_VisionDisconnect", 0);
 
-  /* "backend/app/plugins/VisionCameraClient.py":140
+  /* "backend/app/plugins/VisionCameraClient.py":138
  * 
  *     def md_VisionDisconnect(self) -> tuple[bool, str]:
  *         if not self._isConnected:             # <<<<<<<<<<<<<<
  *             return True, "[VisionCamera] Already disconnected"
  *         try:
 */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_isConnected); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 140, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_isConnected); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 138, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 140, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 138, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_3 = (!__pyx_t_2);
   if (__pyx_t_3) {
 
-    /* "backend/app/plugins/VisionCameraClient.py":141
+    /* "backend/app/plugins/VisionCameraClient.py":139
  *     def md_VisionDisconnect(self) -> tuple[bool, str]:
  *         if not self._isConnected:
  *             return True, "[VisionCamera] Already disconnected"             # <<<<<<<<<<<<<<
@@ -5606,7 +5535,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     __pyx_r = __pyx_mstate_global->__pyx_tuple[2];
     goto __pyx_L0;
 
-    /* "backend/app/plugins/VisionCameraClient.py":140
+    /* "backend/app/plugins/VisionCameraClient.py":138
  * 
  *     def md_VisionDisconnect(self) -> tuple[bool, str]:
  *         if not self._isConnected:             # <<<<<<<<<<<<<<
@@ -5615,7 +5544,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
 */
   }
 
-  /* "backend/app/plugins/VisionCameraClient.py":142
+  /* "backend/app/plugins/VisionCameraClient.py":140
  *         if not self._isConnected:
  *             return True, "[VisionCamera] Already disconnected"
  *         try:             # <<<<<<<<<<<<<<
@@ -5631,7 +5560,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     __Pyx_XGOTREF(__pyx_t_6);
     /*try:*/ {
 
-      /* "backend/app/plugins/VisionCameraClient.py":143
+      /* "backend/app/plugins/VisionCameraClient.py":141
  *             return True, "[VisionCamera] Already disconnected"
  *         try:
  *             self._cleanup()             # <<<<<<<<<<<<<<
@@ -5645,12 +5574,12 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
         PyObject *__pyx_callargs[2] = {__pyx_t_7, NULL};
         __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_cleanup, __pyx_callargs+__pyx_t_8, (1-__pyx_t_8) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
-        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 143, __pyx_L4_error)
+        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 141, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_1);
       }
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "backend/app/plugins/VisionCameraClient.py":144
+      /* "backend/app/plugins/VisionCameraClient.py":142
  *         try:
  *             self._cleanup()
  *             return True, "[VisionCamera] Disconnect OK"             # <<<<<<<<<<<<<<
@@ -5662,7 +5591,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
       __pyx_r = __pyx_mstate_global->__pyx_tuple[3];
       goto __pyx_L8_try_return;
 
-      /* "backend/app/plugins/VisionCameraClient.py":142
+      /* "backend/app/plugins/VisionCameraClient.py":140
  *         if not self._isConnected:
  *             return True, "[VisionCamera] Already disconnected"
  *         try:             # <<<<<<<<<<<<<<
@@ -5674,7 +5603,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
     __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-    /* "backend/app/plugins/VisionCameraClient.py":145
+    /* "backend/app/plugins/VisionCameraClient.py":143
  *             self._cleanup()
  *             return True, "[VisionCamera] Disconnect OK"
  *         except Exception as e:             # <<<<<<<<<<<<<<
@@ -5684,7 +5613,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     __pyx_t_9 = __Pyx_PyErr_ExceptionMatches(((PyObject *)(((PyTypeObject*)PyExc_Exception))));
     if (__pyx_t_9) {
       __Pyx_AddTraceback("backend.app.plugins.VisionCameraClient.VisionCameraClient.md_VisionDisconnect", __pyx_clineno, __pyx_lineno, __pyx_filename);
-      if (__Pyx_GetException(&__pyx_t_1, &__pyx_t_7, &__pyx_t_10) < 0) __PYX_ERR(0, 145, __pyx_L6_except_error)
+      if (__Pyx_GetException(&__pyx_t_1, &__pyx_t_7, &__pyx_t_10) < 0) __PYX_ERR(0, 143, __pyx_L6_except_error)
       __Pyx_XGOTREF(__pyx_t_1);
       __Pyx_XGOTREF(__pyx_t_7);
       __Pyx_XGOTREF(__pyx_t_10);
@@ -5692,7 +5621,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
       __pyx_v_e = __pyx_t_7;
       /*try:*/ {
 
-        /* "backend/app/plugins/VisionCameraClient.py":146
+        /* "backend/app/plugins/VisionCameraClient.py":144
  *             return True, "[VisionCamera] Disconnect OK"
  *         except Exception as e:
  *             return False, f"[VisionCamera] Disconnect fail: {e}"             # <<<<<<<<<<<<<<
@@ -5700,18 +5629,18 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
  *     def md_IsConnect(self) -> tuple[bool, str]:
 */
         __Pyx_XDECREF(__pyx_r);
-        __pyx_t_11 = __Pyx_PyObject_FormatSimple(__pyx_v_e, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 146, __pyx_L15_error)
+        __pyx_t_11 = __Pyx_PyObject_FormatSimple(__pyx_v_e, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 144, __pyx_L15_error)
         __Pyx_GOTREF(__pyx_t_11);
-        __pyx_t_12 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_VisionCamera_Disconnect_fail, __pyx_t_11); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 146, __pyx_L15_error)
+        __pyx_t_12 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_VisionCamera_Disconnect_fail, __pyx_t_11); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 144, __pyx_L15_error)
         __Pyx_GOTREF(__pyx_t_12);
         __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-        __pyx_t_11 = PyTuple_New(2); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 146, __pyx_L15_error)
+        __pyx_t_11 = PyTuple_New(2); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 144, __pyx_L15_error)
         __Pyx_GOTREF(__pyx_t_11);
         __Pyx_INCREF(Py_False);
         __Pyx_GIVEREF(Py_False);
-        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_11, 0, Py_False) != (0)) __PYX_ERR(0, 146, __pyx_L15_error);
+        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_11, 0, Py_False) != (0)) __PYX_ERR(0, 144, __pyx_L15_error);
         __Pyx_GIVEREF(__pyx_t_12);
-        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_11, 1, __pyx_t_12) != (0)) __PYX_ERR(0, 146, __pyx_L15_error);
+        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_11, 1, __pyx_t_12) != (0)) __PYX_ERR(0, 144, __pyx_L15_error);
         __pyx_t_12 = 0;
         __pyx_r = ((PyObject*)__pyx_t_11);
         __pyx_t_11 = 0;
@@ -5721,7 +5650,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
         goto __pyx_L14_return;
       }
 
-      /* "backend/app/plugins/VisionCameraClient.py":145
+      /* "backend/app/plugins/VisionCameraClient.py":143
  *             self._cleanup()
  *             return True, "[VisionCamera] Disconnect OK"
  *         except Exception as e:             # <<<<<<<<<<<<<<
@@ -5772,7 +5701,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     }
     goto __pyx_L6_except_error;
 
-    /* "backend/app/plugins/VisionCameraClient.py":142
+    /* "backend/app/plugins/VisionCameraClient.py":140
  *         if not self._isConnected:
  *             return True, "[VisionCamera] Already disconnected"
  *         try:             # <<<<<<<<<<<<<<
@@ -5799,7 +5728,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     goto __pyx_L0;
   }
 
-  /* "backend/app/plugins/VisionCameraClient.py":139
+  /* "backend/app/plugins/VisionCameraClient.py":137
  *             return False, f"[VisionCamera] Connect fail: {e}"
  * 
  *     def md_VisionDisconnect(self) -> tuple[bool, str]:             # <<<<<<<<<<<<<<
@@ -5823,7 +5752,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
   return __pyx_r;
 }
 
-/* "backend/app/plugins/VisionCameraClient.py":148
+/* "backend/app/plugins/VisionCameraClient.py":146
  *             return False, f"[VisionCamera] Disconnect fail: {e}"
  * 
  *     def md_IsConnect(self) -> tuple[bool, str]:             # <<<<<<<<<<<<<<
@@ -5870,32 +5799,32 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_self,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 148, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 146, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 148, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 146, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "md_IsConnect", 0) < (0)) __PYX_ERR(0, 148, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "md_IsConnect", 0) < (0)) __PYX_ERR(0, 146, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("md_IsConnect", 1, 1, 1, i); __PYX_ERR(0, 148, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("md_IsConnect", 1, 1, 1, i); __PYX_ERR(0, 146, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 148, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 146, __pyx_L3_error)
     }
     __pyx_v_self = values[0];
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("md_IsConnect", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 148, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("md_IsConnect", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 146, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -5936,21 +5865,21 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("md_IsConnect", 0);
 
-  /* "backend/app/plugins/VisionCameraClient.py":149
+  /* "backend/app/plugins/VisionCameraClient.py":147
  * 
  *     def md_IsConnect(self) -> tuple[bool, str]:
  *         if not self._isConnected:             # <<<<<<<<<<<<<<
  *             return False, "[VisionCamera] Not connected"
  *         try:
 */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_isConnected); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 149, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_isConnected); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 147, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 149, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 147, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_3 = (!__pyx_t_2);
   if (__pyx_t_3) {
 
-    /* "backend/app/plugins/VisionCameraClient.py":150
+    /* "backend/app/plugins/VisionCameraClient.py":148
  *     def md_IsConnect(self) -> tuple[bool, str]:
  *         if not self._isConnected:
  *             return False, "[VisionCamera] Not connected"             # <<<<<<<<<<<<<<
@@ -5962,7 +5891,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     __pyx_r = __pyx_mstate_global->__pyx_tuple[4];
     goto __pyx_L0;
 
-    /* "backend/app/plugins/VisionCameraClient.py":149
+    /* "backend/app/plugins/VisionCameraClient.py":147
  * 
  *     def md_IsConnect(self) -> tuple[bool, str]:
  *         if not self._isConnected:             # <<<<<<<<<<<<<<
@@ -5971,7 +5900,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
 */
   }
 
-  /* "backend/app/plugins/VisionCameraClient.py":151
+  /* "backend/app/plugins/VisionCameraClient.py":149
  *         if not self._isConnected:
  *             return False, "[VisionCamera] Not connected"
  *         try:             # <<<<<<<<<<<<<<
@@ -5987,14 +5916,14 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     __Pyx_XGOTREF(__pyx_t_6);
     /*try:*/ {
 
-      /* "backend/app/plugins/VisionCameraClient.py":152
+      /* "backend/app/plugins/VisionCameraClient.py":150
  *             return False, "[VisionCamera] Not connected"
  *         try:
  *             result = self._dll.isConnect()             # <<<<<<<<<<<<<<
  *             if result == 0:
  *                 return True, "[VisionCamera] Connected"
 */
-      __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_dll_2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 152, __pyx_L4_error)
+      __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_dll); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 150, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_8);
       __pyx_t_7 = __pyx_t_8;
       __Pyx_INCREF(__pyx_t_7);
@@ -6004,23 +5933,23 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
         __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_isConnect, __pyx_callargs+__pyx_t_9, (1-__pyx_t_9) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
         __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 152, __pyx_L4_error)
+        if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 150, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_1);
       }
       __pyx_v_result = __pyx_t_1;
       __pyx_t_1 = 0;
 
-      /* "backend/app/plugins/VisionCameraClient.py":153
+      /* "backend/app/plugins/VisionCameraClient.py":151
  *         try:
  *             result = self._dll.isConnect()
  *             if result == 0:             # <<<<<<<<<<<<<<
  *                 return True, "[VisionCamera] Connected"
  *             self._isConnected = False
 */
-      __pyx_t_3 = (__Pyx_PyLong_BoolEqObjC(__pyx_v_result, __pyx_mstate_global->__pyx_int_0, 0, 0)); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 153, __pyx_L4_error)
+      __pyx_t_3 = (__Pyx_PyLong_BoolEqObjC(__pyx_v_result, __pyx_mstate_global->__pyx_int_0, 0, 0)); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 151, __pyx_L4_error)
       if (__pyx_t_3) {
 
-        /* "backend/app/plugins/VisionCameraClient.py":154
+        /* "backend/app/plugins/VisionCameraClient.py":152
  *             result = self._dll.isConnect()
  *             if result == 0:
  *                 return True, "[VisionCamera] Connected"             # <<<<<<<<<<<<<<
@@ -6032,7 +5961,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
         __pyx_r = __pyx_mstate_global->__pyx_tuple[5];
         goto __pyx_L8_try_return;
 
-        /* "backend/app/plugins/VisionCameraClient.py":153
+        /* "backend/app/plugins/VisionCameraClient.py":151
  *         try:
  *             result = self._dll.isConnect()
  *             if result == 0:             # <<<<<<<<<<<<<<
@@ -6041,16 +5970,16 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
 */
       }
 
-      /* "backend/app/plugins/VisionCameraClient.py":155
+      /* "backend/app/plugins/VisionCameraClient.py":153
  *             if result == 0:
  *                 return True, "[VisionCamera] Connected"
  *             self._isConnected = False             # <<<<<<<<<<<<<<
  *             return False, f"[VisionCamera] Connection lost (code={result})"
  *         except Exception:
 */
-      if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_isConnected, Py_False) < (0)) __PYX_ERR(0, 155, __pyx_L4_error)
+      if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_isConnected, Py_False) < (0)) __PYX_ERR(0, 153, __pyx_L4_error)
 
-      /* "backend/app/plugins/VisionCameraClient.py":156
+      /* "backend/app/plugins/VisionCameraClient.py":154
  *                 return True, "[VisionCamera] Connected"
  *             self._isConnected = False
  *             return False, f"[VisionCamera] Connection lost (code={result})"             # <<<<<<<<<<<<<<
@@ -6058,28 +5987,28 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
  *             return False, "[VisionCamera] Not connected"
 */
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_1 = __Pyx_PyObject_FormatSimple(__pyx_v_result, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 156, __pyx_L4_error)
+      __pyx_t_1 = __Pyx_PyObject_FormatSimple(__pyx_v_result, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 154, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_1);
       __pyx_t_10[0] = __pyx_mstate_global->__pyx_kp_u_VisionCamera_Connection_lost_co;
       __pyx_t_10[1] = __pyx_t_1;
       __pyx_t_10[2] = __pyx_mstate_global->__pyx_kp_u__2;
       __pyx_t_8 = __Pyx_PyUnicode_Join(__pyx_t_10, 3, 37 + __Pyx_PyUnicode_GET_LENGTH(__pyx_t_1) + 1, 127 | __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_1));
-      if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 156, __pyx_L4_error)
+      if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 154, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_8);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 156, __pyx_L4_error)
+      __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 154, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_INCREF(Py_False);
       __Pyx_GIVEREF(Py_False);
-      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 0, Py_False) != (0)) __PYX_ERR(0, 156, __pyx_L4_error);
+      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 0, Py_False) != (0)) __PYX_ERR(0, 154, __pyx_L4_error);
       __Pyx_GIVEREF(__pyx_t_8);
-      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_t_8) != (0)) __PYX_ERR(0, 156, __pyx_L4_error);
+      if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_t_8) != (0)) __PYX_ERR(0, 154, __pyx_L4_error);
       __pyx_t_8 = 0;
       __pyx_r = ((PyObject*)__pyx_t_1);
       __pyx_t_1 = 0;
       goto __pyx_L8_try_return;
 
-      /* "backend/app/plugins/VisionCameraClient.py":151
+      /* "backend/app/plugins/VisionCameraClient.py":149
  *         if not self._isConnected:
  *             return False, "[VisionCamera] Not connected"
  *         try:             # <<<<<<<<<<<<<<
@@ -6092,7 +6021,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
     __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
 
-    /* "backend/app/plugins/VisionCameraClient.py":157
+    /* "backend/app/plugins/VisionCameraClient.py":155
  *             self._isConnected = False
  *             return False, f"[VisionCamera] Connection lost (code={result})"
  *         except Exception:             # <<<<<<<<<<<<<<
@@ -6103,7 +6032,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     if (__pyx_t_11) {
       __Pyx_ErrRestore(0,0,0);
 
-      /* "backend/app/plugins/VisionCameraClient.py":158
+      /* "backend/app/plugins/VisionCameraClient.py":156
  *             return False, f"[VisionCamera] Connection lost (code={result})"
  *         except Exception:
  *             return False, "[VisionCamera] Not connected"             # <<<<<<<<<<<<<<
@@ -6117,7 +6046,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     }
     goto __pyx_L6_except_error;
 
-    /* "backend/app/plugins/VisionCameraClient.py":151
+    /* "backend/app/plugins/VisionCameraClient.py":149
  *         if not self._isConnected:
  *             return False, "[VisionCamera] Not connected"
  *         try:             # <<<<<<<<<<<<<<
@@ -6144,7 +6073,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     goto __pyx_L0;
   }
 
-  /* "backend/app/plugins/VisionCameraClient.py":148
+  /* "backend/app/plugins/VisionCameraClient.py":146
  *             return False, f"[VisionCamera] Disconnect fail: {e}"
  * 
  *     def md_IsConnect(self) -> tuple[bool, str]:             # <<<<<<<<<<<<<<
@@ -6166,7 +6095,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
   return __pyx_r;
 }
 
-/* "backend/app/plugins/VisionCameraClient.py":164
+/* "backend/app/plugins/VisionCameraClient.py":162
  *     # ------------------------------------------------------------------
  * 
  *     def md_VisionCapture(self, szPath: str, left=-1, top=-1, right=-1, bottom=-1) -> tuple[bool, str]:             # <<<<<<<<<<<<<<
@@ -6219,68 +6148,68 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_self,&__pyx_mstate_global->__pyx_n_u_szPath,&__pyx_mstate_global->__pyx_n_u_left,&__pyx_mstate_global->__pyx_n_u_top,&__pyx_mstate_global->__pyx_n_u_right,&__pyx_mstate_global->__pyx_n_u_bottom,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 164, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 162, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  6:
         values[5] = __Pyx_ArgRef_FASTCALL(__pyx_args, 5);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[5])) __PYX_ERR(0, 164, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[5])) __PYX_ERR(0, 162, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  5:
         values[4] = __Pyx_ArgRef_FASTCALL(__pyx_args, 4);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[4])) __PYX_ERR(0, 164, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[4])) __PYX_ERR(0, 162, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  4:
         values[3] = __Pyx_ArgRef_FASTCALL(__pyx_args, 3);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 164, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 162, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  3:
         values[2] = __Pyx_ArgRef_FASTCALL(__pyx_args, 2);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 164, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 162, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  2:
         values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 164, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 162, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 164, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 162, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "md_VisionCapture", 0) < (0)) __PYX_ERR(0, 164, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "md_VisionCapture", 0) < (0)) __PYX_ERR(0, 162, __pyx_L3_error)
       if (!values[2]) values[2] = __Pyx_NewRef(((PyObject *)((PyObject*)__pyx_mstate_global->__pyx_int_neg_1)));
       if (!values[3]) values[3] = __Pyx_NewRef(((PyObject *)((PyObject*)__pyx_mstate_global->__pyx_int_neg_1)));
       if (!values[4]) values[4] = __Pyx_NewRef(((PyObject *)((PyObject*)__pyx_mstate_global->__pyx_int_neg_1)));
       if (!values[5]) values[5] = __Pyx_NewRef(((PyObject *)((PyObject*)__pyx_mstate_global->__pyx_int_neg_1)));
       for (Py_ssize_t i = __pyx_nargs; i < 2; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("md_VisionCapture", 0, 2, 6, i); __PYX_ERR(0, 164, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("md_VisionCapture", 0, 2, 6, i); __PYX_ERR(0, 162, __pyx_L3_error) }
       }
     } else {
       switch (__pyx_nargs) {
         case  6:
         values[5] = __Pyx_ArgRef_FASTCALL(__pyx_args, 5);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[5])) __PYX_ERR(0, 164, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[5])) __PYX_ERR(0, 162, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  5:
         values[4] = __Pyx_ArgRef_FASTCALL(__pyx_args, 4);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[4])) __PYX_ERR(0, 164, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[4])) __PYX_ERR(0, 162, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  4:
         values[3] = __Pyx_ArgRef_FASTCALL(__pyx_args, 3);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 164, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[3])) __PYX_ERR(0, 162, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  3:
         values[2] = __Pyx_ArgRef_FASTCALL(__pyx_args, 2);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 164, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[2])) __PYX_ERR(0, 162, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  2:
         values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 164, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 162, __pyx_L3_error)
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 164, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 162, __pyx_L3_error)
         break;
         default: goto __pyx_L5_argtuple_error;
       }
@@ -6298,7 +6227,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("md_VisionCapture", 0, 2, 6, __pyx_nargs); __PYX_ERR(0, 164, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("md_VisionCapture", 0, 2, 6, __pyx_nargs); __PYX_ERR(0, 162, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -6309,7 +6238,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_szPath), (&PyUnicode_Type), 0, "szPath", 2))) __PYX_ERR(0, 164, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_szPath), (&PyUnicode_Type), 0, "szPath", 2))) __PYX_ERR(0, 162, __pyx_L1_error)
   __pyx_r = __pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCameraClient_10md_VisionCapture(__pyx_self, __pyx_v_self, __pyx_v_szPath, __pyx_v_left, __pyx_v_top, __pyx_v_right, __pyx_v_bottom);
 
   /* function exit code */
@@ -6360,21 +6289,21 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("md_VisionCapture", 0);
 
-  /* "backend/app/plugins/VisionCameraClient.py":166
+  /* "backend/app/plugins/VisionCameraClient.py":164
  *     def md_VisionCapture(self, szPath: str, left=-1, top=-1, right=-1, bottom=-1) -> tuple[bool, str]:
  *         """   ."""
  *         if not self._isConnected:             # <<<<<<<<<<<<<<
  *             return False, "[VisionCamera] Not connected"
  * 
 */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_isConnected); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 166, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_isConnected); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 164, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 166, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 164, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_3 = (!__pyx_t_2);
   if (__pyx_t_3) {
 
-    /* "backend/app/plugins/VisionCameraClient.py":167
+    /* "backend/app/plugins/VisionCameraClient.py":165
  *         """   ."""
  *         if not self._isConnected:
  *             return False, "[VisionCamera] Not connected"             # <<<<<<<<<<<<<<
@@ -6386,7 +6315,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     __pyx_r = __pyx_mstate_global->__pyx_tuple[4];
     goto __pyx_L0;
 
-    /* "backend/app/plugins/VisionCameraClient.py":166
+    /* "backend/app/plugins/VisionCameraClient.py":164
  *     def md_VisionCapture(self, szPath: str, left=-1, top=-1, right=-1, bottom=-1) -> tuple[bool, str]:
  *         """   ."""
  *         if not self._isConnected:             # <<<<<<<<<<<<<<
@@ -6395,7 +6324,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
 */
   }
 
-  /* "backend/app/plugins/VisionCameraClient.py":169
+  /* "backend/app/plugins/VisionCameraClient.py":167
  *             return False, "[VisionCamera] Not connected"
  * 
  *         with self._frame_lock:             # <<<<<<<<<<<<<<
@@ -6403,12 +6332,12 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
  * 
 */
   /*with:*/ {
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_lock); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 169, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_lock); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 167, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_4 = __Pyx_PyObject_LookupSpecial(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_exit); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 169, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_LookupSpecial(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_exit); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 167, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_t_6 = NULL;
-    __pyx_t_7 = __Pyx_PyObject_LookupSpecial(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_enter); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 169, __pyx_L4_error)
+    __pyx_t_7 = __Pyx_PyObject_LookupSpecial(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_enter); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 167, __pyx_L4_error)
     __Pyx_GOTREF(__pyx_t_7);
     __pyx_t_8 = 1;
     #if CYTHON_UNPACK_METHODS
@@ -6427,7 +6356,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
       __pyx_t_5 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_7, __pyx_callargs+__pyx_t_8, (1-__pyx_t_8) | (__pyx_t_8*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 169, __pyx_L4_error)
+      if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 167, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_5);
     }
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
@@ -6442,19 +6371,19 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
         __Pyx_XGOTREF(__pyx_t_11);
         /*try:*/ {
 
-          /* "backend/app/plugins/VisionCameraClient.py":170
+          /* "backend/app/plugins/VisionCameraClient.py":168
  * 
  *         with self._frame_lock:
  *             img = self._latest_frame             # <<<<<<<<<<<<<<
  * 
  *         if img is None:
 */
-          __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_latest_frame); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 170, __pyx_L8_error)
+          __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_latest_frame); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 168, __pyx_L8_error)
           __Pyx_GOTREF(__pyx_t_1);
           __pyx_v_img = __pyx_t_1;
           __pyx_t_1 = 0;
 
-          /* "backend/app/plugins/VisionCameraClient.py":169
+          /* "backend/app/plugins/VisionCameraClient.py":167
  *             return False, "[VisionCamera] Not connected"
  * 
  *         with self._frame_lock:             # <<<<<<<<<<<<<<
@@ -6473,20 +6402,20 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
         __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
         /*except:*/ {
           __Pyx_AddTraceback("backend.app.plugins.VisionCameraClient.VisionCameraClient.md_VisionCapture", __pyx_clineno, __pyx_lineno, __pyx_filename);
-          if (__Pyx_GetException(&__pyx_t_1, &__pyx_t_5, &__pyx_t_7) < 0) __PYX_ERR(0, 169, __pyx_L10_except_error)
+          if (__Pyx_GetException(&__pyx_t_1, &__pyx_t_5, &__pyx_t_7) < 0) __PYX_ERR(0, 167, __pyx_L10_except_error)
           __Pyx_XGOTREF(__pyx_t_1);
           __Pyx_XGOTREF(__pyx_t_5);
           __Pyx_XGOTREF(__pyx_t_7);
-          __pyx_t_6 = PyTuple_Pack(3, __pyx_t_1, __pyx_t_5, __pyx_t_7); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 169, __pyx_L10_except_error)
+          __pyx_t_6 = PyTuple_Pack(3, __pyx_t_1, __pyx_t_5, __pyx_t_7); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 167, __pyx_L10_except_error)
           __Pyx_GOTREF(__pyx_t_6);
           __pyx_t_12 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_t_6, NULL);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
           __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 169, __pyx_L10_except_error)
+          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 167, __pyx_L10_except_error)
           __Pyx_GOTREF(__pyx_t_12);
           __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_12);
           __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-          if (__pyx_t_3 < (0)) __PYX_ERR(0, 169, __pyx_L10_except_error)
+          if (__pyx_t_3 < (0)) __PYX_ERR(0, 167, __pyx_L10_except_error)
           __pyx_t_2 = (!__pyx_t_3);
           if (unlikely(__pyx_t_2)) {
             __Pyx_GIVEREF(__pyx_t_1);
@@ -6494,7 +6423,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
             __Pyx_XGIVEREF(__pyx_t_7);
             __Pyx_ErrRestoreWithState(__pyx_t_1, __pyx_t_5, __pyx_t_7);
             __pyx_t_1 = 0;  __pyx_t_5 = 0;  __pyx_t_7 = 0; 
-            __PYX_ERR(0, 169, __pyx_L10_except_error)
+            __PYX_ERR(0, 167, __pyx_L10_except_error)
           }
           __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
@@ -6520,7 +6449,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
         if (__pyx_t_4) {
           __pyx_t_11 = __Pyx_PyObject_Call(__pyx_t_4, __pyx_mstate_global->__pyx_tuple[0], NULL);
           __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-          if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 169, __pyx_L1_error)
+          if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 167, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_11);
           __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
         }
@@ -6535,18 +6464,18 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     __pyx_L17:;
   }
 
-  /* "backend/app/plugins/VisionCameraClient.py":172
+  /* "backend/app/plugins/VisionCameraClient.py":170
  *             img = self._latest_frame
  * 
  *         if img is None:             # <<<<<<<<<<<<<<
  *             return False, "[VisionCamera] No frame available yet"
  * 
 */
-  if (unlikely(!__pyx_v_img)) { __Pyx_RaiseUnboundLocalError("img"); __PYX_ERR(0, 172, __pyx_L1_error) }
+  if (unlikely(!__pyx_v_img)) { __Pyx_RaiseUnboundLocalError("img"); __PYX_ERR(0, 170, __pyx_L1_error) }
   __pyx_t_2 = (__pyx_v_img == Py_None);
   if (__pyx_t_2) {
 
-    /* "backend/app/plugins/VisionCameraClient.py":173
+    /* "backend/app/plugins/VisionCameraClient.py":171
  * 
  *         if img is None:
  *             return False, "[VisionCamera] No frame available yet"             # <<<<<<<<<<<<<<
@@ -6558,7 +6487,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     __pyx_r = __pyx_mstate_global->__pyx_tuple[6];
     goto __pyx_L0;
 
-    /* "backend/app/plugins/VisionCameraClient.py":172
+    /* "backend/app/plugins/VisionCameraClient.py":170
  *             img = self._latest_frame
  * 
  *         if img is None:             # <<<<<<<<<<<<<<
@@ -6567,7 +6496,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
 */
   }
 
-  /* "backend/app/plugins/VisionCameraClient.py":175
+  /* "backend/app/plugins/VisionCameraClient.py":173
  *             return False, "[VisionCamera] No frame available yet"
  * 
  *         try:             # <<<<<<<<<<<<<<
@@ -6583,81 +6512,81 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     __Pyx_XGOTREF(__pyx_t_10);
     /*try:*/ {
 
-      /* "backend/app/plugins/VisionCameraClient.py":176
+      /* "backend/app/plugins/VisionCameraClient.py":174
  * 
  *         try:
  *             if left >= 0 and top >= 0 and right >= 0 and bottom >= 0:             # <<<<<<<<<<<<<<
  *                 img = img.crop((left, top, right, bottom))
  *             Path(szPath).parent.mkdir(parents=True, exist_ok=True)
 */
-      __pyx_t_7 = PyObject_RichCompare(__pyx_v_left, __pyx_mstate_global->__pyx_int_0, Py_GE); __Pyx_XGOTREF(__pyx_t_7); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 176, __pyx_L19_error)
-      __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_7); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 176, __pyx_L19_error)
+      __pyx_t_7 = PyObject_RichCompare(__pyx_v_left, __pyx_mstate_global->__pyx_int_0, Py_GE); __Pyx_XGOTREF(__pyx_t_7); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 174, __pyx_L19_error)
+      __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_7); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 174, __pyx_L19_error)
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       if (__pyx_t_3) {
       } else {
         __pyx_t_2 = __pyx_t_3;
         goto __pyx_L26_bool_binop_done;
       }
-      __pyx_t_7 = PyObject_RichCompare(__pyx_v_top, __pyx_mstate_global->__pyx_int_0, Py_GE); __Pyx_XGOTREF(__pyx_t_7); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 176, __pyx_L19_error)
-      __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_7); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 176, __pyx_L19_error)
+      __pyx_t_7 = PyObject_RichCompare(__pyx_v_top, __pyx_mstate_global->__pyx_int_0, Py_GE); __Pyx_XGOTREF(__pyx_t_7); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 174, __pyx_L19_error)
+      __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_7); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 174, __pyx_L19_error)
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       if (__pyx_t_3) {
       } else {
         __pyx_t_2 = __pyx_t_3;
         goto __pyx_L26_bool_binop_done;
       }
-      __pyx_t_7 = PyObject_RichCompare(__pyx_v_right, __pyx_mstate_global->__pyx_int_0, Py_GE); __Pyx_XGOTREF(__pyx_t_7); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 176, __pyx_L19_error)
-      __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_7); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 176, __pyx_L19_error)
+      __pyx_t_7 = PyObject_RichCompare(__pyx_v_right, __pyx_mstate_global->__pyx_int_0, Py_GE); __Pyx_XGOTREF(__pyx_t_7); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 174, __pyx_L19_error)
+      __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_7); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 174, __pyx_L19_error)
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       if (__pyx_t_3) {
       } else {
         __pyx_t_2 = __pyx_t_3;
         goto __pyx_L26_bool_binop_done;
       }
-      __pyx_t_7 = PyObject_RichCompare(__pyx_v_bottom, __pyx_mstate_global->__pyx_int_0, Py_GE); __Pyx_XGOTREF(__pyx_t_7); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 176, __pyx_L19_error)
-      __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_7); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 176, __pyx_L19_error)
+      __pyx_t_7 = PyObject_RichCompare(__pyx_v_bottom, __pyx_mstate_global->__pyx_int_0, Py_GE); __Pyx_XGOTREF(__pyx_t_7); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 174, __pyx_L19_error)
+      __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_7); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 174, __pyx_L19_error)
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       __pyx_t_2 = __pyx_t_3;
       __pyx_L26_bool_binop_done:;
       if (__pyx_t_2) {
 
-        /* "backend/app/plugins/VisionCameraClient.py":177
+        /* "backend/app/plugins/VisionCameraClient.py":175
  *         try:
  *             if left >= 0 and top >= 0 and right >= 0 and bottom >= 0:
  *                 img = img.crop((left, top, right, bottom))             # <<<<<<<<<<<<<<
  *             Path(szPath).parent.mkdir(parents=True, exist_ok=True)
  *             img.save(szPath)
 */
-        if (unlikely(!__pyx_v_img)) { __Pyx_RaiseUnboundLocalError("img"); __PYX_ERR(0, 177, __pyx_L19_error) }
+        if (unlikely(!__pyx_v_img)) { __Pyx_RaiseUnboundLocalError("img"); __PYX_ERR(0, 175, __pyx_L19_error) }
         __pyx_t_5 = __pyx_v_img;
         __Pyx_INCREF(__pyx_t_5);
-        __pyx_t_1 = PyTuple_New(4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 177, __pyx_L19_error)
+        __pyx_t_1 = PyTuple_New(4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 175, __pyx_L19_error)
         __Pyx_GOTREF(__pyx_t_1);
         __Pyx_INCREF(__pyx_v_left);
         __Pyx_GIVEREF(__pyx_v_left);
-        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_left) != (0)) __PYX_ERR(0, 177, __pyx_L19_error);
+        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_v_left) != (0)) __PYX_ERR(0, 175, __pyx_L19_error);
         __Pyx_INCREF(__pyx_v_top);
         __Pyx_GIVEREF(__pyx_v_top);
-        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_top) != (0)) __PYX_ERR(0, 177, __pyx_L19_error);
+        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_v_top) != (0)) __PYX_ERR(0, 175, __pyx_L19_error);
         __Pyx_INCREF(__pyx_v_right);
         __Pyx_GIVEREF(__pyx_v_right);
-        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_v_right) != (0)) __PYX_ERR(0, 177, __pyx_L19_error);
+        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_v_right) != (0)) __PYX_ERR(0, 175, __pyx_L19_error);
         __Pyx_INCREF(__pyx_v_bottom);
         __Pyx_GIVEREF(__pyx_v_bottom);
-        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 3, __pyx_v_bottom) != (0)) __PYX_ERR(0, 177, __pyx_L19_error);
+        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 3, __pyx_v_bottom) != (0)) __PYX_ERR(0, 175, __pyx_L19_error);
         __pyx_t_8 = 0;
         {
           PyObject *__pyx_callargs[2] = {__pyx_t_5, __pyx_t_1};
           __pyx_t_7 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_crop, __pyx_callargs+__pyx_t_8, (2-__pyx_t_8) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
           __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
           __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-          if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 177, __pyx_L19_error)
+          if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 175, __pyx_L19_error)
           __Pyx_GOTREF(__pyx_t_7);
         }
         __Pyx_XDECREF_SET(__pyx_v_img, __pyx_t_7);
         __pyx_t_7 = 0;
 
-        /* "backend/app/plugins/VisionCameraClient.py":176
+        /* "backend/app/plugins/VisionCameraClient.py":174
  * 
  *         try:
  *             if left >= 0 and top >= 0 and right >= 0 and bottom >= 0:             # <<<<<<<<<<<<<<
@@ -6666,7 +6595,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
 */
       }
 
-      /* "backend/app/plugins/VisionCameraClient.py":178
+      /* "backend/app/plugins/VisionCameraClient.py":176
  *             if left >= 0 and top >= 0 and right >= 0 and bottom >= 0:
  *                 img = img.crop((left, top, right, bottom))
  *             Path(szPath).parent.mkdir(parents=True, exist_ok=True)             # <<<<<<<<<<<<<<
@@ -6674,7 +6603,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
  *             return True, "[VisionCamera] Capture OK"
 */
       __pyx_t_6 = NULL;
-      __Pyx_GetModuleGlobalName(__pyx_t_13, __pyx_mstate_global->__pyx_n_u_Path); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 178, __pyx_L19_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_13, __pyx_mstate_global->__pyx_n_u_Path); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 176, __pyx_L19_error)
       __Pyx_GOTREF(__pyx_t_13);
       __pyx_t_8 = 1;
       #if CYTHON_UNPACK_METHODS
@@ -6693,10 +6622,10 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
         __pyx_t_5 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_13, __pyx_callargs+__pyx_t_8, (2-__pyx_t_8) | (__pyx_t_8*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
         __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-        if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 178, __pyx_L19_error)
+        if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 176, __pyx_L19_error)
         __Pyx_GOTREF(__pyx_t_5);
       }
-      __pyx_t_13 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_parent); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 178, __pyx_L19_error)
+      __pyx_t_13 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_parent); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 176, __pyx_L19_error)
       __Pyx_GOTREF(__pyx_t_13);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       __pyx_t_1 = __pyx_t_13;
@@ -6704,27 +6633,27 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
       __pyx_t_8 = 0;
       {
         PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 2 : 0)] = {__pyx_t_1, NULL};
-        __pyx_t_5 = __Pyx_MakeVectorcallBuilderKwds(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 178, __pyx_L19_error)
+        __pyx_t_5 = __Pyx_MakeVectorcallBuilderKwds(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 176, __pyx_L19_error)
         __Pyx_GOTREF(__pyx_t_5);
-        if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_parents, Py_True, __pyx_t_5, __pyx_callargs+1, 0) < (0)) __PYX_ERR(0, 178, __pyx_L19_error)
-        if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_exist_ok, Py_True, __pyx_t_5, __pyx_callargs+1, 1) < (0)) __PYX_ERR(0, 178, __pyx_L19_error)
+        if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_parents, Py_True, __pyx_t_5, __pyx_callargs+1, 0) < (0)) __PYX_ERR(0, 176, __pyx_L19_error)
+        if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_exist_ok, Py_True, __pyx_t_5, __pyx_callargs+1, 1) < (0)) __PYX_ERR(0, 176, __pyx_L19_error)
         __pyx_t_7 = __Pyx_Object_VectorcallMethod_CallFromBuilder((PyObject*)__pyx_mstate_global->__pyx_n_u_mkdir, __pyx_callargs+__pyx_t_8, (1-__pyx_t_8) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_5);
         __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
         __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
-        if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 178, __pyx_L19_error)
+        if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 176, __pyx_L19_error)
         __Pyx_GOTREF(__pyx_t_7);
       }
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-      /* "backend/app/plugins/VisionCameraClient.py":179
+      /* "backend/app/plugins/VisionCameraClient.py":177
  *                 img = img.crop((left, top, right, bottom))
  *             Path(szPath).parent.mkdir(parents=True, exist_ok=True)
  *             img.save(szPath)             # <<<<<<<<<<<<<<
  *             return True, "[VisionCamera] Capture OK"
  *         except Exception as e:
 */
-      if (unlikely(!__pyx_v_img)) { __Pyx_RaiseUnboundLocalError("img"); __PYX_ERR(0, 179, __pyx_L19_error) }
+      if (unlikely(!__pyx_v_img)) { __Pyx_RaiseUnboundLocalError("img"); __PYX_ERR(0, 177, __pyx_L19_error) }
       __pyx_t_13 = __pyx_v_img;
       __Pyx_INCREF(__pyx_t_13);
       __pyx_t_8 = 0;
@@ -6732,12 +6661,12 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
         PyObject *__pyx_callargs[2] = {__pyx_t_13, __pyx_v_szPath};
         __pyx_t_7 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_save, __pyx_callargs+__pyx_t_8, (2-__pyx_t_8) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
         __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-        if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 179, __pyx_L19_error)
+        if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 177, __pyx_L19_error)
         __Pyx_GOTREF(__pyx_t_7);
       }
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-      /* "backend/app/plugins/VisionCameraClient.py":180
+      /* "backend/app/plugins/VisionCameraClient.py":178
  *             Path(szPath).parent.mkdir(parents=True, exist_ok=True)
  *             img.save(szPath)
  *             return True, "[VisionCamera] Capture OK"             # <<<<<<<<<<<<<<
@@ -6749,7 +6678,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
       __pyx_r = __pyx_mstate_global->__pyx_tuple[7];
       goto __pyx_L23_try_return;
 
-      /* "backend/app/plugins/VisionCameraClient.py":175
+      /* "backend/app/plugins/VisionCameraClient.py":173
  *             return False, "[VisionCamera] No frame available yet"
  * 
  *         try:             # <<<<<<<<<<<<<<
@@ -6764,7 +6693,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-    /* "backend/app/plugins/VisionCameraClient.py":181
+    /* "backend/app/plugins/VisionCameraClient.py":179
  *             img.save(szPath)
  *             return True, "[VisionCamera] Capture OK"
  *         except Exception as e:             # <<<<<<<<<<<<<<
@@ -6774,7 +6703,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     __pyx_t_14 = __Pyx_PyErr_ExceptionMatches(((PyObject *)(((PyTypeObject*)PyExc_Exception))));
     if (__pyx_t_14) {
       __Pyx_AddTraceback("backend.app.plugins.VisionCameraClient.VisionCameraClient.md_VisionCapture", __pyx_clineno, __pyx_lineno, __pyx_filename);
-      if (__Pyx_GetException(&__pyx_t_7, &__pyx_t_13, &__pyx_t_5) < 0) __PYX_ERR(0, 181, __pyx_L21_except_error)
+      if (__Pyx_GetException(&__pyx_t_7, &__pyx_t_13, &__pyx_t_5) < 0) __PYX_ERR(0, 179, __pyx_L21_except_error)
       __Pyx_XGOTREF(__pyx_t_7);
       __Pyx_XGOTREF(__pyx_t_13);
       __Pyx_XGOTREF(__pyx_t_5);
@@ -6782,7 +6711,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
       __pyx_v_e = __pyx_t_13;
       /*try:*/ {
 
-        /* "backend/app/plugins/VisionCameraClient.py":182
+        /* "backend/app/plugins/VisionCameraClient.py":180
  *             return True, "[VisionCamera] Capture OK"
  *         except Exception as e:
  *             return False, f"[VisionCamera] Capture fail: {e}"             # <<<<<<<<<<<<<<
@@ -6790,18 +6719,18 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
  *     def md_CaptureBytes(self, fmt: str = "jpeg") -> bytes:
 */
         __Pyx_XDECREF(__pyx_r);
-        __pyx_t_1 = __Pyx_PyObject_FormatSimple(__pyx_v_e, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 182, __pyx_L35_error)
+        __pyx_t_1 = __Pyx_PyObject_FormatSimple(__pyx_v_e, __pyx_mstate_global->__pyx_empty_unicode); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 180, __pyx_L35_error)
         __Pyx_GOTREF(__pyx_t_1);
-        __pyx_t_6 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_VisionCamera_Capture_fail, __pyx_t_1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 182, __pyx_L35_error)
+        __pyx_t_6 = __Pyx_PyUnicode_Concat(__pyx_mstate_global->__pyx_kp_u_VisionCamera_Capture_fail, __pyx_t_1); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 180, __pyx_L35_error)
         __Pyx_GOTREF(__pyx_t_6);
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-        __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 182, __pyx_L35_error)
+        __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 180, __pyx_L35_error)
         __Pyx_GOTREF(__pyx_t_1);
         __Pyx_INCREF(Py_False);
         __Pyx_GIVEREF(Py_False);
-        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 0, Py_False) != (0)) __PYX_ERR(0, 182, __pyx_L35_error);
+        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 0, Py_False) != (0)) __PYX_ERR(0, 180, __pyx_L35_error);
         __Pyx_GIVEREF(__pyx_t_6);
-        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_t_6) != (0)) __PYX_ERR(0, 182, __pyx_L35_error);
+        if (__Pyx_PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_t_6) != (0)) __PYX_ERR(0, 180, __pyx_L35_error);
         __pyx_t_6 = 0;
         __pyx_r = ((PyObject*)__pyx_t_1);
         __pyx_t_1 = 0;
@@ -6811,7 +6740,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
         goto __pyx_L34_return;
       }
 
-      /* "backend/app/plugins/VisionCameraClient.py":181
+      /* "backend/app/plugins/VisionCameraClient.py":179
  *             img.save(szPath)
  *             return True, "[VisionCamera] Capture OK"
  *         except Exception as e:             # <<<<<<<<<<<<<<
@@ -6862,7 +6791,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     }
     goto __pyx_L21_except_error;
 
-    /* "backend/app/plugins/VisionCameraClient.py":175
+    /* "backend/app/plugins/VisionCameraClient.py":173
  *             return False, "[VisionCamera] No frame available yet"
  * 
  *         try:             # <<<<<<<<<<<<<<
@@ -6889,7 +6818,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     goto __pyx_L0;
   }
 
-  /* "backend/app/plugins/VisionCameraClient.py":164
+  /* "backend/app/plugins/VisionCameraClient.py":162
  *     # ------------------------------------------------------------------
  * 
  *     def md_VisionCapture(self, szPath: str, left=-1, top=-1, right=-1, bottom=-1) -> tuple[bool, str]:             # <<<<<<<<<<<<<<
@@ -6914,7 +6843,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
   return __pyx_r;
 }
 
-/* "backend/app/plugins/VisionCameraClient.py":184
+/* "backend/app/plugins/VisionCameraClient.py":182
  *             return False, f"[VisionCamera] Capture fail: {e}"
  * 
  *     def md_CaptureBytes(self, fmt: str = "jpeg") -> bytes:             # <<<<<<<<<<<<<<
@@ -6963,35 +6892,35 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_self,&__pyx_mstate_global->__pyx_n_u_fmt,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 184, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 182, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  2:
         values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 184, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 182, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 184, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 182, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "md_CaptureBytes", 0) < (0)) __PYX_ERR(0, 184, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "md_CaptureBytes", 0) < (0)) __PYX_ERR(0, 182, __pyx_L3_error)
       if (!values[1]) values[1] = __Pyx_NewRef(((PyObject*)((PyObject*)__pyx_mstate_global->__pyx_n_u_jpeg)));
       for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("md_CaptureBytes", 0, 1, 2, i); __PYX_ERR(0, 184, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("md_CaptureBytes", 0, 1, 2, i); __PYX_ERR(0, 182, __pyx_L3_error) }
       }
     } else {
       switch (__pyx_nargs) {
         case  2:
         values[1] = __Pyx_ArgRef_FASTCALL(__pyx_args, 1);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 184, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[1])) __PYX_ERR(0, 182, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 184, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 182, __pyx_L3_error)
         break;
         default: goto __pyx_L5_argtuple_error;
       }
@@ -7002,7 +6931,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("md_CaptureBytes", 0, 1, 2, __pyx_nargs); __PYX_ERR(0, 184, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("md_CaptureBytes", 0, 1, 2, __pyx_nargs); __PYX_ERR(0, 182, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -7013,7 +6942,7 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_fmt), (&PyUnicode_Type), 0, "fmt", 2))) __PYX_ERR(0, 184, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_fmt), (&PyUnicode_Type), 0, "fmt", 2))) __PYX_ERR(0, 182, __pyx_L1_error)
   __pyx_r = __pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCameraClient_12md_CaptureBytes(__pyx_self, __pyx_v_self, __pyx_v_fmt);
 
   /* function exit code */
@@ -7055,21 +6984,21 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("md_CaptureBytes", 0);
 
-  /* "backend/app/plugins/VisionCameraClient.py":186
+  /* "backend/app/plugins/VisionCameraClient.py":184
  *     def md_CaptureBytes(self, fmt: str = "jpeg") -> bytes:
  *         """    ."""
  *         if not self._isConnected:             # <<<<<<<<<<<<<<
  *             raise RuntimeError("[VisionCamera] Not connected")
  * 
 */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_isConnected); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 186, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_isConnected); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 184, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 186, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_2 < 0))) __PYX_ERR(0, 184, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_3 = (!__pyx_t_2);
   if (unlikely(__pyx_t_3)) {
 
-    /* "backend/app/plugins/VisionCameraClient.py":187
+    /* "backend/app/plugins/VisionCameraClient.py":185
  *         """    ."""
  *         if not self._isConnected:
  *             raise RuntimeError("[VisionCamera] Not connected")             # <<<<<<<<<<<<<<
@@ -7082,14 +7011,14 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
       PyObject *__pyx_callargs[2] = {__pyx_t_4, __pyx_mstate_global->__pyx_kp_u_VisionCamera_Not_connected};
       __pyx_t_1 = __Pyx_PyObject_FastCall((PyObject*)(((PyTypeObject*)PyExc_RuntimeError)), __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 187, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 185, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
     }
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 187, __pyx_L1_error)
+    __PYX_ERR(0, 185, __pyx_L1_error)
 
-    /* "backend/app/plugins/VisionCameraClient.py":186
+    /* "backend/app/plugins/VisionCameraClient.py":184
  *     def md_CaptureBytes(self, fmt: str = "jpeg") -> bytes:
  *         """    ."""
  *         if not self._isConnected:             # <<<<<<<<<<<<<<
@@ -7098,7 +7027,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
 */
   }
 
-  /* "backend/app/plugins/VisionCameraClient.py":189
+  /* "backend/app/plugins/VisionCameraClient.py":187
  *             raise RuntimeError("[VisionCamera] Not connected")
  * 
  *         with self._frame_lock:             # <<<<<<<<<<<<<<
@@ -7106,12 +7035,12 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
  * 
 */
   /*with:*/ {
-    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_lock); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 189, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_lock); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 187, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_6 = __Pyx_PyObject_LookupSpecial(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_exit); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 189, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_LookupSpecial(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_exit); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 187, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __pyx_t_7 = NULL;
-    __pyx_t_8 = __Pyx_PyObject_LookupSpecial(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_enter); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 189, __pyx_L4_error)
+    __pyx_t_8 = __Pyx_PyObject_LookupSpecial(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_enter); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 187, __pyx_L4_error)
     __Pyx_GOTREF(__pyx_t_8);
     __pyx_t_5 = 1;
     #if CYTHON_UNPACK_METHODS
@@ -7130,7 +7059,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
       __pyx_t_4 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_8, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
       __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-      if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 189, __pyx_L4_error)
+      if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 187, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_4);
     }
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
@@ -7145,19 +7074,19 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
         __Pyx_XGOTREF(__pyx_t_11);
         /*try:*/ {
 
-          /* "backend/app/plugins/VisionCameraClient.py":190
+          /* "backend/app/plugins/VisionCameraClient.py":188
  * 
  *         with self._frame_lock:
  *             img = self._latest_frame             # <<<<<<<<<<<<<<
  * 
  *         if img is None:
 */
-          __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_latest_frame); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 190, __pyx_L8_error)
+          __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_latest_frame); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 188, __pyx_L8_error)
           __Pyx_GOTREF(__pyx_t_1);
           __pyx_v_img = __pyx_t_1;
           __pyx_t_1 = 0;
 
-          /* "backend/app/plugins/VisionCameraClient.py":189
+          /* "backend/app/plugins/VisionCameraClient.py":187
  *             raise RuntimeError("[VisionCamera] Not connected")
  * 
  *         with self._frame_lock:             # <<<<<<<<<<<<<<
@@ -7176,20 +7105,20 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
         __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
         /*except:*/ {
           __Pyx_AddTraceback("backend.app.plugins.VisionCameraClient.VisionCameraClient.md_CaptureBytes", __pyx_clineno, __pyx_lineno, __pyx_filename);
-          if (__Pyx_GetException(&__pyx_t_1, &__pyx_t_4, &__pyx_t_8) < 0) __PYX_ERR(0, 189, __pyx_L10_except_error)
+          if (__Pyx_GetException(&__pyx_t_1, &__pyx_t_4, &__pyx_t_8) < 0) __PYX_ERR(0, 187, __pyx_L10_except_error)
           __Pyx_XGOTREF(__pyx_t_1);
           __Pyx_XGOTREF(__pyx_t_4);
           __Pyx_XGOTREF(__pyx_t_8);
-          __pyx_t_7 = PyTuple_Pack(3, __pyx_t_1, __pyx_t_4, __pyx_t_8); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 189, __pyx_L10_except_error)
+          __pyx_t_7 = PyTuple_Pack(3, __pyx_t_1, __pyx_t_4, __pyx_t_8); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 187, __pyx_L10_except_error)
           __Pyx_GOTREF(__pyx_t_7);
           __pyx_t_12 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_t_7, NULL);
           __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
           __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 189, __pyx_L10_except_error)
+          if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 187, __pyx_L10_except_error)
           __Pyx_GOTREF(__pyx_t_12);
           __pyx_t_3 = __Pyx_PyObject_IsTrue(__pyx_t_12);
           __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-          if (__pyx_t_3 < (0)) __PYX_ERR(0, 189, __pyx_L10_except_error)
+          if (__pyx_t_3 < (0)) __PYX_ERR(0, 187, __pyx_L10_except_error)
           __pyx_t_2 = (!__pyx_t_3);
           if (unlikely(__pyx_t_2)) {
             __Pyx_GIVEREF(__pyx_t_1);
@@ -7197,7 +7126,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
             __Pyx_XGIVEREF(__pyx_t_8);
             __Pyx_ErrRestoreWithState(__pyx_t_1, __pyx_t_4, __pyx_t_8);
             __pyx_t_1 = 0;  __pyx_t_4 = 0;  __pyx_t_8 = 0; 
-            __PYX_ERR(0, 189, __pyx_L10_except_error)
+            __PYX_ERR(0, 187, __pyx_L10_except_error)
           }
           __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
           __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
@@ -7223,7 +7152,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
         if (__pyx_t_6) {
           __pyx_t_11 = __Pyx_PyObject_Call(__pyx_t_6, __pyx_mstate_global->__pyx_tuple[0], NULL);
           __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-          if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 189, __pyx_L1_error)
+          if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 187, __pyx_L1_error)
           __Pyx_GOTREF(__pyx_t_11);
           __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
         }
@@ -7238,18 +7167,18 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     __pyx_L17:;
   }
 
-  /* "backend/app/plugins/VisionCameraClient.py":192
+  /* "backend/app/plugins/VisionCameraClient.py":190
  *             img = self._latest_frame
  * 
  *         if img is None:             # <<<<<<<<<<<<<<
  *             raise RuntimeError("[VisionCamera] No frame available yet")
  * 
 */
-  if (unlikely(!__pyx_v_img)) { __Pyx_RaiseUnboundLocalError("img"); __PYX_ERR(0, 192, __pyx_L1_error) }
+  if (unlikely(!__pyx_v_img)) { __Pyx_RaiseUnboundLocalError("img"); __PYX_ERR(0, 190, __pyx_L1_error) }
   __pyx_t_2 = (__pyx_v_img == Py_None);
   if (unlikely(__pyx_t_2)) {
 
-    /* "backend/app/plugins/VisionCameraClient.py":193
+    /* "backend/app/plugins/VisionCameraClient.py":191
  * 
  *         if img is None:
  *             raise RuntimeError("[VisionCamera] No frame available yet")             # <<<<<<<<<<<<<<
@@ -7262,14 +7191,14 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
       PyObject *__pyx_callargs[2] = {__pyx_t_4, __pyx_mstate_global->__pyx_kp_u_VisionCamera_No_frame_available};
       __pyx_t_8 = __Pyx_PyObject_FastCall((PyObject*)(((PyTypeObject*)PyExc_RuntimeError)), __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-      if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 193, __pyx_L1_error)
+      if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 191, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_8);
     }
     __Pyx_Raise(__pyx_t_8, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    __PYX_ERR(0, 193, __pyx_L1_error)
+    __PYX_ERR(0, 191, __pyx_L1_error)
 
-    /* "backend/app/plugins/VisionCameraClient.py":192
+    /* "backend/app/plugins/VisionCameraClient.py":190
  *             img = self._latest_frame
  * 
  *         if img is None:             # <<<<<<<<<<<<<<
@@ -7278,7 +7207,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
 */
   }
 
-  /* "backend/app/plugins/VisionCameraClient.py":195
+  /* "backend/app/plugins/VisionCameraClient.py":193
  *             raise RuntimeError("[VisionCamera] No frame available yet")
  * 
  *         buf = io.BytesIO()             # <<<<<<<<<<<<<<
@@ -7286,9 +7215,9 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
  *             img.save(buf, format="JPEG", quality=85)
 */
   __pyx_t_4 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_io); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 195, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_io); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 193, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_BytesIO); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 195, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_t_1, __pyx_mstate_global->__pyx_n_u_BytesIO); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 193, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_5 = 1;
@@ -7308,60 +7237,60 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     __pyx_t_8 = __Pyx_PyObject_FastCall((PyObject*)__pyx_t_7, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (__pyx_t_5*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-    if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 195, __pyx_L1_error)
+    if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 193, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
   }
   __pyx_v_buf = __pyx_t_8;
   __pyx_t_8 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":196
+  /* "backend/app/plugins/VisionCameraClient.py":194
  * 
  *         buf = io.BytesIO()
  *         if fmt.lower() in ("jpg", "jpeg"):             # <<<<<<<<<<<<<<
  *             img.save(buf, format="JPEG", quality=85)
  *         else:
 */
-  __pyx_t_8 = __Pyx_CallUnboundCMethod0(&__pyx_mstate_global->__pyx_umethod_PyUnicode_Type__lower, __pyx_v_fmt); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 196, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_CallUnboundCMethod0(&__pyx_mstate_global->__pyx_umethod_PyUnicode_Type__lower, __pyx_v_fmt); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 194, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_8);
-  __pyx_t_3 = (__Pyx_PyUnicode_Equals(__pyx_t_8, __pyx_mstate_global->__pyx_n_u_jpg, Py_EQ)); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 196, __pyx_L1_error)
+  __pyx_t_3 = (__Pyx_PyUnicode_Equals(__pyx_t_8, __pyx_mstate_global->__pyx_n_u_jpg, Py_EQ)); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 194, __pyx_L1_error)
   if (!__pyx_t_3) {
   } else {
     __pyx_t_2 = __pyx_t_3;
     goto __pyx_L20_bool_binop_done;
   }
-  __pyx_t_3 = (__Pyx_PyUnicode_Equals(__pyx_t_8, __pyx_mstate_global->__pyx_n_u_jpeg, Py_EQ)); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 196, __pyx_L1_error)
+  __pyx_t_3 = (__Pyx_PyUnicode_Equals(__pyx_t_8, __pyx_mstate_global->__pyx_n_u_jpeg, Py_EQ)); if (unlikely((__pyx_t_3 < 0))) __PYX_ERR(0, 194, __pyx_L1_error)
   __pyx_t_2 = __pyx_t_3;
   __pyx_L20_bool_binop_done:;
   __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
   __pyx_t_3 = __pyx_t_2;
   if (__pyx_t_3) {
 
-    /* "backend/app/plugins/VisionCameraClient.py":197
+    /* "backend/app/plugins/VisionCameraClient.py":195
  *         buf = io.BytesIO()
  *         if fmt.lower() in ("jpg", "jpeg"):
  *             img.save(buf, format="JPEG", quality=85)             # <<<<<<<<<<<<<<
  *         else:
  *             img.save(buf, format="PNG")
 */
-    if (unlikely(!__pyx_v_img)) { __Pyx_RaiseUnboundLocalError("img"); __PYX_ERR(0, 197, __pyx_L1_error) }
+    if (unlikely(!__pyx_v_img)) { __Pyx_RaiseUnboundLocalError("img"); __PYX_ERR(0, 195, __pyx_L1_error) }
     __pyx_t_7 = __pyx_v_img;
     __Pyx_INCREF(__pyx_t_7);
     __pyx_t_5 = 0;
     {
       PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 2 : 0)] = {__pyx_t_7, __pyx_v_buf};
-      __pyx_t_4 = __Pyx_MakeVectorcallBuilderKwds(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 197, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_MakeVectorcallBuilderKwds(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 195, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_format, __pyx_mstate_global->__pyx_n_u_JPEG, __pyx_t_4, __pyx_callargs+2, 0) < (0)) __PYX_ERR(0, 197, __pyx_L1_error)
-      if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_quality, __pyx_mstate_global->__pyx_int_85, __pyx_t_4, __pyx_callargs+2, 1) < (0)) __PYX_ERR(0, 197, __pyx_L1_error)
+      if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_format, __pyx_mstate_global->__pyx_n_u_JPEG, __pyx_t_4, __pyx_callargs+2, 0) < (0)) __PYX_ERR(0, 195, __pyx_L1_error)
+      if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_quality, __pyx_mstate_global->__pyx_int_85, __pyx_t_4, __pyx_callargs+2, 1) < (0)) __PYX_ERR(0, 195, __pyx_L1_error)
       __pyx_t_8 = __Pyx_Object_VectorcallMethod_CallFromBuilder((PyObject*)__pyx_mstate_global->__pyx_n_u_save, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_4);
       __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 197, __pyx_L1_error)
+      if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 195, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_8);
     }
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
 
-    /* "backend/app/plugins/VisionCameraClient.py":196
+    /* "backend/app/plugins/VisionCameraClient.py":194
  * 
  *         buf = io.BytesIO()
  *         if fmt.lower() in ("jpg", "jpeg"):             # <<<<<<<<<<<<<<
@@ -7371,7 +7300,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     goto __pyx_L19;
   }
 
-  /* "backend/app/plugins/VisionCameraClient.py":199
+  /* "backend/app/plugins/VisionCameraClient.py":197
  *             img.save(buf, format="JPEG", quality=85)
  *         else:
  *             img.save(buf, format="PNG")             # <<<<<<<<<<<<<<
@@ -7379,26 +7308,26 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
  * 
 */
   /*else*/ {
-    if (unlikely(!__pyx_v_img)) { __Pyx_RaiseUnboundLocalError("img"); __PYX_ERR(0, 199, __pyx_L1_error) }
+    if (unlikely(!__pyx_v_img)) { __Pyx_RaiseUnboundLocalError("img"); __PYX_ERR(0, 197, __pyx_L1_error) }
     __pyx_t_4 = __pyx_v_img;
     __Pyx_INCREF(__pyx_t_4);
     __pyx_t_5 = 0;
     {
       PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_4, __pyx_v_buf};
-      __pyx_t_7 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 199, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 197, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
-      if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_format, __pyx_mstate_global->__pyx_n_u_PNG, __pyx_t_7, __pyx_callargs+2, 0) < (0)) __PYX_ERR(0, 199, __pyx_L1_error)
+      if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_format, __pyx_mstate_global->__pyx_n_u_PNG, __pyx_t_7, __pyx_callargs+2, 0) < (0)) __PYX_ERR(0, 197, __pyx_L1_error)
       __pyx_t_8 = __Pyx_Object_VectorcallMethod_CallFromBuilder((PyObject*)__pyx_mstate_global->__pyx_n_u_save, __pyx_callargs+__pyx_t_5, (2-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_7);
       __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-      if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 199, __pyx_L1_error)
+      if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 197, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_8);
     }
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
   }
   __pyx_L19:;
 
-  /* "backend/app/plugins/VisionCameraClient.py":200
+  /* "backend/app/plugins/VisionCameraClient.py":198
  *         else:
  *             img.save(buf, format="PNG")
  *         return buf.getvalue()             # <<<<<<<<<<<<<<
@@ -7413,15 +7342,15 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     PyObject *__pyx_callargs[2] = {__pyx_t_7, NULL};
     __pyx_t_8 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_getvalue, __pyx_callargs+__pyx_t_5, (1-__pyx_t_5) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
-    if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 200, __pyx_L1_error)
+    if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 198, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
   }
-  if (!(likely(PyBytes_CheckExact(__pyx_t_8))||((__pyx_t_8) == Py_None) || __Pyx_RaiseUnexpectedTypeError("bytes", __pyx_t_8))) __PYX_ERR(0, 200, __pyx_L1_error)
+  if (!(likely(PyBytes_CheckExact(__pyx_t_8))||((__pyx_t_8) == Py_None) || __Pyx_RaiseUnexpectedTypeError("bytes", __pyx_t_8))) __PYX_ERR(0, 198, __pyx_L1_error)
   __pyx_r = ((PyObject*)__pyx_t_8);
   __pyx_t_8 = 0;
   goto __pyx_L0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":184
+  /* "backend/app/plugins/VisionCameraClient.py":182
  *             return False, f"[VisionCamera] Capture fail: {e}"
  * 
  *     def md_CaptureBytes(self, fmt: str = "jpeg") -> bytes:             # <<<<<<<<<<<<<<
@@ -7445,7 +7374,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
   return __pyx_r;
 }
 
-/* "backend/app/plugins/VisionCameraClient.py":204
+/* "backend/app/plugins/VisionCameraClient.py":202
  *     # ------------------------------------------------------------------
  * 
  *     @property             # <<<<<<<<<<<<<<
@@ -7492,32 +7421,32 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_self,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 204, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 202, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 204, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 202, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "is_connected", 0) < (0)) __PYX_ERR(0, 204, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "is_connected", 0) < (0)) __PYX_ERR(0, 202, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("is_connected", 1, 1, 1, i); __PYX_ERR(0, 204, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("is_connected", 1, 1, 1, i); __PYX_ERR(0, 202, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 204, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 202, __pyx_L3_error)
     }
     __pyx_v_self = values[0];
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("is_connected", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 204, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("is_connected", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 202, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -7547,7 +7476,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("is_connected", 0);
 
-  /* "backend/app/plugins/VisionCameraClient.py":206
+  /* "backend/app/plugins/VisionCameraClient.py":204
  *     @property
  *     def is_connected(self) -> bool:
  *         return self._isConnected             # <<<<<<<<<<<<<<
@@ -7555,13 +7484,13 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
  *     def _cleanup(self):
 */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_isConnected); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 206, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_isConnected); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 204, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":204
+  /* "backend/app/plugins/VisionCameraClient.py":202
  *     # ------------------------------------------------------------------
  * 
  *     @property             # <<<<<<<<<<<<<<
@@ -7580,7 +7509,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
   return __pyx_r;
 }
 
-/* "backend/app/plugins/VisionCameraClient.py":208
+/* "backend/app/plugins/VisionCameraClient.py":206
  *         return self._isConnected
  * 
  *     def _cleanup(self):             # <<<<<<<<<<<<<<
@@ -7628,32 +7557,32 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_self,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 208, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 206, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 208, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 206, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "_cleanup", 0) < (0)) __PYX_ERR(0, 208, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "_cleanup", 0) < (0)) __PYX_ERR(0, 206, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("_cleanup", 1, 1, 1, i); __PYX_ERR(0, 208, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("_cleanup", 1, 1, 1, i); __PYX_ERR(0, 206, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 208, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 206, __pyx_L3_error)
     }
     __pyx_v_self = values[0];
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("_cleanup", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 208, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("_cleanup", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 206, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -7693,14 +7622,14 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_cleanup", 0);
 
-  /* "backend/app/plugins/VisionCameraClient.py":211
+  /* "backend/app/plugins/VisionCameraClient.py":209
  *         """ ."""
  *         #
  *         self._frame_stop.set()             # <<<<<<<<<<<<<<
  *         if self._frame_thread and self._frame_thread.is_alive():
  *             self._frame_thread.join(timeout=5)
 */
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_stop); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 211, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_stop); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 209, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_2 = __pyx_t_3;
   __Pyx_INCREF(__pyx_t_2);
@@ -7710,28 +7639,28 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_set, __pyx_callargs+__pyx_t_4, (1-__pyx_t_4) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 211, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 209, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":212
+  /* "backend/app/plugins/VisionCameraClient.py":210
  *         #
  *         self._frame_stop.set()
  *         if self._frame_thread and self._frame_thread.is_alive():             # <<<<<<<<<<<<<<
  *             self._frame_thread.join(timeout=5)
  *         self._frame_thread = None
 */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_thread); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 212, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_thread); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 210, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 212, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 210, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_6) {
   } else {
     __pyx_t_5 = __pyx_t_6;
     goto __pyx_L4_bool_binop_done;
   }
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_thread); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 212, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_thread); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 210, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = __pyx_t_2;
   __Pyx_INCREF(__pyx_t_3);
@@ -7741,42 +7670,42 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_is_alive, __pyx_callargs+__pyx_t_4, (1-__pyx_t_4) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 212, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 210, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
-  __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 212, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_6 < 0))) __PYX_ERR(0, 210, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_5 = __pyx_t_6;
   __pyx_L4_bool_binop_done:;
   if (__pyx_t_5) {
 
-    /* "backend/app/plugins/VisionCameraClient.py":213
+    /* "backend/app/plugins/VisionCameraClient.py":211
  *         self._frame_stop.set()
  *         if self._frame_thread and self._frame_thread.is_alive():
  *             self._frame_thread.join(timeout=5)             # <<<<<<<<<<<<<<
  *         self._frame_thread = None
  *         self._latest_frame = None
 */
-    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_thread); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 213, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_thread); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 211, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_t_2 = __pyx_t_3;
     __Pyx_INCREF(__pyx_t_2);
     __pyx_t_4 = 0;
     {
       PyObject *__pyx_callargs[2 + ((CYTHON_VECTORCALL) ? 1 : 0)] = {__pyx_t_2, NULL};
-      __pyx_t_7 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 213, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_MakeVectorcallBuilderKwds(1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 211, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
-      if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_timeout, __pyx_mstate_global->__pyx_int_5, __pyx_t_7, __pyx_callargs+1, 0) < (0)) __PYX_ERR(0, 213, __pyx_L1_error)
+      if (__Pyx_VectorcallBuilder_AddArg(__pyx_mstate_global->__pyx_n_u_timeout, __pyx_mstate_global->__pyx_int_5, __pyx_t_7, __pyx_callargs+1, 0) < (0)) __PYX_ERR(0, 211, __pyx_L1_error)
       __pyx_t_1 = __Pyx_Object_VectorcallMethod_CallFromBuilder((PyObject*)__pyx_mstate_global->__pyx_n_u_join, __pyx_callargs+__pyx_t_4, (1-__pyx_t_4) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET), __pyx_t_7);
       __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 213, __pyx_L1_error)
+      if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 211, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
     }
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "backend/app/plugins/VisionCameraClient.py":212
+    /* "backend/app/plugins/VisionCameraClient.py":210
  *         #
  *         self._frame_stop.set()
  *         if self._frame_thread and self._frame_thread.is_alive():             # <<<<<<<<<<<<<<
@@ -7785,38 +7714,38 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
 */
   }
 
-  /* "backend/app/plugins/VisionCameraClient.py":214
+  /* "backend/app/plugins/VisionCameraClient.py":212
  *         if self._frame_thread and self._frame_thread.is_alive():
  *             self._frame_thread.join(timeout=5)
  *         self._frame_thread = None             # <<<<<<<<<<<<<<
  *         self._latest_frame = None
  *         # DLL disconnect
 */
-  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_thread, Py_None) < (0)) __PYX_ERR(0, 214, __pyx_L1_error)
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_frame_thread, Py_None) < (0)) __PYX_ERR(0, 212, __pyx_L1_error)
 
-  /* "backend/app/plugins/VisionCameraClient.py":215
+  /* "backend/app/plugins/VisionCameraClient.py":213
  *             self._frame_thread.join(timeout=5)
  *         self._frame_thread = None
  *         self._latest_frame = None             # <<<<<<<<<<<<<<
  *         # DLL disconnect
  *         if self._isConnected:
 */
-  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_latest_frame, Py_None) < (0)) __PYX_ERR(0, 215, __pyx_L1_error)
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_latest_frame, Py_None) < (0)) __PYX_ERR(0, 213, __pyx_L1_error)
 
-  /* "backend/app/plugins/VisionCameraClient.py":217
+  /* "backend/app/plugins/VisionCameraClient.py":215
  *         self._latest_frame = None
  *         # DLL disconnect
  *         if self._isConnected:             # <<<<<<<<<<<<<<
  *             try:
  *                 self._dll.Vision_Disconnect()
 */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_isConnected); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 217, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_isConnected); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 215, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 217, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_IsTrue(__pyx_t_1); if (unlikely((__pyx_t_5 < 0))) __PYX_ERR(0, 215, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   if (__pyx_t_5) {
 
-    /* "backend/app/plugins/VisionCameraClient.py":218
+    /* "backend/app/plugins/VisionCameraClient.py":216
  *         # DLL disconnect
  *         if self._isConnected:
  *             try:             # <<<<<<<<<<<<<<
@@ -7832,14 +7761,14 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
       __Pyx_XGOTREF(__pyx_t_10);
       /*try:*/ {
 
-        /* "backend/app/plugins/VisionCameraClient.py":219
+        /* "backend/app/plugins/VisionCameraClient.py":217
  *         if self._isConnected:
  *             try:
  *                 self._dll.Vision_Disconnect()             # <<<<<<<<<<<<<<
  *             except Exception:
  *                 pass
 */
-        __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_dll_2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 219, __pyx_L7_error)
+        __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_dll); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 217, __pyx_L7_error)
         __Pyx_GOTREF(__pyx_t_7);
         __pyx_t_3 = __pyx_t_7;
         __Pyx_INCREF(__pyx_t_3);
@@ -7849,12 +7778,12 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
           __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_Vision_Disconnect, __pyx_callargs+__pyx_t_4, (1-__pyx_t_4) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
           __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
           __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-          if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 219, __pyx_L7_error)
+          if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 217, __pyx_L7_error)
           __Pyx_GOTREF(__pyx_t_1);
         }
         __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-        /* "backend/app/plugins/VisionCameraClient.py":218
+        /* "backend/app/plugins/VisionCameraClient.py":216
  *         # DLL disconnect
  *         if self._isConnected:
  *             try:             # <<<<<<<<<<<<<<
@@ -7872,7 +7801,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
       __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
       __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
 
-      /* "backend/app/plugins/VisionCameraClient.py":220
+      /* "backend/app/plugins/VisionCameraClient.py":218
  *             try:
  *                 self._dll.Vision_Disconnect()
  *             except Exception:             # <<<<<<<<<<<<<<
@@ -7886,7 +7815,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
       }
       goto __pyx_L9_except_error;
 
-      /* "backend/app/plugins/VisionCameraClient.py":218
+      /* "backend/app/plugins/VisionCameraClient.py":216
  *         # DLL disconnect
  *         if self._isConnected:
  *             try:             # <<<<<<<<<<<<<<
@@ -7907,7 +7836,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
       __pyx_L12_try_end:;
     }
 
-    /* "backend/app/plugins/VisionCameraClient.py":217
+    /* "backend/app/plugins/VisionCameraClient.py":215
  *         self._latest_frame = None
  *         # DLL disconnect
  *         if self._isConnected:             # <<<<<<<<<<<<<<
@@ -7916,16 +7845,16 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
 */
   }
 
-  /* "backend/app/plugins/VisionCameraClient.py":222
+  /* "backend/app/plugins/VisionCameraClient.py":220
  *             except Exception:
  *                 pass
  *         self._isConnected = False             # <<<<<<<<<<<<<<
  * 
  *     def dispose(self):
 */
-  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_isConnected, Py_False) < (0)) __PYX_ERR(0, 222, __pyx_L1_error)
+  if (__Pyx_PyObject_SetAttrStr(__pyx_v_self, __pyx_mstate_global->__pyx_n_u_isConnected, Py_False) < (0)) __PYX_ERR(0, 220, __pyx_L1_error)
 
-  /* "backend/app/plugins/VisionCameraClient.py":208
+  /* "backend/app/plugins/VisionCameraClient.py":206
  *         return self._isConnected
  * 
  *     def _cleanup(self):             # <<<<<<<<<<<<<<
@@ -7949,7 +7878,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
   return __pyx_r;
 }
 
-/* "backend/app/plugins/VisionCameraClient.py":224
+/* "backend/app/plugins/VisionCameraClient.py":222
  *         self._isConnected = False
  * 
  *     def dispose(self):             # <<<<<<<<<<<<<<
@@ -7995,32 +7924,32 @@ PyObject *__pyx_args, PyObject *__pyx_kwds
   {
     PyObject ** const __pyx_pyargnames[] = {&__pyx_mstate_global->__pyx_n_u_self,0};
     const Py_ssize_t __pyx_kwds_len = (__pyx_kwds) ? __Pyx_NumKwargs_FASTCALL(__pyx_kwds) : 0;
-    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 224, __pyx_L3_error)
+    if (unlikely(__pyx_kwds_len) < 0) __PYX_ERR(0, 222, __pyx_L3_error)
     if (__pyx_kwds_len > 0) {
       switch (__pyx_nargs) {
         case  1:
         values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 224, __pyx_L3_error)
+        if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 222, __pyx_L3_error)
         CYTHON_FALLTHROUGH;
         case  0: break;
         default: goto __pyx_L5_argtuple_error;
       }
       const Py_ssize_t kwd_pos_args = __pyx_nargs;
-      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "dispose", 0) < (0)) __PYX_ERR(0, 224, __pyx_L3_error)
+      if (__Pyx_ParseKeywords(__pyx_kwds, __pyx_kwvalues, __pyx_pyargnames, 0, values, kwd_pos_args, __pyx_kwds_len, "dispose", 0) < (0)) __PYX_ERR(0, 222, __pyx_L3_error)
       for (Py_ssize_t i = __pyx_nargs; i < 1; i++) {
-        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("dispose", 1, 1, 1, i); __PYX_ERR(0, 224, __pyx_L3_error) }
+        if (unlikely(!values[i])) { __Pyx_RaiseArgtupleInvalid("dispose", 1, 1, 1, i); __PYX_ERR(0, 222, __pyx_L3_error) }
       }
     } else if (unlikely(__pyx_nargs != 1)) {
       goto __pyx_L5_argtuple_error;
     } else {
       values[0] = __Pyx_ArgRef_FASTCALL(__pyx_args, 0);
-      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 224, __pyx_L3_error)
+      if (!CYTHON_ASSUME_SAFE_MACROS && unlikely(!values[0])) __PYX_ERR(0, 222, __pyx_L3_error)
     }
     __pyx_v_self = values[0];
   }
   goto __pyx_L6_skip;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("dispose", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 224, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("dispose", 1, 1, 1, __pyx_nargs); __PYX_ERR(0, 222, __pyx_L3_error)
   __pyx_L6_skip:;
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -8052,7 +7981,7 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("dispose", 0);
 
-  /* "backend/app/plugins/VisionCameraClient.py":225
+  /* "backend/app/plugins/VisionCameraClient.py":223
  * 
  *     def dispose(self):
  *         self._cleanup()             # <<<<<<<<<<<<<<
@@ -8064,12 +7993,12 @@ static PyObject *__pyx_pf_7backend_3app_7plugins_18VisionCameraClient_18VisionCa
     PyObject *__pyx_callargs[2] = {__pyx_t_2, NULL};
     __pyx_t_1 = __Pyx_PyObject_FastCallMethod((PyObject*)__pyx_mstate_global->__pyx_n_u_cleanup, __pyx_callargs+__pyx_t_3, (1-__pyx_t_3) | (1*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
-    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 225, __pyx_L1_error)
+    if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 223, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":224
+  /* "backend/app/plugins/VisionCameraClient.py":222
  *         self._isConnected = False
  * 
  *     def dispose(self):             # <<<<<<<<<<<<<<
@@ -8449,7 +8378,7 @@ __Pyx_RefNannySetupContext("PyInit_VisionCameraClient", 0);
  * 
  * import io             # <<<<<<<<<<<<<<
  * import os
- * import shutil
+ * import logging
 */
   __pyx_t_1 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_io, 0, 0, NULL, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 8, __pyx_L1_error)
   __pyx_t_2 = __pyx_t_1;
@@ -8461,8 +8390,8 @@ __Pyx_RefNannySetupContext("PyInit_VisionCameraClient", 0);
  * 
  * import io
  * import os             # <<<<<<<<<<<<<<
- * import shutil
  * import logging
+ * import tempfile
 */
   __pyx_t_1 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_os, 0, 0, NULL, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 9, __pyx_L1_error)
   __pyx_t_2 = __pyx_t_1;
@@ -8473,69 +8402,56 @@ __Pyx_RefNannySetupContext("PyInit_VisionCameraClient", 0);
   /* "backend/app/plugins/VisionCameraClient.py":10
  * import io
  * import os
- * import shutil             # <<<<<<<<<<<<<<
- * import logging
- * import tempfile
-*/
-  __pyx_t_1 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_shutil, 0, 0, NULL, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 10, __pyx_L1_error)
-  __pyx_t_2 = __pyx_t_1;
-  __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_shutil, __pyx_t_2) < (0)) __PYX_ERR(0, 10, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "backend/app/plugins/VisionCameraClient.py":11
- * import os
- * import shutil
  * import logging             # <<<<<<<<<<<<<<
  * import tempfile
  * import threading
 */
-  __pyx_t_1 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_logging, 0, 0, NULL, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 11, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_logging, 0, 0, NULL, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 10, __pyx_L1_error)
   __pyx_t_2 = __pyx_t_1;
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_logging, __pyx_t_2) < (0)) __PYX_ERR(0, 11, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_logging, __pyx_t_2) < (0)) __PYX_ERR(0, 10, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":12
- * import shutil
+  /* "backend/app/plugins/VisionCameraClient.py":11
+ * import os
  * import logging
  * import tempfile             # <<<<<<<<<<<<<<
  * import threading
  * import time
 */
-  __pyx_t_1 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_tempfile, 0, 0, NULL, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 12, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_tempfile, 0, 0, NULL, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 11, __pyx_L1_error)
   __pyx_t_2 = __pyx_t_1;
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_tempfile, __pyx_t_2) < (0)) __PYX_ERR(0, 12, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_tempfile, __pyx_t_2) < (0)) __PYX_ERR(0, 11, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":13
+  /* "backend/app/plugins/VisionCameraClient.py":12
  * import logging
  * import tempfile
  * import threading             # <<<<<<<<<<<<<<
  * import time
  * from ctypes import cdll, c_wchar_p
 */
-  __pyx_t_1 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_threading, 0, 0, NULL, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 13, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_threading, 0, 0, NULL, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 12, __pyx_L1_error)
   __pyx_t_2 = __pyx_t_1;
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_threading, __pyx_t_2) < (0)) __PYX_ERR(0, 13, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_threading, __pyx_t_2) < (0)) __PYX_ERR(0, 12, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":14
+  /* "backend/app/plugins/VisionCameraClient.py":13
  * import tempfile
  * import threading
  * import time             # <<<<<<<<<<<<<<
  * from ctypes import cdll, c_wchar_p
  * from pathlib import Path
 */
-  __pyx_t_1 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_time, 0, 0, NULL, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 14, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_time, 0, 0, NULL, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 13, __pyx_L1_error)
   __pyx_t_2 = __pyx_t_1;
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_time, __pyx_t_2) < (0)) __PYX_ERR(0, 14, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_time, __pyx_t_2) < (0)) __PYX_ERR(0, 13, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":15
+  /* "backend/app/plugins/VisionCameraClient.py":14
  * import threading
  * import time
  * from ctypes import cdll, c_wchar_p             # <<<<<<<<<<<<<<
@@ -8544,13 +8460,37 @@ __Pyx_RefNannySetupContext("PyInit_VisionCameraClient", 0);
 */
   {
     PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_cdll,__pyx_mstate_global->__pyx_n_u_c_wchar_p};
-    __pyx_t_1 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_ctypes, __pyx_imported_names, 2, NULL, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 15, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_ctypes, __pyx_imported_names, 2, NULL, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 14, __pyx_L1_error)
   }
   __pyx_t_2 = __pyx_t_1;
   __Pyx_GOTREF(__pyx_t_2);
   {
     PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_cdll,__pyx_mstate_global->__pyx_n_u_c_wchar_p};
     for (__pyx_t_3=0; __pyx_t_3 < 2; __pyx_t_3++) {
+      __pyx_t_4 = __Pyx_ImportFrom(__pyx_t_2, __pyx_imported_names[__pyx_t_3]); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 14, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_4);
+      if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_imported_names[__pyx_t_3], __pyx_t_4) < (0)) __PYX_ERR(0, 14, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    }
+  }
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+  /* "backend/app/plugins/VisionCameraClient.py":15
+ * import time
+ * from ctypes import cdll, c_wchar_p
+ * from pathlib import Path             # <<<<<<<<<<<<<<
+ * from PIL import Image
+ * 
+*/
+  {
+    PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_Path};
+    __pyx_t_1 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_pathlib, __pyx_imported_names, 1, NULL, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 15, __pyx_L1_error)
+  }
+  __pyx_t_2 = __pyx_t_1;
+  __Pyx_GOTREF(__pyx_t_2);
+  {
+    PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_Path};
+    __pyx_t_3 = 0; {
       __pyx_t_4 = __Pyx_ImportFrom(__pyx_t_2, __pyx_imported_names[__pyx_t_3]); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 15, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_imported_names[__pyx_t_3], __pyx_t_4) < (0)) __PYX_ERR(0, 15, __pyx_L1_error)
@@ -8560,20 +8500,20 @@ __Pyx_RefNannySetupContext("PyInit_VisionCameraClient", 0);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
   /* "backend/app/plugins/VisionCameraClient.py":16
- * import time
  * from ctypes import cdll, c_wchar_p
- * from pathlib import Path             # <<<<<<<<<<<<<<
- * from PIL import Image
+ * from pathlib import Path
+ * from PIL import Image             # <<<<<<<<<<<<<<
  * 
+ * logger = logging.getLogger(__name__)
 */
   {
-    PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_Path};
-    __pyx_t_1 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_pathlib, __pyx_imported_names, 1, NULL, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 16, __pyx_L1_error)
+    PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_Image};
+    __pyx_t_1 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_PIL, __pyx_imported_names, 1, NULL, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 16, __pyx_L1_error)
   }
   __pyx_t_2 = __pyx_t_1;
   __Pyx_GOTREF(__pyx_t_2);
   {
-    PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_Path};
+    PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_Image};
     __pyx_t_3 = 0; {
       __pyx_t_4 = __Pyx_ImportFrom(__pyx_t_2, __pyx_imported_names[__pyx_t_3]); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 16, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
@@ -8583,31 +8523,7 @@ __Pyx_RefNannySetupContext("PyInit_VisionCameraClient", 0);
   }
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":17
- * from ctypes import cdll, c_wchar_p
- * from pathlib import Path
- * from PIL import Image             # <<<<<<<<<<<<<<
- * 
- * logger = logging.getLogger(__name__)
-*/
-  {
-    PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_Image};
-    __pyx_t_1 = __Pyx_Import(__pyx_mstate_global->__pyx_n_u_PIL, __pyx_imported_names, 1, NULL, 0); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 17, __pyx_L1_error)
-  }
-  __pyx_t_2 = __pyx_t_1;
-  __Pyx_GOTREF(__pyx_t_2);
-  {
-    PyObject* const __pyx_imported_names[] = {__pyx_mstate_global->__pyx_n_u_Image};
-    __pyx_t_3 = 0; {
-      __pyx_t_4 = __Pyx_ImportFrom(__pyx_t_2, __pyx_imported_names[__pyx_t_3]); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 17, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_4);
-      if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_imported_names[__pyx_t_3], __pyx_t_4) < (0)) __PYX_ERR(0, 17, __pyx_L1_error)
-      __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    }
-  }
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-
-  /* "backend/app/plugins/VisionCameraClient.py":19
+  /* "backend/app/plugins/VisionCameraClient.py":18
  * from PIL import Image
  * 
  * logger = logging.getLogger(__name__)             # <<<<<<<<<<<<<<
@@ -8615,12 +8531,12 @@ __Pyx_RefNannySetupContext("PyInit_VisionCameraClient", 0);
  * 
 */
   __pyx_t_4 = NULL;
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_logging); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 19, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_logging); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 18, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_getLogger); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 19, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_getLogger); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 18, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_name_2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 19, __pyx_L1_error)
+  __Pyx_GetModuleGlobalName(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_name_2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 18, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __pyx_t_7 = 1;
   {
@@ -8629,54 +8545,54 @@ __Pyx_RefNannySetupContext("PyInit_VisionCameraClient", 0);
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 19, __pyx_L1_error)
+    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 18, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
   }
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_logger, __pyx_t_2) < (0)) __PYX_ERR(0, 19, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_logger, __pyx_t_2) < (0)) __PYX_ERR(0, 18, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":22
+  /* "backend/app/plugins/VisionCameraClient.py":21
  * 
  * 
  * def _find_dll() -> str:             # <<<<<<<<<<<<<<
  *     """MATVisionLib.dll  ."""
  *     search_dirs = [
 */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 22, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 21, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 22, __pyx_L1_error)
-  __pyx_t_6 = __Pyx_CyFunction_New(&__pyx_mdef_7backend_3app_7plugins_18VisionCameraClient_1_find_dll, 0, __pyx_mstate_global->__pyx_n_u_find_dll, NULL, __pyx_mstate_global->__pyx_n_u_backend_app_plugins_VisionCamera, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[0])); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 22, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 21, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_CyFunction_New(&__pyx_mdef_7backend_3app_7plugins_18VisionCameraClient_1_find_dll, 0, __pyx_mstate_global->__pyx_n_u_find_dll, NULL, __pyx_mstate_global->__pyx_n_u_backend_app_plugins_VisionCamera, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[0])); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 21, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_6);
   #endif
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_6, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_find_dll, __pyx_t_6) < (0)) __PYX_ERR(0, 22, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_find_dll, __pyx_t_6) < (0)) __PYX_ERR(0, 21, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":39
+  /* "backend/app/plugins/VisionCameraClient.py":38
  * 
  * 
  * class VisionCameraClient:             # <<<<<<<<<<<<<<
  *     """MATVisionLib.dll    .
  * 
 */
-  __pyx_t_6 = __Pyx_Py3MetaclassPrepare((PyObject *) NULL, __pyx_mstate_global->__pyx_empty_tuple, __pyx_mstate_global->__pyx_n_u_VisionCameraClient, __pyx_mstate_global->__pyx_n_u_VisionCameraClient, (PyObject *) NULL, __pyx_mstate_global->__pyx_n_u_backend_app_plugins_VisionCamera, __pyx_mstate_global->__pyx_kp_u_MATVisionLib_dll_2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 39, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_Py3MetaclassPrepare((PyObject *) NULL, __pyx_mstate_global->__pyx_empty_tuple, __pyx_mstate_global->__pyx_n_u_VisionCameraClient, __pyx_mstate_global->__pyx_n_u_VisionCameraClient, (PyObject *) NULL, __pyx_mstate_global->__pyx_n_u_backend_app_plugins_VisionCamera, __pyx_mstate_global->__pyx_kp_u_MATVisionLib_dll_2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 38, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
 
-  /* "backend/app/plugins/VisionCameraClient.py":45
+  /* "backend/app/plugins/VisionCameraClient.py":44
  *     """
  * 
  *     def __init__(self, model: str, port: dict, context=None):             # <<<<<<<<<<<<<<
  *         self._device = model
  *         self._isConnected = False
 */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 45, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 44, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_model, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 45, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_port, __pyx_mstate_global->__pyx_n_u_dict) < (0)) __PYX_ERR(0, 45, __pyx_L1_error)
-  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_7backend_3app_7plugins_18VisionCameraClient_18VisionCameraClient_1__init__, 0, __pyx_mstate_global->__pyx_n_u_VisionCameraClient___init, NULL, __pyx_mstate_global->__pyx_n_u_backend_app_plugins_VisionCamera, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[1])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 45, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_model, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 44, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_port, __pyx_mstate_global->__pyx_n_u_dict) < (0)) __PYX_ERR(0, 44, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_7backend_3app_7plugins_18VisionCameraClient_18VisionCameraClient_1__init__, 0, __pyx_mstate_global->__pyx_n_u_VisionCameraClient___init, NULL, __pyx_mstate_global->__pyx_n_u_backend_app_plugins_VisionCamera, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[1])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 44, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_5);
@@ -8684,96 +8600,96 @@ __Pyx_RefNannySetupContext("PyInit_VisionCameraClient", 0);
   __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_5, __pyx_mstate_global->__pyx_tuple[8]);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_5, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (__Pyx_SetNameInClass(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_init, __pyx_t_5) < (0)) __PYX_ERR(0, 45, __pyx_L1_error)
+  if (__Pyx_SetNameInClass(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_init, __pyx_t_5) < (0)) __PYX_ERR(0, 44, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":73
+  /* "backend/app/plugins/VisionCameraClient.py":71
  *     # ------------------------------------------------------------------
  * 
  *     def _frame_loop(self):             # <<<<<<<<<<<<<<
  *         """  DLL   _latest_frame ."""
  *         logger.info("VisionCamera frame loop started")
 */
-  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_7backend_3app_7plugins_18VisionCameraClient_18VisionCameraClient_3_frame_loop, 0, __pyx_mstate_global->__pyx_n_u_VisionCameraClient__frame_loop, NULL, __pyx_mstate_global->__pyx_n_u_backend_app_plugins_VisionCamera, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[2])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 73, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_7backend_3app_7plugins_18VisionCameraClient_18VisionCameraClient_3_frame_loop, 0, __pyx_mstate_global->__pyx_n_u_VisionCameraClient__frame_loop, NULL, __pyx_mstate_global->__pyx_n_u_backend_app_plugins_VisionCamera, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[2])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 71, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_5);
   #endif
-  if (__Pyx_SetNameInClass(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_frame_loop, __pyx_t_5) < (0)) __PYX_ERR(0, 73, __pyx_L1_error)
+  if (__Pyx_SetNameInClass(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_frame_loop, __pyx_t_5) < (0)) __PYX_ERR(0, 71, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":113
+  /* "backend/app/plugins/VisionCameraClient.py":111
  *     # ------------------------------------------------------------------
  * 
  *     def md_VisionConnect(self) -> tuple[bool, str]:             # <<<<<<<<<<<<<<
  *         """  +   ."""
  *         if self._isConnected:
 */
-  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 113, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 111, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_kp_u_tuple_bool_str) < (0)) __PYX_ERR(0, 113, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7backend_3app_7plugins_18VisionCameraClient_18VisionCameraClient_5md_VisionConnect, 0, __pyx_mstate_global->__pyx_n_u_VisionCameraClient_md_VisionConn, NULL, __pyx_mstate_global->__pyx_n_u_backend_app_plugins_VisionCamera, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[3])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 113, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_kp_u_tuple_bool_str) < (0)) __PYX_ERR(0, 111, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7backend_3app_7plugins_18VisionCameraClient_18VisionCameraClient_5md_VisionConnect, 0, __pyx_mstate_global->__pyx_n_u_VisionCameraClient_md_VisionConn, NULL, __pyx_mstate_global->__pyx_n_u_backend_app_plugins_VisionCamera, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[3])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 111, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_2);
   #endif
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_5);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (__Pyx_SetNameInClass(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_md_VisionConnect, __pyx_t_2) < (0)) __PYX_ERR(0, 113, __pyx_L1_error)
+  if (__Pyx_SetNameInClass(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_md_VisionConnect, __pyx_t_2) < (0)) __PYX_ERR(0, 111, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":139
+  /* "backend/app/plugins/VisionCameraClient.py":137
  *             return False, f"[VisionCamera] Connect fail: {e}"
  * 
  *     def md_VisionDisconnect(self) -> tuple[bool, str]:             # <<<<<<<<<<<<<<
  *         if not self._isConnected:
  *             return True, "[VisionCamera] Already disconnected"
 */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 139, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 137, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_kp_u_tuple_bool_str) < (0)) __PYX_ERR(0, 139, __pyx_L1_error)
-  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_7backend_3app_7plugins_18VisionCameraClient_18VisionCameraClient_7md_VisionDisconnect, 0, __pyx_mstate_global->__pyx_n_u_VisionCameraClient_md_VisionDisc, NULL, __pyx_mstate_global->__pyx_n_u_backend_app_plugins_VisionCamera, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[4])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 139, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_kp_u_tuple_bool_str) < (0)) __PYX_ERR(0, 137, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_7backend_3app_7plugins_18VisionCameraClient_18VisionCameraClient_7md_VisionDisconnect, 0, __pyx_mstate_global->__pyx_n_u_VisionCameraClient_md_VisionDisc, NULL, __pyx_mstate_global->__pyx_n_u_backend_app_plugins_VisionCamera, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[4])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 137, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_5);
   #endif
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_5, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (__Pyx_SetNameInClass(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_md_VisionDisconnect, __pyx_t_5) < (0)) __PYX_ERR(0, 139, __pyx_L1_error)
+  if (__Pyx_SetNameInClass(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_md_VisionDisconnect, __pyx_t_5) < (0)) __PYX_ERR(0, 137, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":148
+  /* "backend/app/plugins/VisionCameraClient.py":146
  *             return False, f"[VisionCamera] Disconnect fail: {e}"
  * 
  *     def md_IsConnect(self) -> tuple[bool, str]:             # <<<<<<<<<<<<<<
  *         if not self._isConnected:
  *             return False, "[VisionCamera] Not connected"
 */
-  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 148, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 146, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_kp_u_tuple_bool_str) < (0)) __PYX_ERR(0, 148, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7backend_3app_7plugins_18VisionCameraClient_18VisionCameraClient_9md_IsConnect, 0, __pyx_mstate_global->__pyx_n_u_VisionCameraClient_md_IsConnect, NULL, __pyx_mstate_global->__pyx_n_u_backend_app_plugins_VisionCamera, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[5])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 148, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_kp_u_tuple_bool_str) < (0)) __PYX_ERR(0, 146, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7backend_3app_7plugins_18VisionCameraClient_18VisionCameraClient_9md_IsConnect, 0, __pyx_mstate_global->__pyx_n_u_VisionCameraClient_md_IsConnect, NULL, __pyx_mstate_global->__pyx_n_u_backend_app_plugins_VisionCamera, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[5])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 146, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_2);
   #endif
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_5);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (__Pyx_SetNameInClass(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_md_IsConnect, __pyx_t_2) < (0)) __PYX_ERR(0, 148, __pyx_L1_error)
+  if (__Pyx_SetNameInClass(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_md_IsConnect, __pyx_t_2) < (0)) __PYX_ERR(0, 146, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":164
+  /* "backend/app/plugins/VisionCameraClient.py":162
  *     # ------------------------------------------------------------------
  * 
  *     def md_VisionCapture(self, szPath: str, left=-1, top=-1, right=-1, bottom=-1) -> tuple[bool, str]:             # <<<<<<<<<<<<<<
  *         """   ."""
  *         if not self._isConnected:
 */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 164, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 162, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_szPath, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 164, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_kp_u_tuple_bool_str) < (0)) __PYX_ERR(0, 164, __pyx_L1_error)
-  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_7backend_3app_7plugins_18VisionCameraClient_18VisionCameraClient_11md_VisionCapture, 0, __pyx_mstate_global->__pyx_n_u_VisionCameraClient_md_VisionCapt, NULL, __pyx_mstate_global->__pyx_n_u_backend_app_plugins_VisionCamera, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[6])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 164, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_szPath, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 162, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_kp_u_tuple_bool_str) < (0)) __PYX_ERR(0, 162, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_CyFunction_New(&__pyx_mdef_7backend_3app_7plugins_18VisionCameraClient_18VisionCameraClient_11md_VisionCapture, 0, __pyx_mstate_global->__pyx_n_u_VisionCameraClient_md_VisionCapt, NULL, __pyx_mstate_global->__pyx_n_u_backend_app_plugins_VisionCamera, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[6])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 162, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_5);
@@ -8781,21 +8697,21 @@ __Pyx_RefNannySetupContext("PyInit_VisionCameraClient", 0);
   __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_5, __pyx_mstate_global->__pyx_tuple[9]);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_5, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (__Pyx_SetNameInClass(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_md_VisionCapture, __pyx_t_5) < (0)) __PYX_ERR(0, 164, __pyx_L1_error)
+  if (__Pyx_SetNameInClass(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_md_VisionCapture, __pyx_t_5) < (0)) __PYX_ERR(0, 162, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":184
+  /* "backend/app/plugins/VisionCameraClient.py":182
  *             return False, f"[VisionCamera] Capture fail: {e}"
  * 
  *     def md_CaptureBytes(self, fmt: str = "jpeg") -> bytes:             # <<<<<<<<<<<<<<
  *         """    ."""
  *         if not self._isConnected:
 */
-  __pyx_t_5 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 184, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 182, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_fmt, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 184, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_bytes) < (0)) __PYX_ERR(0, 184, __pyx_L1_error)
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7backend_3app_7plugins_18VisionCameraClient_18VisionCameraClient_13md_CaptureBytes, 0, __pyx_mstate_global->__pyx_n_u_VisionCameraClient_md_CaptureByt, NULL, __pyx_mstate_global->__pyx_n_u_backend_app_plugins_VisionCamera, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[7])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 184, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_fmt, __pyx_mstate_global->__pyx_n_u_str) < (0)) __PYX_ERR(0, 182, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_5, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_bytes) < (0)) __PYX_ERR(0, 182, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7backend_3app_7plugins_18VisionCameraClient_18VisionCameraClient_13md_CaptureBytes, 0, __pyx_mstate_global->__pyx_n_u_VisionCameraClient_md_CaptureByt, NULL, __pyx_mstate_global->__pyx_n_u_backend_app_plugins_VisionCamera, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[7])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 182, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_2);
@@ -8803,10 +8719,10 @@ __Pyx_RefNannySetupContext("PyInit_VisionCameraClient", 0);
   __Pyx_CyFunction_SetDefaultsTuple(__pyx_t_2, __pyx_mstate_global->__pyx_tuple[10]);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_2, __pyx_t_5);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-  if (__Pyx_SetNameInClass(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_md_CaptureBytes, __pyx_t_2) < (0)) __PYX_ERR(0, 184, __pyx_L1_error)
+  if (__Pyx_SetNameInClass(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_md_CaptureBytes, __pyx_t_2) < (0)) __PYX_ERR(0, 182, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":204
+  /* "backend/app/plugins/VisionCameraClient.py":202
  *     # ------------------------------------------------------------------
  * 
  *     @property             # <<<<<<<<<<<<<<
@@ -8814,10 +8730,10 @@ __Pyx_RefNannySetupContext("PyInit_VisionCameraClient", 0);
  *         return self._isConnected
 */
   __pyx_t_5 = NULL;
-  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 204, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyDict_NewPresized(1); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 202, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_bool) < (0)) __PYX_ERR(0, 204, __pyx_L1_error)
-  __pyx_t_8 = __Pyx_CyFunction_New(&__pyx_mdef_7backend_3app_7plugins_18VisionCameraClient_18VisionCameraClient_15is_connected, 0, __pyx_mstate_global->__pyx_n_u_VisionCameraClient_is_connected, NULL, __pyx_mstate_global->__pyx_n_u_backend_app_plugins_VisionCamera, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[8])); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 204, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_4, __pyx_mstate_global->__pyx_n_u_return, __pyx_mstate_global->__pyx_n_u_bool) < (0)) __PYX_ERR(0, 202, __pyx_L1_error)
+  __pyx_t_8 = __Pyx_CyFunction_New(&__pyx_mdef_7backend_3app_7plugins_18VisionCameraClient_18VisionCameraClient_15is_connected, 0, __pyx_mstate_global->__pyx_n_u_VisionCameraClient_is_connected, NULL, __pyx_mstate_global->__pyx_n_u_backend_app_plugins_VisionCamera, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[8])); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 202, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_8);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_8);
@@ -8830,54 +8746,54 @@ __Pyx_RefNannySetupContext("PyInit_VisionCameraClient", 0);
     __pyx_t_2 = __Pyx_PyObject_FastCall((PyObject*)__pyx_builtin_property, __pyx_callargs+__pyx_t_7, (2-__pyx_t_7) | (__pyx_t_7*__Pyx_PY_VECTORCALL_ARGUMENTS_OFFSET));
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 204, __pyx_L1_error)
+    if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 202, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
   }
-  if (__Pyx_SetNameInClass(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_is_connected, __pyx_t_2) < (0)) __PYX_ERR(0, 204, __pyx_L1_error)
+  if (__Pyx_SetNameInClass(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_is_connected, __pyx_t_2) < (0)) __PYX_ERR(0, 202, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":208
+  /* "backend/app/plugins/VisionCameraClient.py":206
  *         return self._isConnected
  * 
  *     def _cleanup(self):             # <<<<<<<<<<<<<<
  *         """ ."""
  *         #
 */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7backend_3app_7plugins_18VisionCameraClient_18VisionCameraClient_17_cleanup, 0, __pyx_mstate_global->__pyx_n_u_VisionCameraClient__cleanup, NULL, __pyx_mstate_global->__pyx_n_u_backend_app_plugins_VisionCamera, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[9])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 208, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7backend_3app_7plugins_18VisionCameraClient_18VisionCameraClient_17_cleanup, 0, __pyx_mstate_global->__pyx_n_u_VisionCameraClient__cleanup, NULL, __pyx_mstate_global->__pyx_n_u_backend_app_plugins_VisionCamera, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[9])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 206, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_2);
   #endif
-  if (__Pyx_SetNameInClass(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_cleanup, __pyx_t_2) < (0)) __PYX_ERR(0, 208, __pyx_L1_error)
+  if (__Pyx_SetNameInClass(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_cleanup, __pyx_t_2) < (0)) __PYX_ERR(0, 206, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":224
+  /* "backend/app/plugins/VisionCameraClient.py":222
  *         self._isConnected = False
  * 
  *     def dispose(self):             # <<<<<<<<<<<<<<
  *         self._cleanup()
 */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7backend_3app_7plugins_18VisionCameraClient_18VisionCameraClient_19dispose, 0, __pyx_mstate_global->__pyx_n_u_VisionCameraClient_dispose, NULL, __pyx_mstate_global->__pyx_n_u_backend_app_plugins_VisionCamera, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[10])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 224, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_7backend_3app_7plugins_18VisionCameraClient_18VisionCameraClient_19dispose, 0, __pyx_mstate_global->__pyx_n_u_VisionCameraClient_dispose, NULL, __pyx_mstate_global->__pyx_n_u_backend_app_plugins_VisionCamera, __pyx_mstate_global->__pyx_d, ((PyObject *)__pyx_mstate_global->__pyx_codeobj_tab[10])); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 222, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_2);
   #endif
-  if (__Pyx_SetNameInClass(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_dispose, __pyx_t_2) < (0)) __PYX_ERR(0, 224, __pyx_L1_error)
+  if (__Pyx_SetNameInClass(__pyx_t_6, __pyx_mstate_global->__pyx_n_u_dispose, __pyx_t_2) < (0)) __PYX_ERR(0, 222, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "backend/app/plugins/VisionCameraClient.py":39
+  /* "backend/app/plugins/VisionCameraClient.py":38
  * 
  * 
  * class VisionCameraClient:             # <<<<<<<<<<<<<<
  *     """MATVisionLib.dll    .
  * 
 */
-  __pyx_t_2 = __Pyx_Py3ClassCreate(((PyObject*)&PyType_Type), __pyx_mstate_global->__pyx_n_u_VisionCameraClient, __pyx_mstate_global->__pyx_empty_tuple, __pyx_t_6, NULL, 0, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 39, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_Py3ClassCreate(((PyObject*)&PyType_Type), __pyx_mstate_global->__pyx_n_u_VisionCameraClient, __pyx_mstate_global->__pyx_empty_tuple, __pyx_t_6, NULL, 0, 0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 38, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   #if CYTHON_COMPILING_IN_CPYTHON && PY_VERSION_HEX >= 0x030E0000
   PyUnstable_Object_EnableDeferredRefcount(__pyx_t_2);
   #endif
-  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_VisionCameraClient, __pyx_t_2) < (0)) __PYX_ERR(0, 39, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_mstate_global->__pyx_d, __pyx_mstate_global->__pyx_n_u_VisionCameraClient, __pyx_t_2) < (0)) __PYX_ERR(0, 38, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
 
@@ -8931,7 +8847,7 @@ __Pyx_RefNannySetupContext("PyInit_VisionCameraClient", 0);
 
 static int __Pyx_InitCachedBuiltins(__pyx_mstatetype *__pyx_mstate) {
   CYTHON_UNUSED_VAR(__pyx_mstate);
-  __pyx_builtin_property = __Pyx_GetBuiltinName(__pyx_mstate->__pyx_n_u_property); if (!__pyx_builtin_property) __PYX_ERR(0, 204, __pyx_L1_error)
+  __pyx_builtin_property = __Pyx_GetBuiltinName(__pyx_mstate->__pyx_n_u_property); if (!__pyx_builtin_property) __PYX_ERR(0, 202, __pyx_L1_error)
 
   /* Cached unbound methods */
   __pyx_mstate->__pyx_umethod_PyDict_Type_get.type = (PyObject*)&PyDict_Type;
@@ -8955,124 +8871,124 @@ static int __Pyx_InitCachedConstants(__pyx_mstatetype *__pyx_mstate) {
   CYTHON_UNUSED_VAR(__pyx_mstate);
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "backend/app/plugins/VisionCameraClient.py":85
+  /* "backend/app/plugins/VisionCameraClient.py":83
  *                 if result == 0 and os.path.exists(tmp_path):
  *                     img = Image.open(tmp_path).convert("RGB")
  *                     with self._frame_lock:             # <<<<<<<<<<<<<<
  *                         self._latest_frame = img
  *                     frame_count += 1
 */
-  __pyx_mstate_global->__pyx_tuple[0] = PyTuple_Pack(3, Py_None, Py_None, Py_None); if (unlikely(!__pyx_mstate_global->__pyx_tuple[0])) __PYX_ERR(0, 85, __pyx_L1_error)
+  __pyx_mstate_global->__pyx_tuple[0] = PyTuple_Pack(3, Py_None, Py_None, Py_None); if (unlikely(!__pyx_mstate_global->__pyx_tuple[0])) __PYX_ERR(0, 83, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_mstate_global->__pyx_tuple[0]);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_tuple[0]);
 
-  /* "backend/app/plugins/VisionCameraClient.py":116
+  /* "backend/app/plugins/VisionCameraClient.py":114
  *         """  +   ."""
  *         if self._isConnected:
  *             return True, "[VisionCamera] Already connected"             # <<<<<<<<<<<<<<
  * 
  *         try:
 */
-  __pyx_mstate_global->__pyx_tuple[1] = PyTuple_Pack(2, Py_True, __pyx_mstate_global->__pyx_kp_u_VisionCamera_Already_connected); if (unlikely(!__pyx_mstate_global->__pyx_tuple[1])) __PYX_ERR(0, 116, __pyx_L1_error)
+  __pyx_mstate_global->__pyx_tuple[1] = PyTuple_Pack(2, Py_True, __pyx_mstate_global->__pyx_kp_u_VisionCamera_Already_connected); if (unlikely(!__pyx_mstate_global->__pyx_tuple[1])) __PYX_ERR(0, 114, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_mstate_global->__pyx_tuple[1]);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_tuple[1]);
 
-  /* "backend/app/plugins/VisionCameraClient.py":141
+  /* "backend/app/plugins/VisionCameraClient.py":139
  *     def md_VisionDisconnect(self) -> tuple[bool, str]:
  *         if not self._isConnected:
  *             return True, "[VisionCamera] Already disconnected"             # <<<<<<<<<<<<<<
  *         try:
  *             self._cleanup()
 */
-  __pyx_mstate_global->__pyx_tuple[2] = PyTuple_Pack(2, Py_True, __pyx_mstate_global->__pyx_kp_u_VisionCamera_Already_disconnect); if (unlikely(!__pyx_mstate_global->__pyx_tuple[2])) __PYX_ERR(0, 141, __pyx_L1_error)
+  __pyx_mstate_global->__pyx_tuple[2] = PyTuple_Pack(2, Py_True, __pyx_mstate_global->__pyx_kp_u_VisionCamera_Already_disconnect); if (unlikely(!__pyx_mstate_global->__pyx_tuple[2])) __PYX_ERR(0, 139, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_mstate_global->__pyx_tuple[2]);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_tuple[2]);
 
-  /* "backend/app/plugins/VisionCameraClient.py":144
+  /* "backend/app/plugins/VisionCameraClient.py":142
  *         try:
  *             self._cleanup()
  *             return True, "[VisionCamera] Disconnect OK"             # <<<<<<<<<<<<<<
  *         except Exception as e:
  *             return False, f"[VisionCamera] Disconnect fail: {e}"
 */
-  __pyx_mstate_global->__pyx_tuple[3] = PyTuple_Pack(2, Py_True, __pyx_mstate_global->__pyx_kp_u_VisionCamera_Disconnect_OK); if (unlikely(!__pyx_mstate_global->__pyx_tuple[3])) __PYX_ERR(0, 144, __pyx_L1_error)
+  __pyx_mstate_global->__pyx_tuple[3] = PyTuple_Pack(2, Py_True, __pyx_mstate_global->__pyx_kp_u_VisionCamera_Disconnect_OK); if (unlikely(!__pyx_mstate_global->__pyx_tuple[3])) __PYX_ERR(0, 142, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_mstate_global->__pyx_tuple[3]);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_tuple[3]);
 
-  /* "backend/app/plugins/VisionCameraClient.py":150
+  /* "backend/app/plugins/VisionCameraClient.py":148
  *     def md_IsConnect(self) -> tuple[bool, str]:
  *         if not self._isConnected:
  *             return False, "[VisionCamera] Not connected"             # <<<<<<<<<<<<<<
  *         try:
  *             result = self._dll.isConnect()
 */
-  __pyx_mstate_global->__pyx_tuple[4] = PyTuple_Pack(2, Py_False, __pyx_mstate_global->__pyx_kp_u_VisionCamera_Not_connected); if (unlikely(!__pyx_mstate_global->__pyx_tuple[4])) __PYX_ERR(0, 150, __pyx_L1_error)
+  __pyx_mstate_global->__pyx_tuple[4] = PyTuple_Pack(2, Py_False, __pyx_mstate_global->__pyx_kp_u_VisionCamera_Not_connected); if (unlikely(!__pyx_mstate_global->__pyx_tuple[4])) __PYX_ERR(0, 148, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_mstate_global->__pyx_tuple[4]);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_tuple[4]);
 
-  /* "backend/app/plugins/VisionCameraClient.py":154
+  /* "backend/app/plugins/VisionCameraClient.py":152
  *             result = self._dll.isConnect()
  *             if result == 0:
  *                 return True, "[VisionCamera] Connected"             # <<<<<<<<<<<<<<
  *             self._isConnected = False
  *             return False, f"[VisionCamera] Connection lost (code={result})"
 */
-  __pyx_mstate_global->__pyx_tuple[5] = PyTuple_Pack(2, Py_True, __pyx_mstate_global->__pyx_kp_u_VisionCamera_Connected); if (unlikely(!__pyx_mstate_global->__pyx_tuple[5])) __PYX_ERR(0, 154, __pyx_L1_error)
+  __pyx_mstate_global->__pyx_tuple[5] = PyTuple_Pack(2, Py_True, __pyx_mstate_global->__pyx_kp_u_VisionCamera_Connected); if (unlikely(!__pyx_mstate_global->__pyx_tuple[5])) __PYX_ERR(0, 152, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_mstate_global->__pyx_tuple[5]);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_tuple[5]);
 
-  /* "backend/app/plugins/VisionCameraClient.py":173
+  /* "backend/app/plugins/VisionCameraClient.py":171
  * 
  *         if img is None:
  *             return False, "[VisionCamera] No frame available yet"             # <<<<<<<<<<<<<<
  * 
  *         try:
 */
-  __pyx_mstate_global->__pyx_tuple[6] = PyTuple_Pack(2, Py_False, __pyx_mstate_global->__pyx_kp_u_VisionCamera_No_frame_available); if (unlikely(!__pyx_mstate_global->__pyx_tuple[6])) __PYX_ERR(0, 173, __pyx_L1_error)
+  __pyx_mstate_global->__pyx_tuple[6] = PyTuple_Pack(2, Py_False, __pyx_mstate_global->__pyx_kp_u_VisionCamera_No_frame_available); if (unlikely(!__pyx_mstate_global->__pyx_tuple[6])) __PYX_ERR(0, 171, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_mstate_global->__pyx_tuple[6]);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_tuple[6]);
 
-  /* "backend/app/plugins/VisionCameraClient.py":180
+  /* "backend/app/plugins/VisionCameraClient.py":178
  *             Path(szPath).parent.mkdir(parents=True, exist_ok=True)
  *             img.save(szPath)
  *             return True, "[VisionCamera] Capture OK"             # <<<<<<<<<<<<<<
  *         except Exception as e:
  *             return False, f"[VisionCamera] Capture fail: {e}"
 */
-  __pyx_mstate_global->__pyx_tuple[7] = PyTuple_Pack(2, Py_True, __pyx_mstate_global->__pyx_kp_u_VisionCamera_Capture_OK); if (unlikely(!__pyx_mstate_global->__pyx_tuple[7])) __PYX_ERR(0, 180, __pyx_L1_error)
+  __pyx_mstate_global->__pyx_tuple[7] = PyTuple_Pack(2, Py_True, __pyx_mstate_global->__pyx_kp_u_VisionCamera_Capture_OK); if (unlikely(!__pyx_mstate_global->__pyx_tuple[7])) __PYX_ERR(0, 178, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_mstate_global->__pyx_tuple[7]);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_tuple[7]);
 
-  /* "backend/app/plugins/VisionCameraClient.py":45
+  /* "backend/app/plugins/VisionCameraClient.py":44
  *     """
  * 
  *     def __init__(self, model: str, port: dict, context=None):             # <<<<<<<<<<<<<<
  *         self._device = model
  *         self._isConnected = False
 */
-  __pyx_mstate_global->__pyx_tuple[8] = PyTuple_Pack(1, Py_None); if (unlikely(!__pyx_mstate_global->__pyx_tuple[8])) __PYX_ERR(0, 45, __pyx_L1_error)
+  __pyx_mstate_global->__pyx_tuple[8] = PyTuple_Pack(1, Py_None); if (unlikely(!__pyx_mstate_global->__pyx_tuple[8])) __PYX_ERR(0, 44, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_mstate_global->__pyx_tuple[8]);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_tuple[8]);
 
-  /* "backend/app/plugins/VisionCameraClient.py":164
+  /* "backend/app/plugins/VisionCameraClient.py":162
  *     # ------------------------------------------------------------------
  * 
  *     def md_VisionCapture(self, szPath: str, left=-1, top=-1, right=-1, bottom=-1) -> tuple[bool, str]:             # <<<<<<<<<<<<<<
  *         """   ."""
  *         if not self._isConnected:
 */
-  __pyx_mstate_global->__pyx_tuple[9] = PyTuple_Pack(4, ((PyObject*)__pyx_mstate_global->__pyx_int_neg_1), ((PyObject*)__pyx_mstate_global->__pyx_int_neg_1), ((PyObject*)__pyx_mstate_global->__pyx_int_neg_1), ((PyObject*)__pyx_mstate_global->__pyx_int_neg_1)); if (unlikely(!__pyx_mstate_global->__pyx_tuple[9])) __PYX_ERR(0, 164, __pyx_L1_error)
+  __pyx_mstate_global->__pyx_tuple[9] = PyTuple_Pack(4, ((PyObject*)__pyx_mstate_global->__pyx_int_neg_1), ((PyObject*)__pyx_mstate_global->__pyx_int_neg_1), ((PyObject*)__pyx_mstate_global->__pyx_int_neg_1), ((PyObject*)__pyx_mstate_global->__pyx_int_neg_1)); if (unlikely(!__pyx_mstate_global->__pyx_tuple[9])) __PYX_ERR(0, 162, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_mstate_global->__pyx_tuple[9]);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_tuple[9]);
 
-  /* "backend/app/plugins/VisionCameraClient.py":184
+  /* "backend/app/plugins/VisionCameraClient.py":182
  *             return False, f"[VisionCamera] Capture fail: {e}"
  * 
  *     def md_CaptureBytes(self, fmt: str = "jpeg") -> bytes:             # <<<<<<<<<<<<<<
  *         """    ."""
  *         if not self._isConnected:
 */
-  __pyx_mstate_global->__pyx_tuple[10] = PyTuple_Pack(1, ((PyObject*)__pyx_mstate_global->__pyx_n_u_jpeg)); if (unlikely(!__pyx_mstate_global->__pyx_tuple[10])) __PYX_ERR(0, 184, __pyx_L1_error)
+  __pyx_mstate_global->__pyx_tuple[10] = PyTuple_Pack(1, ((PyObject*)__pyx_mstate_global->__pyx_n_u_jpeg)); if (unlikely(!__pyx_mstate_global->__pyx_tuple[10])) __PYX_ERR(0, 182, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_mstate_global->__pyx_tuple[10]);
   __Pyx_GIVEREF(__pyx_mstate_global->__pyx_tuple[10]);
   #if CYTHON_IMMORTAL_CONSTANTS
@@ -9105,34 +9021,34 @@ static int __Pyx_InitCachedConstants(__pyx_mstatetype *__pyx_mstate) {
 static int __Pyx_InitConstants(__pyx_mstatetype *__pyx_mstate) {
   CYTHON_UNUSED_VAR(__pyx_mstate);
   {
-    const struct { const unsigned int length: 9; } index[] = {{0},{16},{143},{113},{179},{34},{32},{35},{25},{29},{27},{29},{34},{24},{37},{28},{32},{37},{28},{47},{26},{33},{33},{31},{50},{1},{1},{1},{8},{41},{4},{10},{16},{7},{5},{5},{4},{11},{4},{10},{13},{3},{3},{4},{20},{3},{6},{18},{27},{27},{30},{26},{31},{34},{31},{35},{35},{38},{14},{14},{17},{18},{38},{4},{6},{3},{5},{9},{4},{8},{5},{18},{7},{7},{8},{4},{6},{1},{6},{7},{4},{7},{4},{3},{7},{9},{7},{1},{9},{11},{8},{6},{8},{8},{9},{3},{6},{11},{11},{11},{11},{13},{7},{8},{3},{9},{10},{8},{3},{4},{8},{2},{9},{12},{8},{12},{13},{6},{5},{4},{4},{3},{13},{4},{6},{7},{5},{11},{8},{15},{12},{16},{16},{19},{13},{5},{5},{10},{7},{4},{8},{4},{12},{2},{6},{7},{4},{7},{3},{4},{11},{8},{7},{12},{6},{6},{5},{4},{11},{4},{3},{12},{10},{6},{5},{5},{3},{6},{6},{8},{8},{9},{4},{7},{8},{8},{3},{6},{17},{15},{7},{96},{173},{9},{90},{280},{12},{57},{81},{121},{236},{169}};
-    #if (CYTHON_COMPRESS_STRINGS) == 2 /* compression: bz2 (2245 bytes) */
-const char* const cstring = "BZh91AY&SY}\017@\347\000\001\273\177\377\377\377\377\377\377\357\275\367\277\377\377\372\277\377\377\377\345x_\367m`v\365@@@@P\036@\000`\007\216\306\271.\315S@\024P\001p\007\030jz\224\312OM4M\014\215\250\365?Q4\332\214\236\247\2054\323\306\210C\324\310d\0324\304z1 d\323M\244\036\246\322ddi\264\232h\031\014\232i\2312i\030\202P\200\204\332\214L\200F\246\231L)\247\250hhz\215\036\240=@\r\000\000\000\003C\0206\240h6\240\000\000\000\000ji\204$!\032\007\251\223@\036P\315C@4h\032\000\000\000\000\0004\320\001\240\320\000h\000\000\320\0001DhSL\323\325F\233\3256\220\000\310\000\000\365\003@\000\006\200\006\020dd\320\000d\r\006\200\000\000\0004A\243F\2322b2i\20412\006\206\230C\020\320\300\230\01024\003FC \014\232\003\023L\23120#\004\310\321\204\320 \321\243M\0311\0314\302\030\231\003CL!\210h`L\004\031\032\001\243!\220\006M\001\211\246L\231\030\021\202dh\302h'\220&\361!\034\257\216\220\317\321(\232U,\024\326\233:qf\020\311\\\335\304\n\005(\013\026$\022\010$\240\221\005\"\021\010\244\rT0<\262b)\324\252Q@\001\214\310\211H$\212\240\204Dp$\252d*\"m/\336@I\0250\340U\025\030B\240p\034\274\201\244\300\323Gc\203\206\3143\325\025\327[`\226\334\316T\016*\n\263\2574\200\277A\"'Ne\034\226\363\346$\345G\020\263Fd\263LiT T\366\010\030\265\010\253\"\260\261S|\251&}\313P\211\361f\214\034[\257F4a\202\200\023\005\"ERB\223\346E\002-T\374r\371\336\025\213W\327\361\273mS\325E\205\025\035\242\220\026\235\312\347\013\243\343\026\346\221\246Y\234\323\233g\326\352Uz\237U4\360\033\377\0171\345/\025;\021\222\214\373'\251N\026'f@\342L\214\244O\245dx\300\246 \002HJ\236\257n\347\202h\315\013\232\220P\2630@\344\256\327\020\220f\253\310X5t\005\276\237\372f\227\360\267.\30749\322\325\353/p\352\253\t\327X\221G&.\272\203\223\036\377\203\340\212\314\034\260\210\367\353hF\017=\001\021\307\275\367\017\020\217}\355$\034;,$-`\357\334x%\330n\342\2315)M*\346\352\362L4r\367\016\034JA/\316g>\210\257\241*\213vU\221\201\270\260Rg\223\312\3375DA%\207\036\231\000\007\215xbV\000\226\234+`cRMe\021$\255\307\241\010\211\323\262""\303\303\251\362\\\034x\276\027\211\266\020:\225\350\257\215\t\222\246\303.\225\311\036?7\303\304;\316\032\363\314\361\373\317\203\353\361\206X\344s\354\327s\322I\273\305t\361\277\272\343\224\262\315\374Y\234fx\320\036\307\247\311\244\234\2350\346\304*\255\240@\211_S\000\362)\252\362\243\016\212\246ZL\n\225\323\203\242\035\323\001\240T.ES\264d\2322\317C\301\334v\373oW\276\332v\020O[|\316\262)\036\327v\003\304_\036\014\265Q\375\227V\214\022\215\264V{\337c'\031T'\220$X1\271fT\235`\213Ak*\203\247N\251 }\305*Tu^\251\351d\021!\005k'\007\tI2\254h]\021\000\235\203`\204o\253\352M\202\331\365\003\310V\236ogE\356H\256\210D\025\023\264\200\016d\325\267\322\3475\365Rd\324\210\241\023\031o\220\234\331\213]\003F\0036\342\223\252\245\254\257\002\270\343k\213\033\225P1\207\272\003\3451\266\217\346\325\336\322\370\027\325\243\256h\321\2437K}\316nZ\361}\270j\331:\310\211\314VU*\372\306d\030\202\263tb6\250\261A\014\352\212\240*\241^\304c:\370\200\300\331\324\025SP\203\233\234}<\263`\231\326\352>j\316\266\347\020}\323S\245\272*\243\224U\264\261,6\3556\362q\331\210\242\2459\351\215\251\023\250\346\036gY\216Q\225\372\231\007\240\361\353}otPA\224\362\035\253(\226\250\223YG\265F\237Nq\235\222\266\326\261\370\262]\2603p\004\314\245\363,[\2528\274@8\342o\235vh\027L\353\027\006|Z\026\214\213\246vu\330\255\\\314\304\027K\345}\275\247oM\346\365\341\331\325\212\013w\235\307\013c\247*9\005x\215{B\266\317C\242\2537\342f\236Izn5G\004\245\2059\321\2549\025TO.\241=\321\277f\036p1\027\207\201\257\030\010\212jC\254\213M*iWk\2723\200\355\213^26=2tX\"I\tDEB\245\033\233\216\240\324\362 \275\004\221\201\014\031\201*S\336\243e[%\206\355w\246\365\013\235\303+\036\344j\324z\272(\327\305\216\236\250\353Y\"\224\255\344\230\350\354\010\222\314iB*\210\326\341\273h\342-\207\\\226r\203\032\022Y\371Y\365W\316\271\264\360r\351]\013b\265@\024P@\2132\264\327\312,\242)\222\362\316\301\3250\210\202\250\252\263\243\240\237\01628\300\214V\222C\330L\250\304I\016s\244s\214\000\031\020H(\230Hno3\243\250\263\321\317\265n\334""\234\241{\336y)\337B\316W\200%Jr\330\242\250\252\252\242*\250)\254\254&\023\306\265n\013'\032\256q\004\231|\242\313^\271&\252\311\361\264\26065\312,\266\323+\264\275\211\316ub\3438\36747\357/\235f\360\254\260\317\231\340>\245\262=\357)\311\314\315\32518\305\356\202\325nJ\334\215E\020\007\360DL\034\363\024E\324\233\r\225, j\342i\315\\&\356\024\202\276\025p\257\201\022D\212\234\351\275Yr\303\030B[\233\311\255\021Nh\212\320\200\312\261q\004\031\303\010\270f\032\t\206X$\346\000\234*\231T hx\267)\006r>\273\353d\233\330\2019^\232\350\375&eGJ\364eD\033\241\236\016[\021kt`\257sd\323\326\362\016\215S\224 (\345\022\272\026:|\002\032\025\306\rZ\227\002\305b)\236\035\032\\W\0106*J\225\224\270\277\261\241\322\265\212\226.\205V\027\344\200\306\026\327d\262Cjj6\226wM\006s\202\242\360Ge\224\223\003!\006\305J\005\274\223\216X\247\237\256\032\255\321f\031\241\215 Ct\020k\311\323\276\325v\307\321\234\00512\257\216tO`\253\242vI\232Q\222\275o\273\336\231\376\026?\237\347\303\215\315\000\357\t\344\"9\224\0178#,B@\362\202\001\010\006\213N\214k\355\250\t\007\305Q\214R\222\010m\"\223\027\036\244\024r\010I\r\352\310 b!\000?Fa{\364\212 \332\363\226\310\004(\267\254\311\320\367$\033\220X\250\035+i\315\274+\203\224\203\204\220\376\237O\2145%\356l\026\340<\3563f\233\277\2622\355\302c\272\364\251z6n\272W\372\010\022<\200\315\276\214>v\321\337\020FB\371)\325GV\274=\372\205\310\365@\n\010\017\363F:\357\2450\354\023~\225I\317|\215+|K\035\0148\023!\267~\374v\346|\277\267l\025\014\201\301\300\031&\014<\207\345\335\024w\313\335\350\213\304\341\304\261\206\027\345\003\256\036D{\022\276\213PEWZy5\355\345h\230\032\245\357xG\261\260\275x\027m\025\203\200\344\035\243W\r9N1\3319\225\231\025\314\231\216\234BW\265-\334\252\301\307q\223\033\361Q\305-\260\252\243T\337--l\3524\265\260\216\261h\2755\260\346e\326\206\233\373\254\001&\266\340\212`\034\346\216\310L\3575\303\n\355\311\271\326C\r\353Q]\005kE\215-\373kK%\205\233\276\205 \333\204\263DI\3324\370\224!\3555-\316\314\365\207\351\306\004\r\323I\006\207b\344f""\024{\300TS\324Y\332\001qu\243\252\343O\375M:\213v\210\353r\325\251\003\006\307\006Fz\033\320\213\220\317\004\213\002F\205\366\0203C#PBFDpJ\325y4H\250H*B\207>38\344jA\240\367\316\023\324\031=\026,\364\r.\\Q\"e\031=\022#\203\375/\317\222\337\251xKwmy\216lk\207\265T_0w\277\277\260\333\026T\321\277\345\276|\262\001~\232\214\3615)\253)\177\305\334\221N\024$\037C\3209\300";
-    PyObject *data = __Pyx_DecompressString(cstring, 2245, 2);
+    const struct { const unsigned int length: 9; } index[] = {{0},{16},{143},{113},{179},{34},{32},{35},{25},{29},{27},{29},{34},{24},{37},{28},{32},{37},{28},{47},{26},{33},{33},{31},{50},{1},{1},{1},{8},{41},{10},{16},{7},{5},{5},{4},{11},{4},{10},{3},{3},{4},{20},{3},{6},{18},{27},{27},{30},{26},{31},{34},{31},{35},{35},{38},{14},{14},{17},{17},{18},{38},{4},{6},{3},{5},{9},{4},{8},{5},{18},{7},{7},{4},{6},{1},{6},{7},{4},{7},{7},{4},{3},{7},{8},{7},{1},{9},{11},{8},{6},{8},{8},{9},{3},{6},{11},{11},{11},{11},{13},{8},{3},{9},{10},{8},{3},{4},{8},{2},{9},{12},{8},{12},{13},{6},{5},{4},{4},{3},{13},{4},{6},{7},{5},{11},{8},{15},{12},{16},{16},{19},{13},{5},{5},{10},{7},{4},{8},{4},{2},{6},{7},{4},{7},{3},{4},{11},{8},{7},{12},{6},{6},{5},{4},{11},{4},{3},{12},{10},{5},{5},{3},{6},{6},{8},{8},{9},{4},{7},{8},{8},{3},{6},{13},{15},{7},{96},{173},{9},{90},{280},{12},{57},{81},{121},{194},{169}};
+    #if (CYTHON_COMPRESS_STRINGS) == 2 /* compression: bz2 (2237 bytes) */
+const char* const cstring = "BZh91AY&SYqE\340\016\000\001\270\177\377\377\377\377\377\377\357\275\367\277\377\377\372\277\377\377\367\345x_\367m`v\365@@@@P\036@\000`\007n\305r[\031\000\000h\3207\000\343\206\247\252*oT?T\364\200y@\330\246\2154\323\312yFG\264\322\236(\332\020\323@zG\251\231\252z\200i\352\007\244i\243\324hlMLd\217PmL\201\262\233M#OPJ\020M\000\023\t152di=MG\250\332\206\206Cj\r\r\000\r\000\000\000z\203j\r\224\007\250m@\000\000\0004\"`BM\t=L\201\352z@\014\232~\251\352\032h4h\000\320\320\320\000\000\0004\000\006\200\r4\000\000\032\000\006\232\221&h\246\324\310\3010\236\246\0040\232b`\236\201=\000\0024\300\320\230\000\324`\023LF\214\020\304\3020\020\3014\300@\320\311\246\206#&\232\003#@hbh0\231\030C 2\032d\0324\310d\003\023\020\3010\230&F\232`\002` @\320\311\246\206#&\232\003#@hbh0\231\030C 2\032d\0324\310d\003\023\020\3010\230&F\232`\002` Q\002\255\234S7\343B\222H\252uI\347\350U\255X\262\010T(\242\271u\3205\3122*\252A \240\020I(\200\224\005\001\004\204~d\372\206\005\003\226\346\r\351p\021\230\r\n! \224UD\010\210\344Bi\331\t\310\233\0137\022\210\222\035;\206\021Q\204\036\016\003\241\274-\324j1\265\357\311\2345C=Qo\256\224+\275\234\250\034J\n\264U\0200\270\302b\243\222q\222\336Z\210\271Q\305\325_ZU\t\354\236\020'{\004L\232\241\342#\306Z/\335dIc\311\n\021\201B\217>\025\370\331x!\342\000\247J\0311J\013\260r[%2\372\363}\016\315+?\331\355\372\226\235\352\242\302\305G]d\005\263\271D\241|{euLc5NiI\255\364\034\016\305Vj\275V\txe\370#\017(\336\330\344\002\3221\226ba@\230\354\304\340,\214\240\"Ia\221K c\005rB\306\347n\342\001W\306^\255W\250,\214\010\016L.\270B+G)\206Zl\027W\037Y\317\3765g\326\344\207I+^u\356\"\211\337\254\010#\223'][\223\301\334\347\242\250o\322$\037\243B0y\342\021\034{\377t\364\007\307\257\343\344\360\335\3414\312\204\3260x*\343\331\030c\263\240\232G\247)#M\256\371&\r\013^P\007\023\032\tI\314\342\302\005I\361\231|dU\203\007\223\206\276/!!\272\316\326\005\330t\315\343\224\000\007\321P\024K\240\210\262C,\272\226$\254\247\300\327\266\264\351\014\2037\257(\307i,WS\217\215\332\354""\371\033c\023\276\246\352x\354$g\221\247G\004\207\037\317\372Y\2476\376\013$}\316o\211\354\362\325\211\322\327k\222\204\333\332w\0067\367\2518\251\333\306\333\312\3344\0101\017\03378\337\312\236D\210?\300\034:;\272\3302\255\026\371\363\221\360\203\227\306\331\005\373H$\204\362R3-}\262\304\2734\273;l=\2450\267\267AD\237B5\\\016\271\245\020\261p\203\357\020\014\034=\264!\211\332\224(\263\327\005\242\213N\"\262\221\3063\t\010\n+\330\334\263\225\002Z\222\260\317\007I$\314\007\336Px\270\337p\216\225Q!\005je\007\t\\\314\253\032\313\242\200\022\244o\025\010\3378\336L\234\225\313\230<\245i\275\275\213\334\211=hZ\n\"\257a\000\034\306{|[M}D\221%Bh\032%\275\345)v\211\266g\270\325\347b\212\263ev\311u\023\2318\371\206p\356\263'\337L%8\333G\362\353\352\333\252\006\251\357\347.\273\326U\311\276\3677\035\032>\275Zm\225\004D\345('\232\216r\244\030\202\263sd\332E\207X\201j\242\250\n\242Q\300\214Z\275\240`kT\025SA\006\351\275\3548\263\300mIR\337d\240\316Z\357\231\304a{)\311\266\030\263\017[\n\222\243f\315\235\016:r\024T\273\247fU\244N\371\314<\265d9FW\350\310=\007\217\\(|PAT_*\032e\022\265\022KD\363v,i\371'\214\365M=mK\362d\277\200*\341\004\251L$R\267\316q=\0008\227#t\250\246\341q\232\203R\276-\n\306E\306T\364\330\241\\\314\304\027\027\315\205}\207nM\306\345\341\360\264\311\005\277\303\312\250c\235nA^#+\344\325\325\324\224\373\261)\226Irm\3127\245\224\226r\215I\275UD\363\212\022\277<=\nb/\017\243\335\214\004E\315\016quVjWi\t\236[\255h\3251\255\351\213\246\336\" \2532%\013\262QwN\307-\350?\272\202!\250c\256Z\253]\353&\315\255\205\372\360M\312\027\273\207:^\344j\024\032)\321\325\030\034\232\346\340Y\"\333C\311\230\351u\204I\2532\020Z\361\335\264p\270\363\221\266\301\213\222\316;\237=\034\253V;\334\270\255\313J\264\350\005\212\210\004Y\225\244\276if\210\246k\305*GN\310\"\n\242\2552\261i\276\032\347\234'6\242!{\"IRdD#\030\317\030\243\301'QTY\230\230n\217\236\273\231ew.\305\277jt\003\007\274\357\345\203p\331\302\350\210\201\202\0346 \220I$!$\002 \203P\032\000\321\375\251T1Qt\207\275M%\203""\334\313F\271\223J\tqVR\034\rz\2136\3133\277\027\261)J|\234Z=\315\r\333\214%A\270()-\251\340>zc\325\350\033\372,\335F\\\216(\301\320Z+\315YkT\000v\341\023\007\0177\344\210\332'\001\301\001a\003N#\032\250\204\235\302\373\020\0265$\250\014\017\007\204L\340\202Bt\253UZ\231L3\334!\211`\022U\002\0260T\031\343\010\270P4\023\014\260I\221\021\016\031\346$\317-x\267)\006r>{\347d\223\330\201)\266&\272\337\211R\243\246\301\031Q\006\3513\301\313J-\016\214\025\356l\331\322\327\001\243<\246\232\002\216Q(\260\245\322\341\010\\\2560j\024\274\026+\021G\364\262\274\242\020l\224\232\312\013/0\217\231\271\362\255\210,]\t\3510\315\001\215U\321L\331\241\26146S\336.-8U\027\205\035\236s&\2431\006J\302\255\363C,S\322O\014\352l(~5\326Cl\020\270\303\257\235\353\257\013Y\341\341\231\257RQ\254\316\324\353\257\210u{\260\375\337\275[\377\036\333\374\377\317\341\362=\340#\260\006\tL\206\351~\023H;\003\020\020\n\000[\357>\016>\245\301 \337\270\314*Q\004zv\2241\275\266`\241\301H\207;\362\010\022\221\274!\010\216D\004O+\321\312P^Bo4\020\233yg\351:x8\000\246\023\276\271\217j\222\340\344\240]n\376\326\243\361R\276\221r\003\314\021\347e\326\303FU\370K\231)>\310\207\247\022\366B\310\022\274@\325\302\223ElU\310\"\\\300i~\221\316\201\363\022H\306~\037\2163\354\301\354\203M(d\224\311\315Y\031\357\245@\244\276\213\026\317^\216\256\215\037\344T\354\002\240\310D\303\032\016\014\265\313\255~+\305\241\260b\306\361\277\214\026v\017\354q#qc1b\270b\302\231|\341j\231\332\t\247\352\354\014H\030}w\201}\364wA\330:\206\331\204\246\360\241\353jd\334:r\342\"u84\355\007\003\327\232\325\274\206\335\375\325L\306\223\334\244\321u\350\030\2533\276\030\017r-\307\221\247pNw\322;`\034\345\216\200J\264\230i\333\327\253>\350xy\366B\342\023f\267\254\332\332r\356\332\213\270W;Q\376\210\333p\214\215B\337\313b\036m\331\337\301\323\325\336A\316w\271\356\277V\313\020\354t\272bqF\024\300\024\026W\026\231\260\016=\336\232\217\n\245\017\324\351k\337\272\032\354\325q\274\331\000\310\221P\311\004xb\006\010\302b\255\201\203\314\320\304\330""\006&\"oJ\325!h\010\320\210*>\177.\0228\342j \317\"\234\022\250\030\222,\030\220\032'\310\202\254\014a\022Dxo\277\243\371\361qz7\302\267\272K\3536\252\301\373V\217\272\307w\376\377\261\336;Uw\227\331\276\273g\017-\\\251Y\246\37586\177\361w$S\205\t\007\024^\000\340";
+    PyObject *data = __Pyx_DecompressString(cstring, 2237, 2);
     if (unlikely(!data)) __PYX_ERR(0, 1, __pyx_L1_error)
     const char* const bytes = __Pyx_PyBytes_AsString(data);
     #if !CYTHON_ASSUME_SAFE_MACROS
     if (likely(bytes)); else { Py_DECREF(data); __PYX_ERR(0, 1, __pyx_L1_error) }
     #endif
-    #elif (CYTHON_COMPRESS_STRINGS) != 0 /* compression: zlib (2112 bytes) */
-const char* const cstring = "x\332\205V\317o\033\307\025\216b\325\221]9\226,\311\226R\327\031\306Re\241\016\005\306\206\335\030v\013J\376\245D\226EWv\223\006\301b\270;\024WZ\356\256v\206\224\331\246\215\013\010\001k_\026\255\333L\003\247\230\240A\261\275m\013\007]\027A\241\243\217<\356\221\3501\\\003\375\023\372f\227\224(\211J\005\222\363f\337\2337\337|\357{\263\272\225]\272\247S\3352\347\365|Z3\214[\273\346\350\233\300o\372\0345\237mDb\003E\317\2366\377\366\270\371\371\327(\022O\242?>M\037>\214\340\257\351\377\375\233\177\006\3608\372\354i\363\367OP\364\360\313\246\250\201\025}\352F\0330\377\313\327\220'\022\277A\321\277\276\210\376\301\321\177>\371\035\212\276z\022=\022\350\305\343\r\210\215\376\014\311\377\372\333\350\321\023H\306_\374\211\247\343\304\273\341D\237C\230\377\357x\250q\024}\372I\364\360\253\346\243Z\363\321\227i\224\307\352*1\265il\333\323\266Q^\326M:\215\232\334m>|\274\303W\262\264\262A\3504\200\203\315\374\350\031\177\361\007\036m\004\321g\217\323\013\026#\210\0251C\263UV\264L\244S\244\021C\317\023\0073bT\021e\216\2562\342\310 \023-^[|\363\374\217\316#lj\310!+De\024\321r^50\245\204\"\253\200\362e\335`\272\211X\325&4\215\346\n\250j\225\221I\210\206\230\205l\210\353\\\300\212\304D\2240i\240Il\232\026\303\014\216\257\300r\335\\\236D\232\356\300&z\205\310\325\327\261AI:!h\026\227\000\342\254\241\023\223]B%\254^\231\240g\321\325\371y\030?\350\014\371\020e\r\207`\255\212T\3134!\031\321\366\361k:\335/d\026\333\254\354\020t\373\335}\034\005\254\033\227\320ng\222\rV\2413\373\270\276u\235t\2423\252\245\221+\335#\366\342L\236\303\023dX\224u_|u\353\234{\317\323\341\353\nm\301B\005\007l\204+\340\306y\203\240*a{\202\3306\331\235.\244v\320\005\212\000xe\223]\231\320\316\242\030\350\2046\2653\274\235\344\022\232\240;<\005\335\201\343%P@!\004\024\262s\247\304E\034\307r\320\031\310\2737C\034`X\226\r\032\307\016\353\272\276\345\266l[\242e\240N#\361P\310\247MM\245\177\2025M\001\325\222n\315\270W\251i\273*\333\332\200\336\242,\235/\001\033\266A>\310[\226qV\266\332\2073U\360\314\335\276V\201\340""\271\022^&\357,^\2731oa\r.\004\007;\325yK]\275\225\235\315j\232C(\355\274.\224\305\271\371\305\205\033\213\230\025\025e\261z\037\276W\241s\225\005r\237\335!\205;7f\226\212R\347{Au\201\251(\272\2513E\351\346R\r\202\315\262\335\315\025S\243H\322\272x\241\275l\213\222.\036\235*]\345\322r\2274\245\325f1;\335#\346hK\373\335\335\355\247q\232o\r\371\377Y\266{$\231+;\322*;2(\333\301\230VMU\267\322\252\345Xe\270\"\tmi&\r\232I\2674\323\345v\223\342\310[\214Y\245|\271\220\227\014\250\312\272Z\304\216b\253\240\245v=\344\340\250\006\344\205\332)\314\301j\254I\330\234\201\002`\250\020\007\006\273Z\200\326S\035\313V\343+Z\3230)\001N\215Tt\225h\240\230V\235\024\310\235|\024\270\204\345L\261cmi\226\252(\004>\220\330\201A\266\230\02272\271\257S\246X\253\361H\301u_jHQ\344\216\361`j2O\241\304\n\226S\302,\221K\274tK:\352j\207\212Z\246l\300\226\311b\r'-(S\226M\000\263L\030|\346\255\345e\342\200\301H\311\006\310`U\260Q&z\t\210-XmI\353\226\336\226\212\262e\301\301\251\202\r\270E:\265\250\304\223V\265\300\206\027\225\016\311\351\212\245\233+6Y^\261\227\225\244\225\023t\006)0#F!\177\341\375eX\353@\021\274\234p\322\257\n\330P\034e\227\242;\345\273[\253\273\205\331E\205\220\2170\034\277R\301\\\205\243\303\033\237\030`\307/\376\366HMI\240\222\374Z61-G\007\220\330\2205\261\250\215\035\250h\362Ke\245\345\027\376\021\260\341\362\263\034\330\304v\210\364J\003V;\254\272V\006\306XUQ\244\221\244\205C\226\r\346\020@nB\366\"\243\270B\250\024fQ\252\010\336\371F\001XT$\225-$`i\244\200a\031-\002\321\0065\010\261\343\033\031\356C\372\013y\237\301\244U\326DI1\343-)\000\313L\207\363\303\027\352\244\260\222-7\222\203\304\017\302\2115@+I7\252q_\311\003'\017`\236\224n\035;&\244\252\2774\344f\032\275\307\334T\330\327_\313\326\336wq\333X\346\357\211;bm{\3723q\323\233\361p\243\267\257\366\235Z.\354{\265\226w_\226\013\277[;W[vsa\377\220{\316\305\356Z\330{\270~\370{<\023\366\035\252\367\276!R\r\2108_[\223\376\013|\260\321w(\354\037q\227\370\010\267\274\234\247\373kAo\220\r\373\217\326\326]\225\017\206\003'\334\365""\372\251\231\315\324f\246\321?P\037@\242\347\277\007_:2\350\366\363\353\"\025\312G)1\346M\372q(\343?\366F\352\351\354\346\211\347=\020\356\276\312\013\"\333\350?\346N\270k\365\321\013\276\026\244\342}\353c\027|\354\263 \323\350;Z\373\025\317\206\255\324\322y\261\376\332\333\301`\220z\220\225\207\235ss\017\262\260\343\241#\265y\336\013\2211\372\217\271&\306\205\351\317\005pN\271\r\021\031\340C\256\250\367\177\237\347\332\343\326Y\217\204\003\303\356\265\372\330\017\275L84\334\220\356\223<\373 \333\000\336\210\233qaeB\027\343\227\022\236\217K\356\341GFh\356\270k\210Io0N4\306\207\371]1\355\017\372SA\006\270\032\000\314\3744\277\303\231xK\334\225T\370\251p\3705>\301\313\"+\336\367\212p\324\265pL\302\032=Y?\371\246\227\013\207O\213L8|\302\375H\234\0238\034=\025\343\317\206\303\262<\235\276\274w\300\273\354;\301P0\033\254\311\270\242\300\000n\362\274\017\301\243\374 \307|-\034\036\221\264]\001\366\006^\207)\300\271\314\251xC\314\212\217\374\267\374\237\006\007\202\214\204sF\244\352\247o>?R\277{O\222q\235\247x&)\345A)\223\026\023\365\341w\236K\352O\275\036Bi\030<\350\235\020\271\204u\230\265T\023J\325\014\270\207\300j?h\3251\256\337\345 \033\344\352\275\2478\336\261\360\"O\205\333r[\361zv\310\254\302s\273d\220\335\034\334L\205G\007ZkeBR?\rgolg=\346\236\225$4\340\030\203r6.+&\275\024za\313\033wG\037\357I\272\243\340\316B\235/J\371\036\255\225\335\254{\227O\212Qo\324\037lt<\210\317D\335)\236\221\033\257z\307\275\270\373\336u\327\302\226|\344\3646?\017u\317\210\005?%U:\352V\001~_\214\303\275\317\177\351\215{y\277Gf\252\2709\267\010\3550\347Iu\326n\361!\236\215{\372\343\244\023\022\246\034w\004z;\007\362\216\321\303\346|\001r\304\327\300M\367*\357\007E-y\203qC\264\225\016\030\336\026\327\275T\333\274\006:\225\0103\276\034\241m\372\304\313b\312\313xW%\022\331R\367 \355MX2\345g\266\312~)\030\017\314\347\331z\357\244({s\376{\301\3177\177\rRi\354*\340>D'>Y\\I\340\254\353@\217,\211!1#4\357\007\376\001\320\341Rpb\363\300f&\0348\016\005\037\341yqP\020\357\242/\257\020\267\307=\301_""\341\025\221\023E\257\2204uR\207\\Wy\305\327\303\377\000\305\356\034\206";
-    PyObject *data = __Pyx_DecompressString(cstring, 2112, 1);
+    #elif (CYTHON_COMPRESS_STRINGS) != 0 /* compression: zlib (2070 bytes) */
+const char* const cstring = "x\332\205U\337o\023\311\035\277\024\227\006j \206\204$W\312\215\2014D\345\214|DP\020\264rB\002\271\013\020S\240wE\247\325xwl/Y\357\256w\307\006W\327\226J\350\344\302\313\352J{\323\023WM\325S\265}\333V\234\272T\247*\217y\364\343>Z}</R\377\204~gw\363\333\271Z\266\347;\363\3751\337\371|?\337\231\033\205;\367T[5\364E\265\224S4\355\306\2669\372\332\367z\036C\275WOB\376\004\205\257^\366\376\366\274\367\371W(\344/\302?\274\314\355\337\217\340\323\363\376\376\365?}X\016?{\331\373\335\013\024>\375\242\307\333 \205\237:\341\023\230\377\345+\210\023\362\337\240\360_\177\016\377\301\320\177>\376\004\205_\276\010\237q\364\372\371\023\260\r\377\004\301\377\372\333\360\331\013\010\306^\377\221\345\242\300\333\323\t?\0073\357\337\321\320f(\374\364\343\360\351\227\275g\355\336\263/r\250\204\345e\242+g\261i\2365\265FE\325\355\263\250\307\234\336\323\347[t5Cih\304>\013\311\301f^\370\212\275\376=\013\237\370\341g\317s7\rJ\020\255b\212f[\264j\350H\265\221B4\265D,L\211\326B6\265T\231\022K\030\351hin\351\355\351\037M#\254+\310\"\017\210Lmd7J\262\206m\233\330\310(\243RC\325\250\252#\3322\211\235C\013e\3242\032H'DA\324@&\330mv\240U\242#\233P!\240I\254\353\006\305\024\216/\201\273\252W&\221\242Z\260\211\332$\302{\036k6\311\305\000\315\342\032\2448\253\251D\247\227P\r\313W&\3543\350\352\342\"\214\3677\233|\210\n\232E\260\322B\262\241\353\020\214(\273\350\025\325\336\315d\026\233\264a\021t\353\275]\024e\254j\227\320ve\034\r\274\320\351]T\337\350'\224\350\264l(\344J\177\213\235y\306\353\260\2024\303\246\375\235\257\256\237s\347y6\351\372\246v\323@e\013d\204\233\240\306%\215\240\026\241;\214\350\006\330\233UH\336\004\0270\002\322k\350\364\312\204r\006E\211N(S[\315\327\202\\B\023\366\026MY\265\340xq*\300\020\002\014\331\272S\254\"\226eX\3504\304\335\031!2\320\014\303\004\216c\213\366\365O\324\206i\212l)\260S\21356\304S\246\246r?\301\212\"\001kI\277f\334\311\324\234\331\322\240\257l\232+\325\000\tS#\367K\206\241\235\021m\366\341L\0134\013\267\346\232`\270P\303\025\362\356\322\334\265E\003+p\031X""\330j-\032\362\362\215\302lAQ,b\333K\013\213K7\257-aZ\225\244\245\326#\370]\205F\225n\222G\3646)\337\2766s\247*h\2753\207>YI\222\252\253T\222\372\251d\215`\275a\366SEHH\002\243>Z\350&\323\260I\037\215jK}\331\221\250k\212\224tU\004H\177\213\005;\241z\177\365\332j\024\346\033M\376\177\224\215\226\210\347\322\226\260\322\226\010\322\206\261 \006\334\340R|\203\031V\013\333-]V\215\234lXF\003\256Hb'\234\311\001gr\tg\372\334n\202 %\203R\243Vj\224K\002\022Yz(W\261%\231\262\330 )\220\030,Y\203\270PL\211ZX\2168\t\331P\240\004\014MbQ\3312L9\272\232\025\005\223\032$\254\220\246*\023\005\250\003\211\352\260mR7\221{\374\025'\020\203\031QM1dI\"\360\205\260\026\014\242\301\244\250\215\311#\325\246\222\261\034\2156\250\036\tJIR\031Z=\032\364\010\220r\215\226\r\253\206i\314\236\310u\235I\362\362&R%\242h\277D\244\021\245!VC\207,*\204\302w\321\250T\210\005\002%5\023R\005\251\211\265\006Qk\200g\331X\243\266j\250k\224\221\326%qX\tkpyl\346\244\024M\222\"\201\014\357\223\n\301\355\007\206\252?0I\345\201Y\221\342.\216\323\322H\231jQ\026\342\037\236-\315x\010\330\300\233\204\343V\225@\206\232H\333\230\275\231\306\3339\273\235\240}\330\010\361\010\305\321K\n\3422\034\035\036z\242\201\034\275\367k\243-\212*I\361\277a\022\335\260MlA\371\342\177[\224U\374\340\3157\341\2363,\010lZDh\205\000\036\026m\325\033\200\022mI\222\020\342Pp\260\206F-\002\331\352\226Z\251R\0337\211-8X\025\214\201\347]+\003r\222\200/\331\035$\205\2241\270\331\032!ft\355\302\305g\377B\334b0I\212\030\023&\3027\2518`JU8-\374\240*\022\255\231b\0131\210\314\201\037Q\305\355f\334\203r\324<\361\004\344\270H\017\261\245C\230\316\033G\234|7u\330\311\006\203\351v\241\375\201\203\327\204\n{\237\337\346\365\215\351\317\370uw\306\305\335\324`\373\333\355b0x\260]r\276%\034\277\333>\327\2568\305 }\3049\347`\247\036\244\366w\366\177\217\345\203\301}\235\324\t\236\355\202\305t\273.\364\347Y\246;\270/H\2178w\330\0103\334\242\253zu?\345\027\202\364\241\366CGf\231`h\324y\3309>\263\222]\311w\323C\235!\304\007\376\273\367\215\003\031'\315\346y6""\020KY>\356Nz\221)e?vG:\271\302\312\350\352\000\230;\007Y\231\027\272\351\303\316\204S\357\214\235\367\024?\033\355\333\031?\357a\217\372\371\356\340\241\366/Y!HB\013\345\205\316\233\027\375\214\237}\\\020\207]p\212\217\013\260\343\276\003\355E\226\002\313(\373_3\205\237\342\272\267\340\3039\3056\204\347\001\017\341\321I\177\237\025\327\306\365\263\036\010\206\206\235\271\316\370\017\335|pd\270+\324\307X\341q\241\013\270\021'\357\200g\014\027e\227b\234\217\n\354\341OX(\316)G\343\223n&\n4\316\206\331]~\326\313xS~\036\260\032\202\234\331Iv\233Q\376\016\277+\240\360\262\301\360\233l\2025x\201\177\340V\341\250\365`\\\2445v\254s\354m\267\030\014\237\344\371`x\324\371\210\237\3438\030;\036\345_\010\206Ey6\353J\356\036\367\262g\371G\374Y\277.\354\252\034Cr\223\323\036\030\217\261\275\014\263z0<\"`\273\002\350\r\275\005SH\3472\263\371\t>\313?\362\336\361~\352\357\361\363\"\235\323<\3339y}\365@\347\356=\001\306<\313\262|\\\312\275\202&\t\022\235\341wW\005\364\307\337\n\2404\024\026R\023\274\030\243\016\263\2045\201`\315\220\263\017\244\265\205\244\216Q\375.\373\005\277\330I\035gx\213\343\005\226\r6\350\366\300\035\330B\263&+n\243Aa%\263\222\r\016\r%\276\" \351\234\204\263w7\242\036v\316\010\020\272p\214\214\230\235\022\025\023Z\033za]\033u\307 \033\210\273\243\354\314B\235/\010\372\036j7\234\202s\227M\3621w\314\313t7-Dg\262\235)\226\027\033/\273G\335\250\373\336s\352AB\0371\275\305\246\241\356y~\323\313\n\226\016;\027\305\372a\347\2043\307\306x&n\267\013N\326\231\006\277\364\301\316A8\236\010\235n_w\256\2624\020\244\030\261{\215\266\020\360\"\237w\263k\342\234\233\211\266\313{\221S\324\003p\025\334\367R\336L\347\374\374Ji5\265\2324\312=\226g\327\301w\312\313\257\027\363\222\177\312\327W\013\235\324$o\270\013\336\373\376\317W~\005\004\350n+\313.\360\305:Q2\001\313\254c\001\363\357\360#|\206+\356\017\274=\300\256;\376\350\312\236\225|0t\024\3128\302J|/'\356\005O\\\014\316\2003\312\276\303\232\274\310\253n9n\325\030\335b_\322DM\377?\204\255\375\006";
+    PyObject *data = __Pyx_DecompressString(cstring, 2070, 1);
     if (unlikely(!data)) __PYX_ERR(0, 1, __pyx_L1_error)
     const char* const bytes = __Pyx_PyBytes_AsString(data);
     #if !CYTHON_ASSUME_SAFE_MACROS
     if (likely(bytes)); else { Py_DECREF(data); __PYX_ERR(0, 1, __pyx_L1_error) }
     #endif
-    #else /* compression: none (3915 bytes) */
-const char* const bytes = "MATVisionLib.dllMATVisionLib.dll \352\270\260\353\260\230 \353\271\204\354\240\204 \354\271\264\353\251\224\353\235\274 \354\240\234\354\226\264.\n\n    \353\260\261\352\267\270\353\235\274\354\232\264\353\223\234 \354\212\244\353\240\210\353\223\234\354\227\220\354\204\234 \354\243\274\352\270\260\354\240\201 \354\272\241\354\262\230 \342\206\222 \354\265\234\354\213\240 \355\224\204\353\240\210\354\236\204 \354\246\211\354\213\234 \353\260\230\355\231\230.\n    MATVisionLib.dll\354\235\204 \354\260\276\354\235\204 \354\210\230 \354\227\206\354\212\265\353\213\210\353\213\244. backend/app/plugins/ \353\230\220\353\212\224 backend/app/modules/\354\227\220 \353\260\260\354\271\230\355\225\230\354\204\270\354\232\224.Note that Cython is deliberately stricter than PEP-484 and rejects subclasses of builtin types. If you need to pass subclasses then set the 'annotation_typing' directive to False.VisionCameraClient: mac=%s, DLL=%s[VisionCamera] Already connected[VisionCamera] Already disconnected[VisionCamera] Capture OK[VisionCamera] Capture fail: [VisionCamera] Connect OK ([VisionCamera] Connect fail: [VisionCamera] Connect fail (code=[VisionCamera] Connected[VisionCamera] Connection lost (code=[VisionCamera] Disconnect OK[VisionCamera] Disconnect fail: [VisionCamera] No frame available yet[VisionCamera] Not connectedVisionCamera capture failed (count=%d, code=%d)VisionCamera connected: %sVisionCamera first frame receivedVisionCamera frame error (%d): %sVisionCamera frame loop startedVisionCamera frame loop stopped (total frames: %d)).?add_notebackend/app/plugins/VisionCameraClient.py.dlllatest.bmptuple[bool, str]BytesIOEventImageJPEGLoadLibraryLockMACAddressMATVisionLib_PILPNGPath__Pyx_PyDict_NextRefRGBThreadVisionCameraClientVisionCameraClient.__init__VisionCameraClient._cleanupVisionCameraClient._frame_loopVisionCameraClient.disposeVisionCameraClient.is_connectedVisionCameraClient.md_CaptureBytesVisionCameraClient.md_IsConnectVisionCameraClient.md_VisionCaptureVision""CameraClient.md_VisionConnectVisionCameraClient.md_VisionDisconnectVision_CaptureVision_ConnectVision_Disconnectasyncio.coroutinesbackend.app.plugins.VisionCameraClientboolbottombufbytesc_wchar_pcdll_cleanupclearcline_in_tracebackcontextconvertcopyfilecropctypesddaemon_devicedictdispose_dlldlldll_dir_dll_path__doc__e__enter__error_countexist_okexists__exit____file___find_dllfmtformatframe_count_frame_lock_frame_loop_frame_stop_frame_threadframes___func__getgetLoggergettempdirgetvalueimginfo__init__ioisConnect_isConnectedis_aliveis_connected_is_coroutineis_setitemsjoinjpegjpg_latest_frameleftloggerlogginglower_macaddress__main__md_CaptureBytesmd_IsConnectmd_VisionCapturemd_VisionConnectmd_VisionDisconnect__metaclass__mkdirmodel__module__modulesname__name__openoriginal_dllosparentparentspathpathlibpopport__prepare__propertyquality__qualname__resultreturnrightsavesearch_dirsselfset__set_name__setdefaultshutilsleepstartstrszPathtargettempfile__test__threadingtimetimeout_tmp_dirtmp_pathtopvaluesvision_camera_dllvisioncam_framewarning\320\000\023\2201\340\004\022\220!\330\010\014\210A\210Y\220a\330\010\014\210A\210Y\220g\230X\240R\240q\330\010\014\210A\210Y\220g\230W\240H\250B\250a\340\004\010\210\005\210Q\330\010\016\210b\220\002\220!\330\010\013\2103\210g\220Q\330\014\023\2203\220a\220q\330\004\n\320\n\033\2301\330\010\t\320\004\"\240!\340\010\013\2104\210q\330\014\023\2206\230\021\340\010\t\330\014\025\220T\230\025\230o\250Q\250i\260q\270\004\270A\330\014\017\210w\220c\230\021\330\020\027\220w\320\036B\300!\3001\340\014\020\320\020 \240\001\360\006\000\r\021\220\014\230F\240!\330\014\020\320\020!\240\031\250'\260\021\330\020\027\220t\230>\250\025\320.A\300\027\310\001\340\014\020\220\016\230f\240A\340\014\022\220%\220q\320\0306\260d\270!\330\014\023\2206\320\0316\260a\260t\2701\340\010\017\210}\230A\330\014\020\320\020 \240\001\330\014\023\2207\320\0329\270\021\270!\200A\330\010\014\210I\220Q\200A\360\006\000\t\r\210L\230\004\230A\330\010\013\2104\210\177\230d\240$""\240n\260I\270Q\330\014\020\220\016\230e\2401\240H\250A\330\010\014\320\014\035\230Q\330\010\014\320\014\035\230Q\340\010\013\2104\210q\330\014\r\330\020\024\220E\320\031+\2501\330\023\024\340\010\014\320\014\034\230A\200A\340\010\016\210e\2201\220A\330\010\023\2203\220a\220t\230:\240R\240q\330\010\026\220a\330\010\026\220a\340\010\016\210d\220$\220l\240'\250\021\330\014\r\330\020\031\230\024\230U\240/\260\021\260)\2701\270A\330\020\023\2207\230#\230R\230t\2402\240U\250'\260\021\260!\330\024\032\230%\230u\240A\240Y\250h\260a\260q\330\031\035\230Q\330\030\034\320\034-\250Q\330\024#\2401\330\024\027\220|\2403\240a\330\030\036\230e\2401\240A\330\024\"\240!\340\024#\2401\330\024\027\220|\2403\240b\250\003\250<\260r\270\023\270C\270q\330\030\036\230h\240a\240q\330'4\260A\330\024\030\230\006\230a\230q\330\024\025\330\014\023\220=\240\001\330\020\037\230q\330\020\023\220<\230s\240\"\240C\240|\2602\260S\270\003\2701\330\024\032\230(\240!\320#H\310\r\320UV\330\020\024\220F\230!\2301\360\006\000\r\021\220\006\220a\220q\340\010\016\210e\2201\320\024J\310!\200A\330\036\037\330\010\017\210t\2201\320\004%\240Q\330\010\013\2104\210t\2201\330\014\023\2206\230\021\330\010\t\330\014\020\220\t\230\021\330\014\023\2206\230\021\330\010\017\210}\230A\330\014\023\2207\320\032<\270A\270Q\320\004\036\230a\330\010\013\2104\210t\2201\330\014\023\2207\230!\330\010\t\330\014\025\220T\230\025\230j\250\001\330\014\017\210w\220c\230\021\330\020\027\220v\230Q\330\014\020\320\020 \240\001\330\014\023\2207\320\032A\300\021\300!\330\017\020\330\014\023\2207\230!\320\004\036\230e\320#4\260A\340\010\013\2104\210t\2201\330\014\022\220,\230a\230q\340\r\021\220\021\330\014\022\220$\220a\340\010\013\2104\210s\220!\330\014\022\220,\230a\230q\340\010\016\210b\220\010\230\001\330\010\013\2103\210f\220C\220t\2307\240!\330\014\017\210u\220A\220U\230'\240\030\250\030\260\021\340\014\017\210u\220A\220U\230'\240\021\330\010\017\210s\220)\2301\320\004\036\230k\250\026\250q\330\010\014\210K\220q\330\010\014\320\014""\034\230A\330\010\014\210O\2304\230t\2401\240N\260!\360\006\000\t\030\220y\240\001\330\010\022\220$\220a\220x\230{\250$\250b\260\001\330\010\017\210v\220Q\220h\230f\240I\250Q\330\010\014\210M\230\023\230A\230X\240R\240\177\260a\260t\2701\330\010\013\2104\210r\220\025\220g\230Q\230d\240!\330\014\022\220)\2301\230N\250$\250a\330\010\014\210H\220D\230\014\240A\240T\250\021\360\006\000\t\r\320\014\035\230Q\330\010\014\210O\2309\240F\250!\330\010\014\210O\2309\240E\250\021\330\010\014\320\0141\260\021\330\010\014\210L\230\010\240\002\240)\2501\250D\260\001\330\010\014\210I\220V\2301\230H\240F\250)\2601\340\010\016\210e\2201\320\024:\270$\270n\310A\320\004'\240u\250I\260X\270Z\300~\320UV\340\010\013\2104\210t\2201\330\014\023\2207\230!\340\r\021\220\021\330\014\022\220$\220a\340\010\013\2104\210s\220!\330\014\023\2207\230!\340\010\t\330\014\017\210u\220C\220r\230\024\230T\240\023\240B\240d\250&\260\003\2602\260T\270\027\300\003\3001\330\020\026\220c\230\025\230b\240\006\240e\2507\260!\330\014\020\220\001\220\027\230\007\230v\240Q\240h\250f\260I\270Q\330\014\017\210u\220A\220Q\330\014\023\2206\230\021\330\010\017\210}\230A\330\014\023\2207\320\0329\270\021\270!";
+    #else /* compression: none (3842 bytes) */
+const char* const bytes = "MATVisionLib.dllMATVisionLib.dll \352\270\260\353\260\230 \353\271\204\354\240\204 \354\271\264\353\251\224\353\235\274 \354\240\234\354\226\264.\n\n    \353\260\261\352\267\270\353\235\274\354\232\264\353\223\234 \354\212\244\353\240\210\353\223\234\354\227\220\354\204\234 \354\243\274\352\270\260\354\240\201 \354\272\241\354\262\230 \342\206\222 \354\265\234\354\213\240 \355\224\204\353\240\210\354\236\204 \354\246\211\354\213\234 \353\260\230\355\231\230.\n    MATVisionLib.dll\354\235\204 \354\260\276\354\235\204 \354\210\230 \354\227\206\354\212\265\353\213\210\353\213\244. backend/app/plugins/ \353\230\220\353\212\224 backend/app/modules/\354\227\220 \353\260\260\354\271\230\355\225\230\354\204\270\354\232\224.Note that Cython is deliberately stricter than PEP-484 and rejects subclasses of builtin types. If you need to pass subclasses then set the 'annotation_typing' directive to False.VisionCameraClient: mac=%s, DLL=%s[VisionCamera] Already connected[VisionCamera] Already disconnected[VisionCamera] Capture OK[VisionCamera] Capture fail: [VisionCamera] Connect OK ([VisionCamera] Connect fail: [VisionCamera] Connect fail (code=[VisionCamera] Connected[VisionCamera] Connection lost (code=[VisionCamera] Disconnect OK[VisionCamera] Disconnect fail: [VisionCamera] No frame available yet[VisionCamera] Not connectedVisionCamera capture failed (count=%d, code=%d)VisionCamera connected: %sVisionCamera first frame receivedVisionCamera frame error (%d): %sVisionCamera frame loop startedVisionCamera frame loop stopped (total frames: %d)).?add_notebackend/app/plugins/VisionCameraClient.pylatest.bmptuple[bool, str]BytesIOEventImageJPEGLoadLibraryLockMACAddressPILPNGPath__Pyx_PyDict_NextRefRGBThreadVisionCameraClientVisionCameraClient.__init__VisionCameraClient._cleanupVisionCameraClient._frame_loopVisionCameraClient.disposeVisionCameraClient.is_connectedVisionCameraClient.md_CaptureBytesVisionCameraClient.md_IsConnectVisionCameraClient.md_VisionCaptureVisionCameraClient.md_V""isionConnectVisionCameraClient.md_VisionDisconnectVision_CaptureVision_ConnectVision_Disconnectadd_dll_directoryasyncio.coroutinesbackend.app.plugins.VisionCameraClientboolbottombufbytesc_wchar_pcdll_cleanupclearcline_in_tracebackcontextconvertcropctypesddaemon_devicedictdirnamedispose_dlldlldll_dirdll_path__doc__e__enter__error_countexist_okexists__exit____file___find_dllfmtformatframe_count_frame_lock_frame_loop_frame_stop_frame_thread__func__getgetLoggergettempdirgetvalueimginfo__init__ioisConnect_isConnectedis_aliveis_connected_is_coroutineis_setitemsjoinjpegjpg_latest_frameleftloggerlogginglower_macaddress__main__md_CaptureBytesmd_IsConnectmd_VisionCapturemd_VisionConnectmd_VisionDisconnect__metaclass__mkdirmodel__module__modulesname__name__openosparentparentspathpathlibpopport__prepare__propertyquality__qualname__resultreturnrightsavesearch_dirsselfset__set_name__setdefaultsleepstartstrszPathtargettempfile__test__threadingtimetimeout_tmp_dirtmp_pathtopvaluesvision_cameravisioncam_framewarning\320\000\023\2201\340\004\022\220!\330\010\014\210A\210Y\220a\330\010\014\210A\210Y\220g\230X\240R\240q\330\010\014\210A\210Y\220g\230W\240H\250B\250a\340\004\010\210\005\210Q\330\010\016\210b\220\002\220!\330\010\013\2103\210g\220Q\330\014\023\2203\220a\220q\330\004\n\320\n\033\2301\330\010\t\320\004\"\240!\340\010\013\2104\210q\330\014\023\2206\230\021\340\010\t\330\014\025\220T\230\025\230o\250Q\250i\260q\270\004\270A\330\014\017\210w\220c\230\021\330\020\027\220w\320\036B\300!\3001\340\014\020\320\020 \240\001\360\006\000\r\021\220\014\230F\240!\330\014\020\320\020!\240\031\250'\260\021\330\020\027\220t\230>\250\025\320.A\300\027\310\001\340\014\020\220\016\230f\240A\340\014\022\220%\220q\320\0306\260d\270!\330\014\023\2206\320\0316\260a\260t\2701\340\010\017\210}\230A\330\014\020\320\020 \240\001\330\014\023\2207\320\0329\270\021\270!\200A\330\010\014\210I\220Q\200A\360\006\000\t\r\210L\230\004\230A\330\010\013\2104\210\177\230d\240$\240n\260I\270Q\330\014\020\220""\016\230e\2401\240H\250A\330\010\014\320\014\035\230Q\330\010\014\320\014\035\230Q\340\010\013\2104\210q\330\014\r\330\020\024\220E\320\031+\2501\330\023\024\340\010\014\320\014\034\230A\200A\340\010\016\210e\2201\220A\330\010\023\2203\220a\220t\230:\240R\240q\330\010\026\220a\330\010\026\220a\340\010\016\210d\220$\220l\240'\250\021\330\014\r\330\020\031\230\024\230U\240/\260\021\260)\2701\270A\330\020\023\2207\230#\230R\230t\2402\240U\250'\260\021\260!\330\024\032\230%\230u\240A\240Y\250h\260a\260q\330\031\035\230Q\330\030\034\320\034-\250Q\330\024#\2401\330\024\027\220|\2403\240a\330\030\036\230e\2401\240A\330\024\"\240!\340\024#\2401\330\024\027\220|\2403\240b\250\003\250<\260r\270\023\270C\270q\330\030\036\230h\240a\240q\330'4\260A\330\024\030\230\006\230a\230q\330\024\025\330\014\023\220=\240\001\330\020\037\230q\330\020\023\220<\230s\240\"\240C\240|\2602\260S\270\003\2701\330\024\032\230(\240!\320#H\310\r\320UV\330\020\024\220F\230!\2301\360\006\000\r\021\220\006\220a\220q\340\010\016\210e\2201\320\024J\310!\200A\330\036\037\330\010\017\210t\2201\320\004%\240Q\330\010\013\2104\210t\2201\330\014\023\2206\230\021\330\010\t\330\014\020\220\t\230\021\330\014\023\2206\230\021\330\010\017\210}\230A\330\014\023\2207\320\032<\270A\270Q\320\004\036\230a\330\010\013\2104\210t\2201\330\014\023\2207\230!\330\010\t\330\014\025\220T\230\025\230j\250\001\330\014\017\210w\220c\230\021\330\020\027\220v\230Q\330\014\020\320\020 \240\001\330\014\023\2207\320\032A\300\021\300!\330\017\020\330\014\023\2207\230!\320\004\036\230e\320#4\260A\340\010\013\2104\210t\2201\330\014\022\220,\230a\230q\340\r\021\220\021\330\014\022\220$\220a\340\010\013\2104\210s\220!\330\014\022\220,\230a\230q\340\010\016\210b\220\010\230\001\330\010\013\2103\210f\220C\220t\2307\240!\330\014\017\210u\220A\220U\230'\240\030\250\030\260\021\340\014\017\210u\220A\220U\230'\240\021\330\010\017\210s\220)\2301\320\004\036\230k\250\026\250q\330\010\014\210K\220q\330\010\014\320\014\034\230A\330\010\014\210O\2304""\230t\2401\240N\260!\360\006\000\t\024\2209\230A\330\010\022\220\"\220E\230\030\240\021\240!\340\010\013\2107\220!\2204\220q\330\014\016\320\016 \240\001\240\021\330\010\014\210H\220D\230\014\240A\240Q\360\006\000\t\r\320\014\035\230Q\330\010\014\210O\2309\240F\250!\330\010\014\210O\2309\240E\250\021\330\010\014\320\0141\260\021\330\010\014\210L\230\004\230A\230X\240[\260\004\260B\3206F\300b\310\004\310A\330\010\014\210I\220V\2301\230H\240F\250)\2601\340\010\016\210e\2201\320\024:\270$\270n\310A\320\004'\240u\250I\260X\270Z\300~\320UV\340\010\013\2104\210t\2201\330\014\023\2207\230!\340\r\021\220\021\330\014\022\220$\220a\340\010\013\2104\210s\220!\330\014\023\2207\230!\340\010\t\330\014\017\210u\220C\220r\230\024\230T\240\023\240B\240d\250&\260\003\2602\260T\270\027\300\003\3001\330\020\026\220c\230\025\230b\240\006\240e\2507\260!\330\014\020\220\001\220\027\230\007\230v\240Q\240h\250f\260I\270Q\330\014\017\210u\220A\220Q\330\014\023\2206\230\021\330\010\017\210}\230A\330\014\023\2207\320\0329\270\021\270!";
     PyObject *data = NULL;
     CYTHON_UNUSED_VAR(__Pyx_DecompressString);
     #endif
     PyObject **stringtab = __pyx_mstate->__pyx_string_tab;
     Py_ssize_t pos = 0;
-    for (int i = 0; i < 181; i++) {
+    for (int i = 0; i < 177; i++) {
       Py_ssize_t bytes_length = index[i].length;
       PyObject *string = PyUnicode_DecodeUTF8(bytes + pos, bytes_length, NULL);
-      if (likely(string) && i >= 33) PyUnicode_InternInPlace(&string);
+      if (likely(string) && i >= 32) PyUnicode_InternInPlace(&string);
       if (unlikely(!string)) {
         Py_XDECREF(data);
         __PYX_ERR(0, 1, __pyx_L1_error)
@@ -9140,7 +9056,7 @@ const char* const bytes = "MATVisionLib.dllMATVisionLib.dll \352\270\260\353\260
       stringtab[i] = string;
       pos += bytes_length;
     }
-    for (int i = 181; i < 192; i++) {
+    for (int i = 177; i < 188; i++) {
       Py_ssize_t bytes_length = index[i].length;
       PyObject *string = PyBytes_FromStringAndSize(bytes + pos, bytes_length);
       stringtab[i] = string;
@@ -9151,14 +9067,14 @@ const char* const bytes = "MATVisionLib.dllMATVisionLib.dll \352\270\260\353\260
       }
     }
     Py_XDECREF(data);
-    for (Py_ssize_t i = 0; i < 192; i++) {
+    for (Py_ssize_t i = 0; i < 188; i++) {
       if (unlikely(PyObject_Hash(stringtab[i]) == -1)) {
         __PYX_ERR(0, 1, __pyx_L1_error)
       }
     }
     #if CYTHON_IMMORTAL_CONSTANTS
     {
-      PyObject **table = stringtab + 181;
+      PyObject **table = stringtab + 177;
       for (Py_ssize_t i=0; i<11; ++i) {
         #if CYTHON_COMPILING_IN_CPYTHON_FREETHREADING
         #if PY_VERSION_HEX < 0x030E0000
@@ -9239,57 +9155,57 @@ static int __Pyx_CreateCodeObjects(__pyx_mstatetype *__pyx_mstate) {
   PyObject* tuple_dedup_map = PyDict_New();
   if (unlikely(!tuple_dedup_map)) return -1;
   {
-    const __Pyx_PyCode_New_function_description descr = {0, 0, 0, 3, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 22};
-    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_search_dirs, __pyx_mstate->__pyx_n_u_d, __pyx_mstate->__pyx_n_u_dll_3};
+    const __Pyx_PyCode_New_function_description descr = {0, 0, 0, 3, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 21};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_search_dirs, __pyx_mstate->__pyx_n_u_d, __pyx_mstate->__pyx_n_u_dll_2};
     __pyx_mstate_global->__pyx_codeobj_tab[0] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_backend_app_plugins_VisionCamera_2, __pyx_mstate->__pyx_n_u_find_dll, __pyx_mstate->__pyx_kp_b_iso88591_1_AYa_AYgXRq_AYgWHBa_Q_b_3gQ_3a, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[0])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {4, 0, 0, 6, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 45};
-    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_model, __pyx_mstate->__pyx_n_u_port, __pyx_mstate->__pyx_n_u_context, __pyx_mstate->__pyx_n_u_original_dll, __pyx_mstate->__pyx_n_u_dll_dir};
-    __pyx_mstate_global->__pyx_codeobj_tab[1] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_backend_app_plugins_VisionCamera_2, __pyx_mstate->__pyx_n_u_init, __pyx_mstate->__pyx_kp_b_iso88591_k_q_Kq_A_O4t1N_y_ax_b_vQhfIQ_M, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[1])) goto bad;
+    const __Pyx_PyCode_New_function_description descr = {4, 0, 0, 6, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 44};
+    PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_model, __pyx_mstate->__pyx_n_u_port, __pyx_mstate->__pyx_n_u_context, __pyx_mstate->__pyx_n_u_dll_path, __pyx_mstate->__pyx_n_u_dll_dir};
+    __pyx_mstate_global->__pyx_codeobj_tab[1] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_backend_app_plugins_VisionCamera_2, __pyx_mstate->__pyx_n_u_init, __pyx_mstate->__pyx_kp_b_iso88591_k_q_Kq_A_O4t1N_9A_E_7_4q_HD_AQ, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[1])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 7, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 73};
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 7, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 71};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_tmp_path, __pyx_mstate->__pyx_n_u_error_count, __pyx_mstate->__pyx_n_u_frame_count, __pyx_mstate->__pyx_n_u_result, __pyx_mstate->__pyx_n_u_img, __pyx_mstate->__pyx_n_u_e};
     __pyx_mstate_global->__pyx_codeobj_tab[2] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_backend_app_plugins_VisionCamera_2, __pyx_mstate->__pyx_n_u_frame_loop, __pyx_mstate->__pyx_kp_b_iso88591_A_e1A_3at_Rq_a_a_d_l_U_1A_7_Rt2U, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[2])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 3, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 113};
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 3, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 111};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_result, __pyx_mstate->__pyx_n_u_e};
     __pyx_mstate_global->__pyx_codeobj_tab[3] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_backend_app_plugins_VisionCamera_2, __pyx_mstate->__pyx_n_u_md_VisionConnect, __pyx_mstate->__pyx_kp_b_iso88591_4q_6_T_oQiq_A_wc_w_B_1_F_t_A_fA, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[3])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 2, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 139};
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 2, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 137};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_e};
     __pyx_mstate_global->__pyx_codeobj_tab[4] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_backend_app_plugins_VisionCamera_2, __pyx_mstate->__pyx_n_u_md_VisionDisconnect, __pyx_mstate->__pyx_kp_b_iso88591_Q_4t1_6_6_A_7_AQ, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[4])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 2, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 148};
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 2, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 146};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_result};
     __pyx_mstate_global->__pyx_codeobj_tab[5] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_backend_app_plugins_VisionCamera_2, __pyx_mstate->__pyx_n_u_md_IsConnect, __pyx_mstate->__pyx_kp_b_iso88591_a_4t1_7_T_j_wc_vQ_7_A_7, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[5])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {6, 0, 0, 8, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 164};
+    const __Pyx_PyCode_New_function_description descr = {6, 0, 0, 8, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 162};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_szPath, __pyx_mstate->__pyx_n_u_left, __pyx_mstate->__pyx_n_u_top, __pyx_mstate->__pyx_n_u_right, __pyx_mstate->__pyx_n_u_bottom, __pyx_mstate->__pyx_n_u_img, __pyx_mstate->__pyx_n_u_e};
     __pyx_mstate_global->__pyx_codeobj_tab[6] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_backend_app_plugins_VisionCamera_2, __pyx_mstate->__pyx_n_u_md_VisionCapture, __pyx_mstate->__pyx_kp_b_iso88591_uIXZ_UV_4t1_7_a_4s_7_uCr_T_Bd_2, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[6])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 4, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 184};
+    const __Pyx_PyCode_New_function_description descr = {2, 0, 0, 4, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 182};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self, __pyx_mstate->__pyx_n_u_fmt, __pyx_mstate->__pyx_n_u_img, __pyx_mstate->__pyx_n_u_buf};
     __pyx_mstate_global->__pyx_codeobj_tab[7] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_backend_app_plugins_VisionCamera_2, __pyx_mstate->__pyx_n_u_md_CaptureBytes, __pyx_mstate->__pyx_kp_b_iso88591_e_4A_4t1_aq_a_4s_aq_b_3fCt7_uAU, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[7])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 204};
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 202};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self};
     __pyx_mstate_global->__pyx_codeobj_tab[8] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_backend_app_plugins_VisionCamera_2, __pyx_mstate->__pyx_n_u_is_connected, __pyx_mstate->__pyx_kp_b_iso88591_A_t1, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[8])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 208};
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 206};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self};
     __pyx_mstate_global->__pyx_codeobj_tab[9] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_backend_app_plugins_VisionCamera_2, __pyx_mstate->__pyx_n_u_cleanup, __pyx_mstate->__pyx_kp_b_iso88591_A_L_A_4_d_nIQ_e1HA_Q_Q_4q_E_1_A, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[9])) goto bad;
   }
   {
-    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 224};
+    const __Pyx_PyCode_New_function_description descr = {1, 0, 0, 1, (unsigned int)(CO_OPTIMIZED|CO_NEWLOCALS), 222};
     PyObject* const varnames[] = {__pyx_mstate->__pyx_n_u_self};
     __pyx_mstate_global->__pyx_codeobj_tab[10] = __Pyx_PyCode_New(descr, varnames, __pyx_mstate->__pyx_kp_u_backend_app_plugins_VisionCamera_2, __pyx_mstate->__pyx_n_u_dispose, __pyx_mstate->__pyx_kp_b_iso88591_A_IQ, tuple_dedup_map); if (unlikely(!__pyx_mstate_global->__pyx_codeobj_tab[10])) goto bad;
   }
@@ -10878,6 +10794,25 @@ static PyObject* __Pyx_PyDict_GetItemDefault(PyObject* d, PyObject* key, PyObjec
     return value;
 }
 
+/* HasAttr */
+#if __PYX_LIMITED_VERSION_HEX < 0x030d0000
+static CYTHON_INLINE int __Pyx_HasAttr(PyObject *o, PyObject *n) {
+    PyObject *r;
+    if (unlikely(!PyUnicode_Check(n))) {
+        PyErr_SetString(PyExc_TypeError,
+                        "hasattr(): attribute name must be string");
+        return -1;
+    }
+    r = __Pyx_PyObject_GetAttrStrNoError(o, n);
+    if (!r) {
+        return (unlikely(PyErr_Occurred())) ? -1 : 0;
+    } else {
+        Py_DECREF(r);
+        return 1;
+    }
+}
+#endif
+
 /* PyObjectVectorCallKwBuilder (used by PyObjectVectorCallMethodKwBuilder) */
 #if CYTHON_VECTORCALL
 static int __Pyx_VectorcallBuilder_AddArg(PyObject *key, PyObject *value, PyObject *builder, PyObject **args, int n) {
@@ -10922,84 +10857,6 @@ static PyObject *__Pyx_Object_VectorcallMethod_CallFromBuilder(PyObject *name, P
     return result;
 }
 #endif
-
-/* JoinPyUnicode */
-static PyObject* __Pyx_PyUnicode_Join(PyObject** values, Py_ssize_t value_count, Py_ssize_t result_ulength,
-                                      Py_UCS4 max_char) {
-#if CYTHON_USE_UNICODE_INTERNALS && CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-    PyObject *result_uval;
-    int result_ukind, kind_shift;
-    Py_ssize_t i, char_pos;
-    void *result_udata;
-    if (max_char > 1114111) max_char = 1114111;
-    result_uval = PyUnicode_New(result_ulength, max_char);
-    if (unlikely(!result_uval)) return NULL;
-    result_ukind = (max_char <= 255) ? PyUnicode_1BYTE_KIND : (max_char <= 65535) ? PyUnicode_2BYTE_KIND : PyUnicode_4BYTE_KIND;
-    kind_shift = (result_ukind == PyUnicode_4BYTE_KIND) ? 2 : result_ukind - 1;
-    result_udata = PyUnicode_DATA(result_uval);
-    assert(kind_shift == 2 || kind_shift == 1 || kind_shift == 0);
-    if (unlikely((PY_SSIZE_T_MAX >> kind_shift) - result_ulength < 0))
-        goto overflow;
-    char_pos = 0;
-    for (i=0; i < value_count; i++) {
-        int ukind;
-        Py_ssize_t ulength;
-        void *udata;
-        PyObject *uval = values[i];
-        #if !CYTHON_COMPILING_IN_LIMITED_API
-        if (__Pyx_PyUnicode_READY(uval) == (-1))
-            goto bad;
-        #endif
-        ulength = __Pyx_PyUnicode_GET_LENGTH(uval);
-        #if !CYTHON_ASSUME_SAFE_SIZE
-        if (unlikely(ulength < 0)) goto bad;
-        #endif
-        if (unlikely(!ulength))
-            continue;
-        if (unlikely((PY_SSIZE_T_MAX >> kind_shift) - ulength < char_pos))
-            goto overflow;
-        ukind = __Pyx_PyUnicode_KIND(uval);
-        udata = __Pyx_PyUnicode_DATA(uval);
-        if (ukind == result_ukind) {
-            memcpy((char *)result_udata + (char_pos << kind_shift), udata, (size_t) (ulength << kind_shift));
-        } else {
-            #if PY_VERSION_HEX >= 0x030d0000
-            if (unlikely(PyUnicode_CopyCharacters(result_uval, char_pos, uval, 0, ulength) < 0)) goto bad;
-            #elif CYTHON_COMPILING_IN_CPYTHON || defined(_PyUnicode_FastCopyCharacters)
-            _PyUnicode_FastCopyCharacters(result_uval, char_pos, uval, 0, ulength);
-            #else
-            Py_ssize_t j;
-            for (j=0; j < ulength; j++) {
-                Py_UCS4 uchar = __Pyx_PyUnicode_READ(ukind, udata, j);
-                __Pyx_PyUnicode_WRITE(result_ukind, result_udata, char_pos+j, uchar);
-            }
-            #endif
-        }
-        char_pos += ulength;
-    }
-    return result_uval;
-overflow:
-    PyErr_SetString(PyExc_OverflowError, "join() result is too long for a Python string");
-bad:
-    Py_DECREF(result_uval);
-    return NULL;
-#else
-    Py_ssize_t i;
-    PyObject *result = NULL;
-    PyObject *value_tuple = PyTuple_New(value_count);
-    if (unlikely(!value_tuple)) return NULL;
-    CYTHON_UNUSED_VAR(max_char);
-    CYTHON_UNUSED_VAR(result_ulength);
-    for (i=0; i<value_count; i++) {
-        if (__Pyx_PyTuple_SET_ITEM(value_tuple, i, values[i]) != (0)) goto bad;
-        Py_INCREF(values[i]);
-    }
-    result = PyUnicode_Join(__pyx_mstate_global->__pyx_empty_unicode, value_tuple);
-bad:
-    Py_DECREF(value_tuple);
-    return result;
-#endif
-}
 
 /* PyLongCompare */
 static CYTHON_INLINE int __Pyx_PyLong_BoolEqObjC(PyObject *op1, PyObject *op2, long intval, long inplace) {
@@ -11568,6 +11425,84 @@ static CYTHON_INLINE int __Pyx_PyLong_BoolNeObjC(PyObject *op1, PyObject *op2, l
         PyObject_RichCompare(op1, op2, Py_NE));
 }
 
+/* JoinPyUnicode */
+static PyObject* __Pyx_PyUnicode_Join(PyObject** values, Py_ssize_t value_count, Py_ssize_t result_ulength,
+                                      Py_UCS4 max_char) {
+#if CYTHON_USE_UNICODE_INTERNALS && CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
+    PyObject *result_uval;
+    int result_ukind, kind_shift;
+    Py_ssize_t i, char_pos;
+    void *result_udata;
+    if (max_char > 1114111) max_char = 1114111;
+    result_uval = PyUnicode_New(result_ulength, max_char);
+    if (unlikely(!result_uval)) return NULL;
+    result_ukind = (max_char <= 255) ? PyUnicode_1BYTE_KIND : (max_char <= 65535) ? PyUnicode_2BYTE_KIND : PyUnicode_4BYTE_KIND;
+    kind_shift = (result_ukind == PyUnicode_4BYTE_KIND) ? 2 : result_ukind - 1;
+    result_udata = PyUnicode_DATA(result_uval);
+    assert(kind_shift == 2 || kind_shift == 1 || kind_shift == 0);
+    if (unlikely((PY_SSIZE_T_MAX >> kind_shift) - result_ulength < 0))
+        goto overflow;
+    char_pos = 0;
+    for (i=0; i < value_count; i++) {
+        int ukind;
+        Py_ssize_t ulength;
+        void *udata;
+        PyObject *uval = values[i];
+        #if !CYTHON_COMPILING_IN_LIMITED_API
+        if (__Pyx_PyUnicode_READY(uval) == (-1))
+            goto bad;
+        #endif
+        ulength = __Pyx_PyUnicode_GET_LENGTH(uval);
+        #if !CYTHON_ASSUME_SAFE_SIZE
+        if (unlikely(ulength < 0)) goto bad;
+        #endif
+        if (unlikely(!ulength))
+            continue;
+        if (unlikely((PY_SSIZE_T_MAX >> kind_shift) - ulength < char_pos))
+            goto overflow;
+        ukind = __Pyx_PyUnicode_KIND(uval);
+        udata = __Pyx_PyUnicode_DATA(uval);
+        if (ukind == result_ukind) {
+            memcpy((char *)result_udata + (char_pos << kind_shift), udata, (size_t) (ulength << kind_shift));
+        } else {
+            #if PY_VERSION_HEX >= 0x030d0000
+            if (unlikely(PyUnicode_CopyCharacters(result_uval, char_pos, uval, 0, ulength) < 0)) goto bad;
+            #elif CYTHON_COMPILING_IN_CPYTHON || defined(_PyUnicode_FastCopyCharacters)
+            _PyUnicode_FastCopyCharacters(result_uval, char_pos, uval, 0, ulength);
+            #else
+            Py_ssize_t j;
+            for (j=0; j < ulength; j++) {
+                Py_UCS4 uchar = __Pyx_PyUnicode_READ(ukind, udata, j);
+                __Pyx_PyUnicode_WRITE(result_ukind, result_udata, char_pos+j, uchar);
+            }
+            #endif
+        }
+        char_pos += ulength;
+    }
+    return result_uval;
+overflow:
+    PyErr_SetString(PyExc_OverflowError, "join() result is too long for a Python string");
+bad:
+    Py_DECREF(result_uval);
+    return NULL;
+#else
+    Py_ssize_t i;
+    PyObject *result = NULL;
+    PyObject *value_tuple = PyTuple_New(value_count);
+    if (unlikely(!value_tuple)) return NULL;
+    CYTHON_UNUSED_VAR(max_char);
+    CYTHON_UNUSED_VAR(result_ulength);
+    for (i=0; i<value_count; i++) {
+        if (__Pyx_PyTuple_SET_ITEM(value_tuple, i, values[i]) != (0)) goto bad;
+        Py_INCREF(values[i]);
+    }
+    result = PyUnicode_Join(__pyx_mstate_global->__pyx_empty_unicode, value_tuple);
+bad:
+    Py_DECREF(value_tuple);
+    return result;
+#endif
+}
+
 /* RaiseUnboundLocalError */
 static void __Pyx_RaiseUnboundLocalError(const char *varname) {
     PyErr_Format(PyExc_UnboundLocalError, "local variable '%s' referenced before assignment", varname);
@@ -11583,25 +11518,6 @@ __Pyx_RaiseUnexpectedTypeError(const char *expected, PyObject *obj)
     __Pyx_DECREF_TypeName(obj_type_name);
     return 0;
 }
-
-/* HasAttr (used by ImportImpl) */
-#if __PYX_LIMITED_VERSION_HEX < 0x030d0000
-static CYTHON_INLINE int __Pyx_HasAttr(PyObject *o, PyObject *n) {
-    PyObject *r;
-    if (unlikely(!PyUnicode_Check(n))) {
-        PyErr_SetString(PyExc_TypeError,
-                        "hasattr(): attribute name must be string");
-        return -1;
-    }
-    r = __Pyx_PyObject_GetAttrStrNoError(o, n);
-    if (!r) {
-        return (unlikely(PyErr_Occurred())) ? -1 : 0;
-    } else {
-        Py_DECREF(r);
-        return 1;
-    }
-}
-#endif
 
 /* ImportImpl (used by Import) */
 static int __Pyx__Import_GetModule(PyObject *qualname, PyObject **module) {
