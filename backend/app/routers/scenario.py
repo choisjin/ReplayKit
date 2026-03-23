@@ -376,8 +376,16 @@ async def crop_from_expected(req: CropFromExpectedRequest):
     if img is None:
         raise HTTPException(status_code=400, detail="Cannot read expected image")
 
+    img_h, img_w = img.shape[:2]
     x, y = int(req.crop["x"]), int(req.crop["y"])
     w, h = int(req.crop["width"]), int(req.crop["height"])
+    # 범위 클램핑
+    x = max(0, min(x, img_w - 1))
+    y = max(0, min(y, img_h - 1))
+    w = min(w, img_w - x)
+    h = min(h, img_h - y)
+    if w <= 0 or h <= 0:
+        raise HTTPException(status_code=400, detail=f"Crop region out of bounds (image: {img_w}x{img_h}, crop: x={x} y={y} w={w} h={h})")
     cropped = img[y:y + h, x:x + w]
 
     save_dir = SCREENSHOTS_DIR / req.scenario_name
