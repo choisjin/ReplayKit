@@ -171,11 +171,15 @@ if %ERRORLEVEL% neq 0 (
 
 for /f "tokens=*" %%v in ('node --version 2^>nul') do echo       Node.js %%v detected
 
-echo       Installing frontend packages...
-cd frontend
-call npm install
-cd ..
-echo       npm install done
+if exist "frontend\package.json" (
+    echo       Installing frontend packages...
+    cd frontend
+    call npm install
+    cd ..
+    echo       npm install done
+) else (
+    echo       [Warning] frontend/package.json not found - skipped
+)
 
 :skip_npm
 
@@ -184,24 +188,23 @@ echo       npm install done
 :: -------------------------------------------------------
 if "%PRODUCTION%"=="1" (
     if not exist ".git" (
-        if exist "git_remote.txt" (
-            echo [5/5] Setting up git repository...
-            set /p GIT_REMOTE=<git_remote.txt
-            git init
-            git remote add origin "%GIT_REMOTE%"
-            git fetch --depth 1 origin main
-            git reset origin/main
-            echo       git repository initialized
-            echo       remote: %GIT_REMOTE%
-        ) else (
-            echo [5/5] No git_remote.txt - git setup skipped
-        )
-    ) else (
-        echo [5/5] git repository already exists - skipped
+        if exist "git_remote.txt" goto :git_setup
     )
-) else (
-    echo [5/5] Dev mode - git setup skipped
 )
+goto :git_done
+
+:git_setup
+echo [5/5] Setting up git repository...
+set /p GIT_REMOTE=<git_remote.txt
+git init
+git remote add origin "%GIT_REMOTE%"
+git fetch --depth 1 origin main
+git reset origin/main
+echo       git repository initialized
+echo       remote: %GIT_REMOTE%
+goto :git_done
+
+:git_done
 
 echo.
 echo ============================================

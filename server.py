@@ -502,13 +502,15 @@ class ServerManagerApp:
             srv.start(self._log)
         threading.Thread(target=_do, daemon=True).start()
 
-    def _start_all_sync(self):
+    def _start_all_sync(self, auto_open_web=False):
         """서버 시작 (현재 스레드에서 실행, 다른 스레드에서 호출할 때 사용)."""
         self.backend.start(self._log)
         if not self._production:
             self.frontend.start(self._log)
         else:
             self._log("[시스템] 프로덕션 모드 — 프론트엔드는 백엔드가 서빙합니다")
+        if auto_open_web:
+            self._wait_and_open_web()
 
     def _start_all(self):
         threading.Thread(target=self._start_all_sync, daemon=True).start()
@@ -516,6 +518,24 @@ class ServerManagerApp:
     def _open_web(self):
         url = self.backend.url if self._production else self.frontend.url
         webbrowser.open(url)
+
+    def _wait_and_open_web(self):
+        """백엔드 HTTP 응답이 올 때까지 대기 후 브라우저 자동 오픈."""
+        import urllib.request
+        url = self.backend.url if self._production else self.frontend.url
+        check_url = self.backend.url + "/api/device/list"
+        for _ in range(30):  # 최대 30초 대기
+            time.sleep(1)
+            if not self.backend.running:
+                return
+            try:
+                urllib.request.urlopen(check_url, timeout=2)
+                self._log(f"[시스템] 백엔드 준비 완료 — 브라우저를 엽니다")
+                webbrowser.open(url)
+                return
+            except Exception:
+                pass
+        self._log("[시스템] 백엔드 응답 대기 시간 초과 — 수동으로 웹을 열어주세요")
 
     def _stop_all(self):
         def _do():
@@ -601,15 +621,17 @@ if __name__ == "__main__":
     app = ServerManagerApp()
 
     if do_sync:
-        # 일반 시작: 동기화 후 자동 시작
+        # 일반 시작: 동기화 후 자동 시작 + 웹 오픈
         def _auto_sync_and_start():
             if app._sync(app._log):
-                app._start_all_sync()
+                app._start_all_sync(auto_open_web=True)
             else:
                 app._log("[시스템] 동기화 실패 — 수동으로 시작하세요")
         threading.Thread(target=_auto_sync_and_start, daemon=True).start()
     elif is_restart:
-        # 재시작: 동기화 없이 바로 시작
-        app.root.after(500, app._start_all)
+        # 재시작: 동기화 없이 바로 시작 + 웹 오픈
+        def _restart_and_open():
+            app._start_all_sync(auto_open_web=True)
+        threading.Thread(target=_restart_and_open, daemon=True).start()
 
     app.run()
