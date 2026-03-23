@@ -7,6 +7,7 @@ DLL을 통해 카메라 연결/캡처를 수행하고,
 
 import io
 import os
+import shutil
 import logging
 import tempfile
 import threading
@@ -46,13 +47,15 @@ class VisionCameraClient:
         self._isConnected = False
         self._macaddress = port.get("MACAddress", "")
 
-        # DLL 로드 (원본 디렉토리에서 직접 로드 — 의존 DLL 경로 유지)
-        dll_path = _find_dll()
-        dll_dir = os.path.dirname(dll_path)
-        # 의존 DLL 검색 경로 추가 (Python 3.8+)
+        # MAC별 DLL 복사 (같은 디렉토리에 — 의존 DLL 경로 유지 + 인스턴스 분리)
+        original_dll = _find_dll()
+        dll_dir = os.path.dirname(original_dll)
+        self._dll_path = os.path.join(dll_dir, f"MATVisionLib_{self._macaddress}.dll")
+        if not os.path.exists(self._dll_path):
+            shutil.copyfile(original_dll, self._dll_path)
         if hasattr(os, 'add_dll_directory'):
             os.add_dll_directory(dll_dir)
-        self._dll = cdll.LoadLibrary(dll_path)
+        self._dll = cdll.LoadLibrary(self._dll_path)
 
         # 백그라운드 프레임 캡처
         self._frame_thread = None
@@ -62,7 +65,7 @@ class VisionCameraClient:
         self._tmp_dir = Path(tempfile.gettempdir()) / "vision_camera" / self._macaddress
         self._tmp_dir.mkdir(parents=True, exist_ok=True)
 
-        logger.info("VisionCameraClient: mac=%s, DLL=%s", self._macaddress, dll_path)
+        logger.info("VisionCameraClient: mac=%s, DLL=%s", self._macaddress, original_dll)
 
     # ------------------------------------------------------------------
     # 백그라운드 프레임 캡처 스레드
