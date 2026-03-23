@@ -305,6 +305,9 @@ async def capture_expected_image(req: CaptureExpectedImageRequest):
         else:
             step.roi = None
 
+    # 스크린샷 디바이스 기록 (재생/테스트 시 동일 디바이스로 캡처)
+    step.screenshot_device_id = req.device_id
+
     await recording_svc.save_scenario(scenario)
     return {"status": "ok", "filename": filename, "step_id": step.id}
 
