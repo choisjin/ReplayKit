@@ -573,7 +573,19 @@ class ServerManagerApp:
             self.backend.stop(self._log)
             if not self._production:
                 self.frontend.stop(self._log)
+        # adb.exe 프로세스 종료
+        self._kill_adb()
         self.root.destroy()
+
+    @staticmethod
+    def _kill_adb():
+        """시스템에서 실행 중인 adb.exe 프로세스를 모두 종료."""
+        for proc in psutil.process_iter(["name"]):
+            try:
+                if proc.info["name"] and proc.info["name"].lower() == "adb.exe":
+                    proc.kill()
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                pass
 
     def run(self):
         self.root.mainloop()
