@@ -245,9 +245,10 @@ if exist ".git" goto :git_done
 if not exist "git_remote.txt" goto :git_done
 echo [5/5] Setting up git repository...
 set /p GIT_REMOTE=<git_remote.txt
-git init
+git init -b main
 git remote add origin "%GIT_REMOTE%"
 git fetch --depth 1 origin main
+git branch --set-upstream-to=origin/main main
 git reset origin/main
 git checkout origin/main -- .gitignore
 echo       git repository initialized
