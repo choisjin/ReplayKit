@@ -1,8 +1,11 @@
 venv/
+python/
 __pycache__/
 *.pyc
 *.exe
 *.msi
+*.zip
+get-pip.py
 backend/screenshots/
 backend/results/
 backend/scenarios/

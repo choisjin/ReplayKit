@@ -134,8 +134,8 @@ echo       pip ready
 :: -------------------------------------------------------
 :install_packages
 echo [3/5] Installing Python packages...
-%PY% -m pip install --upgrade pip -q 2>nul
-%PIP% install -r requirements.txt -q
+%PY% -m pip install --upgrade pip -q --no-warn-script-location 2>nul
+%PIP% install -r requirements.txt -q --no-warn-script-location
 if exist "lge.auto-*.whl" (
     for %%f in (lge.auto-*.whl) do %PIP% install "%%f"
     echo       lge.auto installed
