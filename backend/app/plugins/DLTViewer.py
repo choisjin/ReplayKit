@@ -2,13 +2,15 @@
 
 DltViewerSDK를 활용하여:
   - DLT 데몬에 TCP 연결로 실시간 로그 수신 (AUTOSAR DLT 프로토콜)
-  - 키워드 기반 로그 모니터링/검증 (CheckLog)
+  - 키워드 기반 로그 모니터링/검증 (WaitLog / StartMonitor)
   - DLT Viewer GUI 실행 관리 (LaunchViewer / CloseViewer)
 
 사용 예:
-  module_command → DLTViewer.Connect()          # DLT 데몬 연결
-  module_command → DLTViewer.CheckLog("keyword") # 로그 키워드 검증
-  module_command → DLTViewer.LaunchViewer()      # GUI 실행
+  module_command → DLTViewer.Connect()           # DLT 데몬 연결
+  module_command → DLTViewer.WaitLog("keyword")  # 로그 키워드 대기 (블로킹)
+  module_command → DLTViewer.StartMonitor("kw")  # 백그라운드 모니터링 시작
+  module_command → DLTViewer.GetMonitorResult()   # 모니터링 결과 확인
+  module_command → DLTViewer.LaunchViewer()       # GUI 실행
 """
 
 import logging
@@ -55,6 +57,9 @@ class DLTViewer:
         self._sdk_dir = _SDK_DIR
         self._recv_buffer = bytearray()
         self._msg_counter = 0
+        # 백그라운드 모니터링
+        self._monitors: dict[str, dict] = {}  # id → {keyword, start, timeout, result, thread}
+        self._monitor_counter = 0
 
     # ------------------------------------------------------------------
     # 연결 관리
@@ -356,8 +361,11 @@ class DLTViewer:
     # 로그 조회/검색
     # ------------------------------------------------------------------
 
-    def CheckLog(self, keyword: str, timeout: int = 30) -> str:
-        """캡처된 로그에서 키워드가 나타날 때까지 대기.
+    def WaitLog(self, keyword: str, timeout: int = 30) -> str:
+        """캡처된 로그에서 키워드가 나타날 때까지 대기 (블로킹).
+
+        스텝 실행을 멈추고 키워드가 나올 때까지 기다립니다.
+        비블로킹으로 사용하려면 StartMonitor를 사용하세요.
 
         Args:
             keyword: 검색할 키워드 (공백으로 구분 시 AND 조건)
@@ -381,14 +389,137 @@ class DLTViewer:
             for i in range(check_idx, len(logs)):
                 line = logs[i]
                 if all(k in line for k in keywords):
-                    logger.info("[DLT] CheckLog PASS: %s", line.strip())
+                    logger.info("[DLT] WaitLog PASS: %s", line.strip())
                     return f"PASS: {line.strip()}"
 
             check_idx = len(logs)
             time.sleep(0.3)
 
-        logger.info("[DLT] CheckLog FAIL: '%s' not found in %ds", keyword, timeout_sec)
+        logger.info("[DLT] WaitLog FAIL: '%s' not found in %ds", keyword, timeout_sec)
         return f"FAIL: keyword '{keyword}' not found within {int(timeout_sec)}s"
+
+    # ------------------------------------------------------------------
+    # 백그라운드 모니터링
+    # ------------------------------------------------------------------
+
+    def StartMonitor(self, keyword: str, timeout: int = 60) -> str:
+        """백그라운드 키워드 모니터링 시작 (비블로킹).
+
+        다음 스텝으로 즉시 진행되며, 별도 스레드에서 키워드를 감시합니다.
+        결과는 GetMonitorResult로 확인합니다.
+
+        Args:
+            keyword: 검색할 키워드 (공백으로 구분 시 AND 조건)
+            timeout: 최대 감시 시간 (초, 기본 60)
+
+        Returns:
+            모니터 ID (예: "mon_1")
+        """
+        if not self._capturing:
+            return "ERROR: 캡처가 실행 중이 아닙니다. Connect() 먼저 호출하세요."
+
+        self._monitor_counter += 1
+        mon_id = f"mon_{self._monitor_counter}"
+
+        monitor = {
+            "keyword": keyword,
+            "start": time.time(),
+            "timeout": float(timeout),
+            "result": None,  # None=진행중, str=완료
+            "matched_line": "",
+        }
+        self._monitors[mon_id] = monitor
+
+        def _watch():
+            keywords = keyword.split()
+            timeout_sec = float(timeout)
+            start = time.time()
+            check_idx = 0
+
+            while time.time() - start < timeout_sec:
+                if mon_id not in self._monitors:
+                    return  # StopMonitor로 취소됨
+
+                with self._lock:
+                    logs = list(self._logs)
+
+                for i in range(check_idx, len(logs)):
+                    line = logs[i]
+                    if all(k in line for k in keywords):
+                        logger.info("[DLT] Monitor %s PASS: %s", mon_id, line.strip())
+                        monitor["result"] = "PASS"
+                        monitor["matched_line"] = line.strip()
+                        return
+
+                check_idx = len(logs)
+                time.sleep(0.3)
+
+            logger.info("[DLT] Monitor %s FAIL: '%s' not found in %ds", mon_id, keyword, timeout_sec)
+            monitor["result"] = "FAIL"
+
+        t = threading.Thread(target=_watch, name=f"DLT-Monitor-{mon_id}", daemon=True)
+        t.start()
+        monitor["thread"] = t
+
+        logger.info("[DLT] StartMonitor %s: keyword='%s' timeout=%ds", mon_id, keyword, timeout)
+        return mon_id
+
+    def StopMonitor(self, monitor_id: str = "") -> str:
+        """백그라운드 모니터링 중지.
+
+        Args:
+            monitor_id: 중지할 모니터 ID (빈 값이면 전체 중지)
+
+        Returns:
+            결과 메시지
+        """
+        if not monitor_id:
+            ids = list(self._monitors.keys())
+            self._monitors.clear()
+            return f"All monitors stopped ({len(ids)})"
+
+        mon = self._monitors.pop(monitor_id, None)
+        if not mon:
+            return f"Monitor '{monitor_id}' not found"
+        return f"Monitor '{monitor_id}' stopped"
+
+    def GetMonitorResult(self, monitor_id: str = "") -> str:
+        """백그라운드 모니터링 결과 확인.
+
+        Args:
+            monitor_id: 확인할 모니터 ID (빈 값이면 전체)
+
+        Returns:
+            결과 문자열:
+            - 단일: "PASS: <로그>" / "FAIL: ..." / "RUNNING: ..."
+            - 전체: 모니터별 결과 목록
+        """
+        if monitor_id:
+            mon = self._monitors.get(monitor_id)
+            if not mon:
+                return f"Monitor '{monitor_id}' not found"
+            if mon["result"] is None:
+                elapsed = int(time.time() - mon["start"])
+                return f"RUNNING: '{mon['keyword']}' ({elapsed}s / {int(mon['timeout'])}s)"
+            elif mon["result"] == "PASS":
+                return f"PASS: {mon['matched_line']}"
+            else:
+                return f"FAIL: keyword '{mon['keyword']}' not found within {int(mon['timeout'])}s"
+
+        # 전체 결과
+        if not self._monitors:
+            return "(no monitors)"
+
+        lines = []
+        for mid, mon in self._monitors.items():
+            if mon["result"] is None:
+                elapsed = int(time.time() - mon["start"])
+                lines.append(f"{mid}: RUNNING '{mon['keyword']}' ({elapsed}s)")
+            elif mon["result"] == "PASS":
+                lines.append(f"{mid}: PASS {mon['matched_line'][:60]}")
+            else:
+                lines.append(f"{mid}: FAIL '{mon['keyword']}'")
+        return "\n".join(lines)
 
     def SearchLog(self, keyword: str, count: int = 10) -> str:
         """현재 버퍼에서 키워드를 포함하는 로그 검색.
