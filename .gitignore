@@ -11,3 +11,4 @@ backend/settings.json
 Results/
 DLL_DEBUG/
 .env
+unins*
