@@ -89,15 +89,16 @@ async def list_devices():
 
 @router.get("/scan")
 async def scan_ports():
-    """Scan all available connection targets: ADB + serial + HKMC (TCP) + UDP bench + VisionCamera."""
+    """Scan all available connection targets: ADB + serial + HKMC (TCP) + UDP bench + VisionCamera + DLT."""
     import asyncio
     adb_task = adb.list_devices()
     serial_task = dm.scan_serial()
     hkmc_task = dm.scan_hkmc()
     bench_task = dm.scan_bench()
     vision_task = dm.scan_vision_cameras()
-    adb_devices, serial_ports, hkmc_devices, bench_devices, vision_cameras = await asyncio.gather(
-        adb_task, serial_task, hkmc_task, bench_task, vision_task
+    dlt_task = dm.scan_dlt()
+    adb_devices, serial_ports, hkmc_devices, bench_devices, vision_cameras, dlt_devices = await asyncio.gather(
+        adb_task, serial_task, hkmc_task, bench_task, vision_task, dlt_task
     )
     return {
         "adb_devices": [d.to_dict() for d in adb_devices],
@@ -105,6 +106,7 @@ async def scan_ports():
         "hkmc_devices": hkmc_devices,
         "bench_devices": bench_devices,
         "vision_cameras": vision_cameras,
+        "dlt_devices": dlt_devices,
     }
 
 
@@ -449,6 +451,40 @@ async def module_functions(module_name: str):
     if not functions:
         raise HTTPException(status_code=404, detail=f"Module '{module_name}' not found or has no functions")
     return {"module": module_name, "functions": functions}
+
+
+class DltViewerRequest(BaseModel):
+    project_file: str = ""
+    log_file: str = ""
+
+
+# DLT Viewer GUI 전용 싱글톤 (디바이스 연결 없이 GUI만 관리)
+_dlt_viewer_instance = None
+
+def _get_dlt_viewer():
+    global _dlt_viewer_instance
+    if _dlt_viewer_instance is None:
+        from ..plugins.DLTViewer import DLTViewer
+        _dlt_viewer_instance = DLTViewer()
+    return _dlt_viewer_instance
+
+
+@router.post("/dlt-viewer/launch")
+async def launch_dlt_viewer(req: DltViewerRequest):
+    """DLT Viewer GUI 실행 (디바이스 연결 불필요)."""
+    viewer = _get_dlt_viewer()
+    result = viewer.LaunchViewer(req.project_file, req.log_file)
+    if result.startswith("ERROR"):
+        raise HTTPException(status_code=400, detail=result)
+    return {"result": result}
+
+
+@router.post("/dlt-viewer/close")
+async def close_dlt_viewer():
+    """DLT Viewer GUI 종료."""
+    viewer = _get_dlt_viewer()
+    result = viewer.CloseViewer()
+    return {"result": result}
 
 
 @router.get("/hkmc-keys")
