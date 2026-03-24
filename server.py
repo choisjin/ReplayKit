@@ -25,16 +25,19 @@ else:
 FRONTEND_DIR = os.path.join(PROJECT_ROOT, "frontend")
 RESTART_FLAG = os.path.join(PROJECT_ROOT, ".restart")
 
-# Always use the venv Python for backend (절대 자기 자신(exe)을 사용하면 안 됨)
+# Backend Python: embedded > venv > system (self)
+_embed_python = os.path.join(PROJECT_ROOT, "python", "python.exe")
 _venv_python = os.path.join(PROJECT_ROOT, "venv", "Scripts", "python.exe")
 if not os.path.exists(_venv_python):
     _venv_python = os.path.join(PROJECT_ROOT, "venv", "bin", "python")
-if os.path.exists(_venv_python):
+if os.path.exists(_embed_python):
+    VENV_PYTHON = _embed_python
+elif os.path.exists(_venv_python):
     VENV_PYTHON = _venv_python
 elif not getattr(sys, "frozen", False):
     VENV_PYTHON = sys.executable
 else:
-    VENV_PYTHON = None  # exe인데 venv 없음 → 서버 시작 불가
+    VENV_PYTHON = None
 
 NPM_CMD = "npm.cmd" if sys.platform == "win32" else "npm"
 
