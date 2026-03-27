@@ -580,8 +580,8 @@ class ServerManagerApp:
         """백엔드 HTTP 응답이 올 때까지 대기 후 브라우저 자동 오픈."""
         import urllib.request
         url = self.backend.url if self._production else self.frontend.url
-        check_url = self.backend.url + "/api/device/list"
-        for _ in range(30):  # 최대 30초 대기
+        check_url = self.backend.url + "/api/health"
+        for _ in range(15):  # 최대 15초 대기
             time.sleep(1)
             if not self.backend.running:
                 return
