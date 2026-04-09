@@ -1420,48 +1420,231 @@
   },
 
   "DLTLogging": {
-    "_description": "DLT 로깅 — DLT Viewer 프로그램을 통해 ECU 로그를 저장하고 검색하는 모듈 (GUI 기반)",
+    "_description": "DLT 로깅 — DLT 데몬에 TCP 직접 연결하여 로그를 캡처·저장하고 키워드 PASS/FAIL 판정하는 모듈 (GUI 불필요)",
     "functions": {
-      "DLT_START": {
-        "description": "DLT Viewer를 실행하고 로깅을 시작합니다.",
+      "StartSave": {
+        "description": "DLT 데몬에 연결하고 로그 캡처 + 파일 저장을 시작합니다. (연결 → 캡처 → 저장 한번에 수행)",
         "params": {
-          "dlt_project": "DLT 프로젝트 파일(.dlp) 경로",
-          "SW_SHOWNORMAL": "창 표시 모드. 1 = 일반(기본), 0 = 숨김"
+          "save_path": "저장 파일 경로. 빈 값이면 backend/logs/에 자동 생성"
         }
       },
-      "DLT_EXIT": {
-        "description": "DLT 로깅을 종료합니다.",
+      "StopSave": {
+        "description": "로그 파일 저장을 중단하고 DLT 연결을 해제합니다.",
+        "params": {}
+      },
+      "MarkStep": {
+        "description": "현재 로그 위치에 스텝 경계를 표시합니다. SearchRange로 구간 검색할 때 사용합니다.",
         "params": {
-          "dlt_log": "로그 파일 경로 (선택)"
+          "step_index": "스텝 인덱스 번호"
         }
       },
-      "DLT_FIND": {
-        "description": "DLT 로그에서 키워드를 검색합니다.",
+      "SearchAll": {
+        "description": "처음부터 현재까지 전체 로그에서 키워드를 검색하여 PASS/FAIL 판정합니다.",
         "params": {
-          "dlt_log": "검색할 로그 파일 경로",
-          "find_timeout": "검색 타임아웃 (초)"
+          "keyword": "검색 키워드 (공백 구분 시 AND 조건). 예: 'BootComplete', 'ERROR crash'",
+          "count": "최대 매칭 결과 수 (기본 5)"
         }
       },
-      "DLT_EXPORT": {
-        "description": "DLT 로그를 CSV 파일로 내보냅니다.",
+      "SearchRange": {
+        "description": "MarkStep으로 표시된 스텝 구간 내에서 키워드를 검색하여 PASS/FAIL 판정합니다.",
         "params": {
-          "csv_file": "CSV 파일 저장 경로"
+          "keyword": "검색 키워드 (공백 구분 시 AND 조건)",
+          "from_step": "시작 스텝 인덱스",
+          "to_step": "종료 스텝 인덱스",
+          "count": "최대 매칭 결과 수 (기본 5)"
         }
       },
-      "DLT_COMMAND": {
-        "description": "DLT 명령어를 실행합니다.",
+      "WaitLog": {
+        "description": "키워드가 포함된 로그가 나타날 때까지 대기합니다 (블로킹). 타임아웃 시 FAIL 반환.",
         "params": {
-          "argument_lists": "명령어 인수 목록"
+          "keyword": "검색 키워드 (공백 구분 시 AND 조건)",
+          "timeout": "최대 대기 시간 (초, 기본 30)"
         }
       },
-      "MCU_Injection": {
-        "description": "MCU 인젝션 명령을 실행합니다.",
+      "ExpectFound": {
+        "description": "키워드가 나타날 때까지 전체 로그를 주기적으로 검색합니다. 즉시 검색 후 없으면 간격(timeout/max_retries)마다 재시도. 발견 시 PASS, 끝까지 없으면 FAIL.",
         "params": {
-          "Inject_Command": "인젝션 명령어"
+          "keyword": "검색 키워드 (공백 구분 시 AND 조건)",
+          "timeout": "총 대기 시간 (초, 기본 60)",
+          "max_retries": "최대 재시도 횟수 (기본 5). 간격 = timeout ÷ max_retries"
         }
       },
-      "except_action": {
-        "description": "예외 발생 시 처리 액션을 수행합니다.",
+      "ExpectNotFound": {
+        "description": "키워드가 끝까지 없는지 전체 로그를 주기적으로 확인합니다. 즉시 검색 후 발견 시 즉시 FAIL. 없으면 간격(timeout/max_retries)마다 재확인. 끝까지 없으면 PASS.",
+        "params": {
+          "keyword": "검색 키워드 (공백 구분 시 AND 조건)",
+          "timeout": "총 확인 시간 (초, 기본 60)",
+          "max_retries": "최대 확인 횟수 (기본 5). 간격 = timeout ÷ max_retries"
+        }
+      },
+      "GetStatus": {
+        "description": "현재 모듈 상태를 조회합니다 (연결, 캡처, 저장, 스텝마크 등).",
+        "params": {}
+      },
+      "ClearLogs": {
+        "description": "로그 버퍼와 스텝 마킹을 초기화합니다.",
+        "params": {}
+      }
+    }
+  },
+
+  "SerialLogging": {
+    "_description": "시리얼 로깅 — 시리얼 포트에 연결하여 로그를 캡처·저장하고 키워드 PASS/FAIL 판정하는 모듈",
+    "functions": {
+      "StartSave": {
+        "description": "시리얼 포트에 연결하고 로그 캡처 + 파일 저장을 시작합니다. (연결 → 캡처 → 저장 한번에 수행)",
+        "params": {
+          "save_path": "저장 파일 경로. 빈 값이면 backend/logs/에 자동 생성"
+        }
+      },
+      "StopSave": {
+        "description": "로그 파일 저장을 중단하고 시리얼 연결을 해제합니다.",
+        "params": {}
+      },
+      "MarkStep": {
+        "description": "현재 로그 위치에 스텝 경계를 표시합니다. SearchRange로 구간 검색할 때 사용합니다.",
+        "params": {
+          "step_index": "스텝 인덱스 번호"
+        }
+      },
+      "SearchAll": {
+        "description": "처음부터 현재까지 전체 로그에서 키워드를 검색하여 PASS/FAIL 판정합니다.",
+        "params": {
+          "keyword": "검색 키워드 (공백 구분 시 AND 조건). 예: 'BootComplete', 'ERROR'",
+          "count": "최대 매칭 결과 수 (기본 5)"
+        }
+      },
+      "SearchRange": {
+        "description": "MarkStep으로 표시된 스텝 구간 내에서 키워드를 검색하여 PASS/FAIL 판정합니다.",
+        "params": {
+          "keyword": "검색 키워드 (공백 구분 시 AND 조건)",
+          "from_step": "시작 스텝 인덱스",
+          "to_step": "종료 스텝 인덱스",
+          "count": "최대 매칭 결과 수 (기본 5)"
+        }
+      },
+      "WaitLog": {
+        "description": "키워드가 포함된 로그가 나타날 때까지 대기합니다 (블로킹). 타임아웃 시 FAIL 반환.",
+        "params": {
+          "keyword": "검색 키워드 (공백 구분 시 AND 조건)",
+          "timeout": "최대 대기 시간 (초, 기본 30)"
+        }
+      },
+      "SendCommand": {
+        "description": "시리얼 포트로 문자열 명령어를 전송합니다.",
+        "params": {
+          "command": "전송할 명령어. 예: 'reboot', 'cat /proc/version'",
+          "encoding": "인코딩 (기본 utf-8)",
+          "append_newline": "개행 문자 자동 추가. true/false (기본 true)"
+        }
+      },
+      "SendHex": {
+        "description": "시리얼 포트로 HEX 바이트를 전송합니다.",
+        "params": {
+          "hex_string": "전송할 HEX 문자열. 예: 'FF 01 A0'"
+        }
+      },
+      "SendAndWait": {
+        "description": "명령어를 전송하고 키워드가 포함된 응답을 대기합니다 (블로킹).",
+        "params": {
+          "command": "전송할 명령어",
+          "keyword": "응답에서 검색할 키워드 (공백 구분 시 AND 조건)",
+          "timeout": "최대 대기 시간 (초, 기본 10)"
+        }
+      },
+      "GetStatus": {
+        "description": "현재 모듈 상태를 조회합니다 (포트, 캡처, 저장, 스텝마크 등).",
+        "params": {}
+      },
+      "ClearLogs": {
+        "description": "로그 버퍼와 스텝 마킹을 초기화합니다.",
+        "params": {}
+      }
+    }
+  },
+
+  "SmartBench": {
+    "_description": "Smart Bench TCP 제어 — TCP 소켓으로 Smart Bench 장비의 전원, 버튼, 전류, LED를 제어하는 모듈",
+    "functions": {
+      "Connect": {
+        "description": "Smart Bench에 TCP 연결합니다.",
+        "params": {}
+      },
+      "Disconnect": {
+        "description": "Smart Bench 연결을 해제합니다.",
+        "params": {}
+      },
+      "Battery": {
+        "description": "Battery(+B) 릴레이를 제어합니다.",
+        "params": { "status": "'on' 또는 'off'" }
+      },
+      "ACC": {
+        "description": "ACC 릴레이를 제어합니다.",
+        "params": { "status": "'on' 또는 'off'" }
+      },
+      "IGN": {
+        "description": "IGN 릴레이를 제어합니다.",
+        "params": { "status": "'on' 또는 'off'" }
+      },
+      "IGN3": {
+        "description": "IGN3 릴레이를 제어합니다.",
+        "params": { "status": "'on' 또는 'off'" }
+      },
+      "USB": {
+        "description": "USB 릴레이를 제어합니다.",
+        "params": { "status": "'on' 또는 'off'" }
+      },
+      "CheckCurrent": {
+        "description": "전류를 측정하여 범위 내 진입 시 PASS (연속 3회), 타임아웃 시 FAIL.",
+        "params": {
+          "min_current": "최소 전류 (A). 예: 0.5",
+          "max_current": "최대 전류 (A). 예: 2.0",
+          "check_delay": "타임아웃 (ms). 예: 10000"
+        }
+      },
+      "CheckCurrentMoment": {
+        "description": "순간 전류를 측정하여 범위 내이면 PASS, 3회 연속 범위 외이면 FAIL.",
+        "params": {
+          "min_current": "최소 전류 (A)",
+          "max_current": "최대 전류 (A)"
+        }
+      },
+      "CheckCurrentMaintain": {
+        "description": "전류가 지정 시간 동안 범위 내 유지되는지 검증합니다.",
+        "params": {
+          "min_current": "최소 전류 (A)",
+          "max_current": "최대 전류 (A)",
+          "check_delay": "유지 시간 (ms)"
+        }
+      },
+      "ButtonPress": {
+        "description": "버튼을 누릅니다.",
+        "params": {
+          "button_num": "버튼 번호 (0=ECALL 등)",
+          "press_time": "누르는 시간 (ms). 예: 3000"
+        }
+      },
+      "LEDCheck": {
+        "description": "LED 상태를 검증합니다.",
+        "params": {
+          "data": "LED 검증 데이터. 예: 'honda;4.0;GREEN;BLINK;RED;ON'"
+        }
+      },
+      "Relay": {
+        "description": "릴레이를 직접 제어합니다.",
+        "params": {
+          "relay_num": "릴레이 번호",
+          "status": "'on' 또는 'off'"
+        }
+      },
+      "SendRaw": {
+        "description": "원시 텍스트 명령을 직접 전송합니다.",
+        "params": {
+          "command": "전송할 명령어 문자열"
+        }
+      },
+      "GetStatus": {
+        "description": "현재 모듈 상태를 조회합니다.",
         "params": {}
       }
     }

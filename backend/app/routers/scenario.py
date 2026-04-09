@@ -226,6 +226,7 @@ class CaptureExpectedImageRequest(BaseModel):
     crop: Optional[dict] = None  # {x, y, width, height} in device pixels
     compare_mode: Optional[str] = None  # "multi_crop" to append
     crop_label: str = ""
+    preserve_crops: bool = False  # True이면 기존 multi_crop 이미지 보존
 
 
 @router.post("/record/capture-expected-image")
@@ -304,14 +305,15 @@ async def capture_expected_image(req: CaptureExpectedImageRequest):
             old_file = save_dir / step.expected_image
             if old_file.exists():
                 old_file.unlink(missing_ok=True)
-        # 이전 multi_crop 이미지 파일 삭제
-        for ci in step.expected_images:
-            if ci.image:
-                old_crop = save_dir / ci.image
-                if old_crop.exists():
-                    old_crop.unlink(missing_ok=True)
-        step.expected_images.clear()
-        step.exclude_rois.clear()
+        if not req.preserve_crops:
+            # 이전 multi_crop 이미지 파일 삭제
+            for ci in step.expected_images:
+                if ci.image:
+                    old_crop = save_dir / ci.image
+                    if old_crop.exists():
+                        old_crop.unlink(missing_ok=True)
+            step.expected_images.clear()
+            step.exclude_rois.clear()
         (save_dir / filename).write_bytes(png_bytes)
         step.expected_image = filename
         if req.crop:
@@ -325,6 +327,99 @@ async def capture_expected_image(req: CaptureExpectedImageRequest):
 
     await recording_svc.save_scenario(scenario)
     return {"status": "ok", "filename": filename, "step_id": step.id}
+
+
+class RemoveExpectedImageRequest(BaseModel):
+    scenario_name: str
+    step_index: int
+
+
+@router.post("/record/remove-expected-image")
+async def remove_expected_image(req: RemoveExpectedImageRequest):
+    """Remove expected image and crop files from a step."""
+    scenario = await _resolve_scenario(req.scenario_name)
+    if req.step_index < 0 or req.step_index >= len(scenario.steps):
+        raise HTTPException(status_code=400, detail=f"Invalid step index: {req.step_index}")
+
+    step = scenario.steps[req.step_index]
+    save_dir = SCREENSHOTS_DIR / scenario.name
+
+    # 기대이미지 파일 삭제
+    if step.expected_image:
+        f = save_dir / step.expected_image
+        if f.exists():
+            f.unlink(missing_ok=True)
+        step.expected_image = None
+
+    # multi_crop 이미지 파일 삭제
+    for ci in step.expected_images:
+        if ci.image:
+            f = save_dir / ci.image
+            if f.exists():
+                f.unlink(missing_ok=True)
+    step.expected_images.clear()
+    step.exclude_rois.clear()
+    step.roi = None
+
+    await recording_svc.save_scenario(scenario)
+    return {"status": "ok"}
+
+
+class ImportStepsRequest(BaseModel):
+    target_name: str
+    source_name: str
+    step_indices: list[int]  # 0-based indices
+
+
+@router.post("/record/import-steps")
+async def import_steps(req: ImportStepsRequest):
+    """소스 시나리오에서 선택된 스텝들을 복사해온다 (기대이미지 포함)."""
+    import shutil, time as _time, re as _re
+    source = await recording_svc.load_scenario(req.source_name)
+    tgt_ss_dir = SCREENSHOTS_DIR / req.target_name
+    tgt_ss_dir.mkdir(parents=True, exist_ok=True)
+    src_ss_dir = SCREENSHOTS_DIR / req.source_name
+
+    imported = []
+    for idx in req.step_indices:
+        if idx < 0 or idx >= len(source.steps):
+            continue
+        from ..models.scenario import Step, CropItem
+        orig = source.steps[idx]
+        step_data = orig.model_dump()
+        # 새 타임스탬프 기반 ID (충돌 방지)
+        ts = int(_time.time() * 1000) % 1000000
+        new_id = 900 + len(imported)  # 프론트에서 재인덱싱하므로 임시값
+
+        # 기대이미지 복사
+        if step_data.get("expected_image"):
+            old_file = src_ss_dir / step_data["expected_image"]
+            new_filename = f"{req.target_name}_step_{new_id:03d}_{ts}.png"
+            new_file = tgt_ss_dir / new_filename
+            if old_file.exists():
+                shutil.copy2(str(old_file), str(new_file))
+            step_data["expected_image"] = new_filename
+            ts += 1
+
+        # multi_crop 이미지 복사
+        new_crops = []
+        for ci_idx, ci in enumerate(step_data.get("expected_images", [])):
+            if ci.get("image"):
+                old_ci = src_ss_dir / ci["image"]
+                new_ci_name = f"{req.target_name}_step_{new_id:03d}_crop_{ci_idx:02d}.png"
+                new_ci = tgt_ss_dir / new_ci_name
+                if old_ci.exists():
+                    shutil.copy2(str(old_ci), str(new_ci))
+                ci["image"] = new_ci_name
+            new_crops.append(ci)
+        step_data["expected_images"] = new_crops
+        step_data["id"] = new_id
+        # goto는 초기화 (다른 시나리오에서 온 경우 의미 없음)
+        step_data["on_pass_goto"] = None
+        step_data["on_fail_goto"] = None
+        imported.append(step_data)
+
+    return {"steps": imported}
 
 
 class RemoveCropRequest(BaseModel):
@@ -378,11 +473,12 @@ async def crop_from_expected(req: CropFromExpectedRequest):
     if not step.expected_image:
         raise HTTPException(status_code=400, detail="Step has no expected image to crop from")
 
-    # Read the expected image
+    # Read the expected image (한글 경로 대응)
+    from ..utils.cv_io import safe_imread
     img_path = SCREENSHOTS_DIR / req.scenario_name / step.expected_image
-    img = cv2.imread(str(img_path))
+    img = safe_imread(img_path)
     if img is None:
-        raise HTTPException(status_code=400, detail="Cannot read expected image")
+        raise HTTPException(status_code=400, detail=f"기대이미지를 읽을 수 없음: {step.expected_image} (exists={img_path.exists()})")
 
     img_h, img_w = img.shape[:2]
     x, y = int(req.crop["x"]), int(req.crop["y"])
@@ -406,16 +502,18 @@ async def crop_from_expected(req: CropFromExpectedRequest):
         if req.replace_index < 0 or req.replace_index >= len(step.expected_images):
             raise HTTPException(status_code=400, detail=f"Invalid replace index: {req.replace_index}")
         old = step.expected_images[req.replace_index]
+        from ..utils.cv_io import safe_imwrite
         filename = old.image  # reuse same filename
-        cv2.imwrite(str(save_dir / filename), cropped)
+        safe_imwrite(save_dir / filename, cropped)
         step.expected_images[req.replace_index] = CropItem(
             image=filename, label=req.crop_label or old.label, roi=roi,
         )
     else:
         # Append new crop
+        from ..utils.cv_io import safe_imwrite
         crop_idx = len(step.expected_images)
         filename = f"{req.scenario_name}_step_{step.id:03d}_crop_{crop_idx:02d}.png"
-        cv2.imwrite(str(save_dir / filename), cropped)
+        safe_imwrite(save_dir / filename, cropped)
         step.expected_images.append(CropItem(image=filename, label=req.crop_label, roi=roi))
 
     await recording_svc.save_scenario(scenario)
@@ -425,6 +523,61 @@ async def crop_from_expected(req: CropFromExpectedRequest):
         "roi": roi.model_dump(),
         "index": req.replace_index if req.replace_index is not None else len(step.expected_images) - 1,
     }
+
+
+# ------------------------------------------------------------------
+# Groups
+# ------------------------------------------------------------------
+# Folders
+# ------------------------------------------------------------------
+
+@router.get("/folders")
+async def get_folders():
+    return {"folders": recording_svc.get_folders()}
+
+
+class FolderRequest(BaseModel):
+    name: str
+
+
+class FolderRenameRequest(BaseModel):
+    old_name: str
+    new_name: str
+
+
+class FolderMoveRequest(BaseModel):
+    scenario_name: str
+    folder_name: Optional[str] = None  # None = 루트
+
+
+@router.post("/folders/create")
+async def create_folder(req: FolderRequest):
+    try:
+        folders = recording_svc.create_folder(req.name)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"folders": folders}
+
+
+@router.post("/folders/rename")
+async def rename_folder(req: FolderRenameRequest):
+    try:
+        folders = recording_svc.rename_folder(req.old_name, req.new_name)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return {"folders": folders}
+
+
+@router.post("/folders/delete")
+async def delete_folder(req: FolderRequest):
+    folders = recording_svc.delete_folder(req.name)
+    return {"folders": folders}
+
+
+@router.post("/folders/move")
+async def move_to_folder(req: FolderMoveRequest):
+    folders = recording_svc.move_to_folder(req.scenario_name, req.folder_name)
+    return {"folders": folders}
 
 
 # ------------------------------------------------------------------
@@ -443,7 +596,10 @@ class CreateGroupRequest(BaseModel):
 
 @router.post("/groups")
 async def create_group(req: CreateGroupRequest):
-    groups = recording_svc.create_group(req.name)
+    try:
+        groups = recording_svc.create_group(req.name)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     return {"groups": groups}
 
 
@@ -454,7 +610,10 @@ class RenameGroupRequest(BaseModel):
 
 @router.put("/groups")
 async def rename_group(req: RenameGroupRequest):
-    groups = recording_svc.rename_group(req.old_name, req.new_name)
+    try:
+        groups = recording_svc.rename_group(req.old_name, req.new_name)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     return {"groups": groups}
 
 
@@ -567,6 +726,27 @@ class TestStepRequest(BaseModel):
     scenario_name: str
     step_index: int  # 0-based
     step_data: Optional[dict] = None  # current (unsaved) step data from frontend
+
+
+@router.post("/clean-test-screenshots")
+async def clean_test_screenshots(scenario_name: str = ""):
+    """단일 스텝 테스트 임시 스크린샷(actual/) 삭제."""
+    import shutil
+    cleaned = 0
+    if scenario_name:
+        actual = SCREENSHOTS_DIR / scenario_name / "actual"
+        if actual.is_dir():
+            shutil.rmtree(str(actual), ignore_errors=True)
+            cleaned += 1
+    else:
+        # 전체 시나리오의 actual 폴더 삭제
+        if SCREENSHOTS_DIR.is_dir():
+            for d in SCREENSHOTS_DIR.iterdir():
+                actual = d / "actual"
+                if actual.is_dir():
+                    shutil.rmtree(str(actual), ignore_errors=True)
+                    cleaned += 1
+    return {"cleaned": cleaned}
 
 
 @router.post("/test-step")

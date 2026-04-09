@@ -4,6 +4,7 @@ import json
 import io
 import subprocess
 import shutil
+import zipfile
 from pathlib import Path
 from datetime import datetime
 
@@ -39,16 +40,49 @@ def _find_ffmpeg() -> str | None:
 
 @router.get("/list")
 async def list_results():
-    """List all test result files."""
+    """List all test result files (런 폴더 + 레거시 플랫 파일 모두 탐색)."""
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     results = []
+    seen: set[str] = set()
+
+    # 1) 런 폴더: results/{ts}_{scenario}/result.json
+    for d in sorted(RESULTS_DIR.iterdir(), reverse=True):
+        if not d.is_dir():
+            continue
+        rj = d / "result.json"
+        if not rj.exists():
+            continue
+        try:
+            data = json.loads(rj.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        key = d.name
+        seen.add(key)
+        results.append({
+            "filename": f"{d.name}/result.json",
+            "run_folder": d.name,
+            "scenario_name": data.get("scenario_name", ""),
+            "status": data.get("status", ""),
+            "total_steps": data.get("total_steps", 0),
+            "total_repeat": data.get("total_repeat", 1),
+            "passed_steps": data.get("passed_steps", 0),
+            "failed_steps": data.get("failed_steps", 0),
+            "warning_steps": data.get("warning_steps", 0),
+            "error_steps": data.get("error_steps", 0),
+            "started_at": data.get("started_at", ""),
+            "finished_at": data.get("finished_at", ""),
+        })
+
+    # 2) 레거시 플랫: results/*.json
     for f in sorted(RESULTS_DIR.glob("*.json"), reverse=True):
         data = json.loads(f.read_text(encoding="utf-8"))
         results.append({
             "filename": f.name,
+            "run_folder": "",
             "scenario_name": data.get("scenario_name", ""),
             "status": data.get("status", ""),
             "total_steps": data.get("total_steps", 0),
+            "total_repeat": data.get("total_repeat", 1),
             "passed_steps": data.get("passed_steps", 0),
             "failed_steps": data.get("failed_steps", 0),
             "warning_steps": data.get("warning_steps", 0),
@@ -96,6 +130,8 @@ def _build_excel_workbook(data: dict, filepath: Path = None):
         top=Side(style="thin"), bottom=Side(style="thin"),
     )
     center = Alignment(horizontal="center", vertical="center")
+    vcenter = Alignment(vertical="center")
+    vcenter_wrap = Alignment(vertical="center", wrap_text=True)
 
     col_headers = [
         "Time Stamp", "TOTAL TC REPEAT", "CURRENT TC REPEAT",
@@ -137,16 +173,18 @@ def _build_excel_workbook(data: dict, filepath: Path = None):
         duration_ms = sr.get("execution_time_ms", 0)
 
         try:
-            from datetime import datetime as _dt
+            from datetime import datetime as _dt, timezone as _tz
             ts = _dt.fromisoformat(timestamp.replace("Z", "+00:00"))
-            ts_str = ts.strftime("%Y-%m-%d %H:%M:%S")
+            ts_local = ts.astimezone()  # 시스템 로컬 시간대로 변환
+            ts_str = ts_local.strftime("%Y-%m-%d %H:%M:%S")
         except Exception:
             ts_str = timestamp or ""
 
         dur_str = f"{duration_ms}ms" if duration_ms < 1000 else f"{duration_ms / 1000:.1f}s"
-        delay_str = f"{delay_ms}ms" if delay_ms < 1000 else f"{delay_ms / 1000:.1f}s"
+        delay_str = f"{delay_ms}ms" if delay_ms and delay_ms >= 1000 else (f"{delay_ms}ms" if delay_ms else "-")
 
         ws.cell(row=ri, column=1, value=ts_str).border = thin_border
+        ws.cell(row=ri, column=1).alignment = center
         ws.cell(row=ri, column=2, value=total_repeat).border = thin_border
         ws.cell(row=ri, column=2).alignment = center
         ws.cell(row=ri, column=3, value=sr.get("repeat_index", 1)).border = thin_border
@@ -154,8 +192,11 @@ def _build_excel_workbook(data: dict, filepath: Path = None):
         ws.cell(row=ri, column=4, value=sr.get("step_id", "")).border = thin_border
         ws.cell(row=ri, column=4).alignment = center
         ws.cell(row=ri, column=5, value=sr.get("device_id", "")).border = thin_border
+        ws.cell(row=ri, column=5).alignment = center
         ws.cell(row=ri, column=6, value=command).border = thin_border
+        ws.cell(row=ri, column=6).alignment = vcenter_wrap
         ws.cell(row=ri, column=7, value=sr.get("description", "")).border = thin_border
+        ws.cell(row=ri, column=7).alignment = vcenter_wrap
         status_cell = ws.cell(row=ri, column=8, value=status.upper())
         status_cell.border = thin_border
         status_cell.alignment = center
@@ -174,6 +215,7 @@ def _build_excel_workbook(data: dict, filepath: Path = None):
 
         exp_path = _resolve_image_path(sr.get("expected_image"))
         ws.cell(row=ri, column=11).border = thin_border
+        ws.cell(row=ri, column=11).alignment = center
         if exp_path:
             try:
                 img = XlImage(str(exp_path))
@@ -187,6 +229,7 @@ def _build_excel_workbook(data: dict, filepath: Path = None):
         act_img_path = sr.get("actual_annotated_image") or sr.get("actual_image")
         act_path = _resolve_image_path(act_img_path)
         ws.cell(row=ri, column=12).border = thin_border
+        ws.cell(row=ri, column=12).alignment = center
         if act_path:
             try:
                 img = XlImage(str(act_path))
@@ -201,7 +244,7 @@ def _build_excel_workbook(data: dict, filepath: Path = None):
     return wb
 
 
-@router.get("/export/{filename}")
+@router.get("/export/{filename:path}")
 async def export_result_excel(filename: str):
     """Export a test result as Excel (.xlsx) — download to browser."""
     filepath = RESULTS_DIR / filename
@@ -227,71 +270,157 @@ async def export_result_excel(filename: str):
     )
 
 
-@router.post("/export-bundle/{filename}")
-async def export_result_bundle(filename: str):
-    """결과 내보내기: Excel + 녹화 영상을 Results/{날짜_시간_시나리오}/ 폴더로 복사."""
+@router.post("/export-bundle/{filename:path}")
+async def export_result_bundle(filename: str, export_path: str = ""):
+    """결과 내보내기: 런 폴더를 ZIP으로 압축하여 다운로드 또는 지정 경로에 저장.
+
+    - 런 폴더: 폴더 전체를 ZIP 압축
+    - 레거시 파일: Excel + 녹화를 임시 폴더에 모아 ZIP 압축
+
+    Args:
+        export_path: 저장 경로. 빈 값이면 브라우저 다운로드.
+    """
     filepath = RESULTS_DIR / filename
     if not filepath.exists():
         raise HTTPException(status_code=404, detail="Result not found")
 
-    data = json.loads(filepath.read_text(encoding="utf-8"))
-    scenario_name = data.get("scenario_name", "unknown")
-    started_at = data.get("started_at", "")
+    # 런 폴더인지 레거시인지 판별
+    if filepath.name == "result.json" and filepath.parent != RESULTS_DIR:
+        run_dir = filepath.parent
+        folder_name = run_dir.name
+    else:
+        # 레거시: 임시 폴더에 결과물 수집
+        data = json.loads(filepath.read_text(encoding="utf-8"))
+        scenario_name = data.get("scenario_name", "unknown")
+        started_at = data.get("started_at", "")
+        try:
+            dt = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
+            ts = dt.strftime("%Y%m%d_%H%M%S")
+        except Exception:
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        safe_name = scenario_name.replace(" ", "_").replace("/", "_").replace("\\", "_")
+        folder_name = f"{ts}_{safe_name}"
 
-    # 폴더명: YYYYMMDD_HHMMSS_시나리오이름
-    try:
-        dt = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
-        ts = dt.strftime("%Y%m%d_%H%M%S")
-    except Exception:
-        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-    safe_name = scenario_name.replace(" ", "_").replace("/", "_").replace("\\", "_")
-    folder_name = f"{ts}_{safe_name}"
-    export_dir = EXPORT_ROOT / folder_name
-    export_dir.mkdir(parents=True, exist_ok=True)
+        import tempfile
+        run_dir = Path(tempfile.mkdtemp()) / folder_name
+        run_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(str(filepath), str(run_dir / filepath.name))
 
-    exported_files = []
+        # Excel 생성
+        try:
+            wb = _build_excel_workbook(data, filepath)
+            wb.save(str(run_dir / filepath.name.replace(".json", ".xlsx")))
+        except Exception:
+            pass
 
-    # 1) Excel 생성
-    try:
-        wb = _build_excel_workbook(data, filepath)
-        excel_name = filename.replace(".json", ".xlsx")
-        excel_path = export_dir / excel_name
-        wb.save(str(excel_path))
-        exported_files.append(excel_name)
-    except Exception as e:
-        exported_files.append(f"Excel 실패: {e}")
+        # 웹캠 녹화 복사
+        base = filename.replace(".json", "")
+        if RECORDINGS_DIR.is_dir():
+            for rec in sorted(RECORDINGS_DIR.glob(f"{base}_webcam_*.webm")):
+                try:
+                    shutil.copy2(str(rec), str(run_dir / rec.name))
+                except Exception:
+                    pass
 
-    # 2) 웹캠 녹화 파일 복사
-    base = filename.replace(".json", "")
-    if RECORDINGS_DIR.is_dir():
-        for rec in sorted(RECORDINGS_DIR.glob(f"{base}_webcam_*.webm")):
-            try:
-                shutil.copy2(str(rec), str(export_dir / rec.name))
-                exported_files.append(rec.name)
-            except Exception:
-                pass
+    # ZIP 압축
+    if export_path:
+        # 지정 경로에 저장
+        zip_path = Path(export_path)
+        if zip_path.is_dir():
+            zip_path = zip_path / f"{folder_name}.zip"
+        zip_path.parent.mkdir(parents=True, exist_ok=True)
+        _zip_directory(run_dir, zip_path)
+        return {"path": str(zip_path), "folder": folder_name, "size": zip_path.stat().st_size}
+    else:
+        # 브라우저 다운로드
+        buf = io.BytesIO()
+        _zip_directory_to_buffer(run_dir, buf)
+        buf.seek(0)
+        return StreamingResponse(
+            buf,
+            media_type="application/zip",
+            headers={"Content-Disposition": f'attachment; filename="{folder_name}.zip"'},
+        )
 
-    return {
-        "path": str(export_dir),
-        "folder": folder_name,
-        "files": exported_files,
-    }
+
+@router.post("/open-folder")
+async def open_result_folder(body: dict):
+    """결과 폴더를 파일 탐색기로 열기."""
+    import os, sys
+    filename = body.get("filename", "")
+    if not filename:
+        raise HTTPException(status_code=400, detail="filename required")
+
+    filepath = RESULTS_DIR / filename
+    if not filepath.exists():
+        raise HTTPException(status_code=404, detail="Result not found")
+
+    # 런 폴더면 그 폴더, 레거시면 RESULTS_DIR
+    if filepath.name == "result.json" and filepath.parent != RESULTS_DIR:
+        target = filepath.parent
+    else:
+        target = RESULTS_DIR
+
+    if sys.platform == "win32":
+        os.startfile(str(target))
+    else:
+        subprocess.Popen(["xdg-open", str(target)])
+    return {"status": "ok", "path": str(target)}
 
 
-@router.delete("/{filename}")
+def _iter_run_dir_files(source_dir: Path):
+    """런 폴더 내 파일을 순회. junction/symlink 디렉토리는 실제 대상을 따라감."""
+    for item in sorted(source_dir.rglob("*")):
+        if item.is_file():
+            yield item
+
+
+def _zip_directory(source_dir: Path, zip_path: Path) -> None:
+    """디렉토리를 ZIP 파일로 압축."""
+    with zipfile.ZipFile(str(zip_path), "w", zipfile.ZIP_DEFLATED) as zf:
+        for file in _iter_run_dir_files(source_dir):
+            arcname = file.relative_to(source_dir.parent).as_posix()
+            zf.write(str(file), arcname)
+
+
+def _zip_directory_to_buffer(source_dir: Path, buf: io.BytesIO) -> None:
+    """디렉토리를 BytesIO 버퍼에 ZIP 압축."""
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for file in _iter_run_dir_files(source_dir):
+            arcname = file.relative_to(source_dir.parent).as_posix()
+            zf.write(str(file), arcname)
+
+
+@router.delete("/{filename:path}")
 async def delete_result(filename: str):
-    """Delete a test result and its associated webcam recordings."""
+    """Delete a test result and its associated files.
+
+    런 폴더(folder/result.json) 또는 레거시 플랫 파일(.json) 모두 처리.
+    """
     filepath = RESULTS_DIR / filename
     if not filepath.exists():
         raise HTTPException(status_code=404, detail="Result not found")
-    filepath.unlink()
-    # 연결된 웹캠 녹화 파일도 삭제
-    base = filename.replace(".json", "")
+
     deleted_recordings = []
-    if RECORDINGS_DIR.is_dir():
-        for rec in RECORDINGS_DIR.glob(f"{base}_webcam_*.webm"):
-            rec.unlink()
-            deleted_recordings.append(rec.name)
+
+    # 런 폴더인 경우 폴더 전체 삭제
+    if filepath.name == "result.json" and filepath.parent != RESULTS_DIR:
+        run_dir = filepath.parent
+        folder_name = run_dir.name
+        shutil.rmtree(str(run_dir), ignore_errors=True)
+        # 연결된 웹캠 녹화 파일도 삭제
+        if RECORDINGS_DIR.is_dir():
+            for rec in RECORDINGS_DIR.glob(f"{folder_name}_webcam_*.webm"):
+                rec.unlink()
+                deleted_recordings.append(rec.name)
+    else:
+        filepath.unlink()
+        base = filename.replace(".json", "")
+        if RECORDINGS_DIR.is_dir():
+            for rec in RECORDINGS_DIR.glob(f"{base}_webcam_*.webm"):
+                rec.unlink()
+                deleted_recordings.append(rec.name)
+
     return {"status": "deleted", "deleted_recordings": deleted_recordings}
 
 
@@ -309,21 +438,45 @@ async def upload_webcam_recording(
     repeat_index: int = Query(1),
 ):
     """Upload a webcam recording linked to a test result."""
-    RECORDINGS_DIR.mkdir(parents=True, exist_ok=True)
-    base = result_filename.replace(".json", "")
-    filename = f"{base}_webcam_r{repeat_index}.webm"
-    filepath = RECORDINGS_DIR / filename
+    base = result_filename.replace(".json", "").replace("/result", "")
+    filename = f"webcam_r{repeat_index}.webm"
     content = await file.read()
-    filepath.write_bytes(content)
-    return {"filename": filename, "url": f"/recordings/{filename}"}
+
+    # 시나리오 결과 폴더의 recordings/ 에 저장
+    run_dir = RESULTS_DIR / base
+    if run_dir.is_dir():
+        rec_dir = run_dir / "recordings"
+        rec_dir.mkdir(exist_ok=True)
+        filepath = rec_dir / filename
+        filepath.write_bytes(content)
+    else:
+        # 결과 폴더가 없으면 기존 위치에 저장 (폴백)
+        RECORDINGS_DIR.mkdir(parents=True, exist_ok=True)
+        filepath = RECORDINGS_DIR / f"{base}_webcam_r{repeat_index}.webm"
+        filepath.write_bytes(content)
+
+    return {"filename": filename, "path": str(filepath)}
 
 
-@router.get("/recordings-for/{result_filename}")
+@router.get("/recordings-for/{result_filename:path}")
 async def list_recordings_for_result(result_filename: str):
     """List webcam recordings linked to a test result."""
     RECORDINGS_DIR.mkdir(parents=True, exist_ok=True)
-    base = result_filename.replace(".json", "")
+    base = result_filename.replace(".json", "").replace("/result", "")
     recordings = []
+
+    # 런 폴더 내 recordings/ 확인
+    run_dir = RESULTS_DIR / base
+    rec_dir = run_dir / "recordings" if run_dir.is_dir() else None
+    if rec_dir and rec_dir.is_dir():
+        for f in sorted(rec_dir.glob("*.webm")):
+            recordings.append({
+                "filename": f.name,
+                "size": f.stat().st_size,
+                "url": f"/results-files/{base}/recordings/{f.name}",
+            })
+
+    # 레거시: Results/Video/ 에서도 탐색
     for f in sorted(RECORDINGS_DIR.glob(f"{base}_webcam_*.webm")):
         recordings.append({
             "filename": f.name,
@@ -370,13 +523,14 @@ async def trim_recording(
             [ffmpeg_path, "-i", str(filepath), "-ss", str(start), "-to", str(end),
              "-c", "copy", str(output_path), "-y"],
             check=True, capture_output=True,
+            creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
         )
     except subprocess.CalledProcessError as e:
         raise HTTPException(status_code=500, detail=f"ffmpeg error: {e.stderr.decode(errors='replace')[:300]}")
     return {"filename": output_name, "url": f"/recordings/{output_name}"}
 
 
-@router.post("/update-step/{filename}")
+@router.post("/update-step/{filename:path}")
 async def update_step_result(filename: str, body: dict):
     """백그라운드 CMD 완료 후 스텝 결과를 영구 업데이트."""
     filepath = RESULTS_DIR / filename
@@ -414,9 +568,103 @@ async def update_step_result(filename: str, body: dict):
     return {"status": "ok", "result_status": data["status"]}
 
 
-@router.get("/{filename}")
+@router.post("/migrate-legacy")
+async def migrate_legacy():
+    """레거시 결과 파일을 새 구조로 마이그레이션.
+    screenshots/{name}/actual_{ts}/ → results/{ts}_{name}/screenshots/
+    results/{name}_{ts}.json → results/{ts}_{name}/result.json
+    """
+    import re as _re
+    migrated = 0
+    errors = []
+
+    # 1) screenshots 내 actual_ 폴더 → results 런 폴더로 이동
+    if SCREENSHOTS_DIR.is_dir():
+        for scenario_dir in SCREENSHOTS_DIR.iterdir():
+            if not scenario_dir.is_dir():
+                continue
+            sc_name = scenario_dir.name
+            for actual_dir in list(scenario_dir.iterdir()):
+                if not actual_dir.is_dir() or not actual_dir.name.startswith("actual_"):
+                    continue
+                ts = actual_dir.name.replace("actual_", "")  # e.g. 20260408_174101
+                if not _re.match(r"\d{8}_\d{6}", ts):
+                    continue
+                safe_name = _re.sub(r'[\\/:*?"<>|→]', '_', sc_name).replace(" ", "_")
+                run_dir = RESULTS_DIR / f"{ts}_{safe_name}"
+                run_dir.mkdir(parents=True, exist_ok=True)
+                dst_ss = run_dir / "screenshots"
+                if not dst_ss.exists():
+                    try:
+                        shutil.move(str(actual_dir), str(dst_ss))
+                        migrated += 1
+                    except Exception as e:
+                        errors.append(f"screenshots/{sc_name}/{actual_dir.name}: {e}")
+                else:
+                    # 이미 존재하면 파일 단위로 머지
+                    for f in actual_dir.iterdir():
+                        if f.is_file():
+                            dst_f = dst_ss / f.name
+                            if not dst_f.exists():
+                                shutil.move(str(f), str(dst_f))
+                    # 빈 폴더 삭제
+                    try:
+                        actual_dir.rmdir()
+                    except Exception:
+                        pass
+                    migrated += 1
+
+    # 2) results 내 플랫 JSON → 런 폴더로 이동
+    if RESULTS_DIR.is_dir():
+        for json_file in list(RESULTS_DIR.glob("*.json")):
+            # {name}_{timestamp}.json 패턴 매칭
+            m = _re.match(r"^(.+?)_(\d{8}_\d{6})\.json$", json_file.name)
+            if not m:
+                continue
+            sc_name = m.group(1)
+            ts = m.group(2)
+            safe_name = _re.sub(r'[\\/:*?"<>|→]', '_', sc_name).replace(" ", "_")
+            run_dir = RESULTS_DIR / f"{ts}_{safe_name}"
+            run_dir.mkdir(parents=True, exist_ok=True)
+            dst = run_dir / "result.json"
+            if not dst.exists():
+                try:
+                    shutil.move(str(json_file), str(dst))
+                    # Excel도 함께 이동
+                    xlsx = json_file.with_suffix(".xlsx")
+                    if xlsx.exists():
+                        shutil.move(str(xlsx), str(run_dir / "result.xlsx"))
+                    migrated += 1
+                except Exception as e:
+                    errors.append(f"{json_file.name}: {e}")
+
+    # 3) screenshots 내 actual/actual_ 폴더 정리 + 빈 폴더 삭제
+    if SCREENSHOTS_DIR.is_dir():
+        for d in list(SCREENSHOTS_DIR.iterdir()):
+            if not d.is_dir():
+                continue
+            for sub in list(d.iterdir()):
+                if sub.is_dir() and sub.name == "actual":
+                    # 타임스탬프 없는 actual 폴더 (단일 스텝 테스트 임시) → 삭제
+                    try:
+                        shutil.rmtree(str(sub))
+                        migrated += 1
+                    except Exception as e:
+                        errors.append(f"screenshots/{d.name}/actual: {e}")
+            # 하위에 actual_ 폴더도 파일도 없으면 폴더 자체 삭제
+            try:
+                remaining = list(d.iterdir())
+                if not remaining:
+                    d.rmdir()
+            except Exception:
+                pass
+
+    return {"migrated": migrated, "errors": errors}
+
+
+@router.get("/{filename:path}")
 async def get_result(filename: str):
-    """Get a specific test result."""
+    """Get a specific test result (런 폴더 또는 레거시 플랫 파일)."""
     filepath = RESULTS_DIR / filename
     if not filepath.exists():
         raise HTTPException(status_code=404, detail="Result not found")

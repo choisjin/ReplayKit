@@ -27,6 +27,7 @@ _DEFAULTS = {
     "scenario_export_dir": "",
     "language": "ko",
     "monitor_server_url": "",
+    "admin_server_url": "",
     "threshold_full": 0.95,
     "threshold_single_crop": 0.90,
     "threshold_full_exclude": 0.93,
@@ -60,6 +61,7 @@ class UpdateSettingsRequest(BaseModel):
     scenario_export_dir: Optional[str] = None
     language: Optional[str] = None
     monitor_server_url: Optional[str] = None
+    admin_server_url: Optional[str] = None
     threshold_full: Optional[float] = None
     threshold_single_crop: Optional[float] = None
     threshold_full_exclude: Optional[float] = None
@@ -81,6 +83,8 @@ async def update_settings(req: UpdateSettingsRequest):
         current["language"] = req.language
     if req.monitor_server_url is not None:
         current["monitor_server_url"] = req.monitor_server_url
+    if req.admin_server_url is not None:
+        current["admin_server_url"] = req.admin_server_url
     if req.threshold_full is not None:
         current["threshold_full"] = req.threshold_full
     if req.threshold_single_crop is not None:
@@ -327,49 +331,79 @@ async def server_restart():
     return {"status": "restarting"}
 
 
+@router.get("/power-status")
+async def power_status():
+    """PC 절전 모드 설정 조회 (Windows 전용)."""
+    result = {"ac_standby_seconds": None, "dc_standby_seconds": None, "warning": None}
+    if sys.platform != "win32":
+        result["warning"] = "Windows만 지원"
+        return result
+    try:
+        import ctypes
+        import ctypes.wintypes as wt
+        powrprof = ctypes.windll.powrprof
+        GUID = ctypes.c_byte * 16
+        SLEEP_SUB = (GUID)(0x38, 0x83, 0x30, 0x23, 0x82, 0x15, 0xD2, 0x11, 0x9C, 0xE7, 0x00, 0x80, 0xC7, 0x3C, 0x88, 0x81)
+        STANDBY = (GUID)(0x1D, 0xC1, 0xF6, 0x29, 0xEA, 0x42, 0x6D, 0x47, 0x82, 0x8A, 0x3B, 0x06, 0x42, 0x6B, 0xD1, 0xFD)
+        val = wt.DWORD(0)
+        powrprof.PowerReadACValueIndex(None, None, ctypes.byref(SLEEP_SUB), ctypes.byref(STANDBY), ctypes.byref(val))
+        result["ac_standby_seconds"] = val.value
+        powrprof.PowerReadDCValueIndex(None, None, ctypes.byref(SLEEP_SUB), ctypes.byref(STANDBY), ctypes.byref(val))
+        result["dc_standby_seconds"] = val.value
+        if val.value > 0 or result["ac_standby_seconds"] > 0:
+            mins = min(result["ac_standby_seconds"] or 99999, result["dc_standby_seconds"] or 99999) // 60
+            result["warning"] = f"절전 모드가 {mins}분으로 설정되어 있습니다. 장시간 재생 시 중단될 수 있습니다."
+    except Exception as e:
+        result["warning"] = f"절전 설정 조회 실패: {e}"
+    return result
+
+
+@router.get("/launcher-log")
+async def get_launcher_log(lines: int = 200, date: str = "", source: str = ""):
+    """런처/백엔드 로그 읽기 (날짜별 로그 파일).
+    source: '' = 런처(날짜별), 'backend' = 백엔드(backend.log + 로테이션)
+    """
+    from datetime import datetime as _dt
+    log_dir = _PROJECT_ROOT / "logs"
+    if not log_dir.is_dir():
+        return {"lines": [], "dates": [], "sources": ["launcher", "backend"]}
+
+    if source == "backend":
+        # 백엔드 로그: backend.log + backend.log.2026-04-09 등
+        files = sorted(log_dir.glob("backend.log*"), reverse=True)
+        dates = []
+        for f in files:
+            if f.name == "backend.log":
+                dates.append("today")
+            else:
+                dates.append(f.name.replace("backend.log.", ""))
+        target = date or "today"
+        if target == "today":
+            log_file = log_dir / "backend.log"
+        else:
+            log_file = log_dir / f"backend.log.{target}"
+    else:
+        # 런처 로그: 날짜별
+        dates = sorted([f.stem for f in log_dir.glob("*.log") if not f.name.startswith("backend")], reverse=True)
+        target = date or _dt.now().strftime("%Y-%m-%d")
+        log_file = log_dir / f"{target}.log"
+
+    if not log_file.exists():
+        return {"lines": [], "dates": dates, "sources": ["launcher", "backend"]}
+    try:
+        content = log_file.read_text(encoding="utf-8", errors="replace")
+        all_lines = content.strip().split("\n") if content.strip() else []
+        return {"lines": all_lines[-lines:], "dates": dates, "sources": ["launcher", "backend"]}
+    except Exception:
+        return {"lines": [], "dates": dates, "sources": ["launcher", "backend"]}
+
+
 @router.post("/update-and-restart")
 async def update_and_restart():
-    """git pull + 의존성 업데이트 + 서버 재시작."""
-    results = {"git": "", "pip": "", "npm": ""}
-    npm_cmd = "npm.cmd" if sys.platform == "win32" else "npm"
-    cwd = str(_PROJECT_ROOT)
-    no_window = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
-
-    try:
-        # 1) 로컬 변경 초기화 + untracked 정리 + git pull
-        subprocess.run(["git", "checkout", "--", "."],
-                       cwd=cwd, capture_output=True, text=True, timeout=30, creationflags=no_window)
-        subprocess.run(["git", "clean", "-fd", "--exclude=ReplayKit.exe"],
-                       cwd=cwd, capture_output=True, text=True, timeout=30, creationflags=no_window)
-        r = subprocess.run(["git", "pull", "origin", "main"],
-                           cwd=cwd, capture_output=True, text=True, timeout=60, creationflags=no_window)
-        results["git"] = (r.stdout.strip() + "\n" + r.stderr.strip()).strip()
-        if r.returncode != 0:
-            return {"status": "error", "step": "git pull", "detail": results["git"], "results": results}
-
-        # 2) pip install
-        venv_py = _PROJECT_ROOT / "venv" / "Scripts" / "python.exe"
-        if not venv_py.exists():
-            venv_py = _PROJECT_ROOT / "venv" / "bin" / "python"
-        python = str(venv_py) if venv_py.exists() else sys.executable
-        r = subprocess.run([python, "-m", "pip", "install", "-r", "requirements.txt", "-q"],
-                           cwd=cwd, capture_output=True, text=True, timeout=120, creationflags=no_window)
-        results["pip"] = r.stdout.strip() or "OK"
-
-        # 3) npm install
-        r = subprocess.run([npm_cmd, "install", "--silent"],
-                           cwd=str(_PROJECT_ROOT / "frontend"), capture_output=True, text=True, timeout=120, creationflags=no_window)
-        results["npm"] = r.stdout.strip() or "OK"
-
-    except subprocess.TimeoutExpired as e:
-        return {"status": "error", "step": "timeout", "detail": str(e), "results": results}
-    except Exception as e:
-        return {"status": "error", "step": "exception", "detail": str(e), "results": results}
-
-    # 4) .restart 플래그로 server.py에 재시작 요청
-    logger.info("Update complete — requesting restart via flag")
+    """서버 종료 → ReplayKit.bat이 git pull + 서버 재시작."""
+    logger.info("Update requested — writing .restart flag")
     _RESTART_FLAG.write_text("restart", encoding="utf-8")
-    return {"status": "restarting", "results": results}
+    return {"status": "restarting"}
 
 
 @router.get("/disk-usage")
@@ -405,6 +439,68 @@ async def disk_usage():
             "used_percent": round(used / total * 100, 1),
         })
     return drives
+
+
+@router.get("/git-log")
+async def git_log(limit: int = 100, fetch: bool = False):
+    """Git 커밋 내역 조회. fetch=true면 원격에서 최신 커밋 가져온 후 조회."""
+    try:
+        no_window = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
+        if fetch:
+            fetch_r = subprocess.run(
+                ["git", "fetch", "origin", "main"],
+                cwd=str(_PROJECT_ROOT), capture_output=True, timeout=15,
+                encoding="utf-8", errors="replace", creationflags=no_window,
+            )
+            if fetch_r.returncode != 0:
+                raise HTTPException(status_code=502, detail=f"원격 저장소 연결 실패: {fetch_r.stderr.strip()}")
+
+        # origin/main 커밋 조회 (setup.bat이 git_remote.txt URL을 origin으로 등록)
+        r = subprocess.run(
+            ["git", "log", "origin/main", f"-{limit}", "--pretty=format:%H||%h||%an||%ae||%aI||%s"],
+            cwd=str(_PROJECT_ROOT),
+            capture_output=True, timeout=10, encoding="utf-8", errors="replace",
+            creationflags=no_window,
+        )
+        if r.returncode != 0:
+            raise HTTPException(status_code=500, detail=f"git log failed: {r.stderr.strip()}")
+
+        commits = []
+        for line in r.stdout.strip().split("\n"):
+            if not line:
+                continue
+            parts = line.split("||", 5)
+            if len(parts) < 6:
+                continue
+            commits.append({
+                "hash": parts[0],
+                "short_hash": parts[1],
+                "author": parts[2],
+                "email": parts[3],
+                "date": parts[4],
+                "message": parts[5],
+            })
+
+        # 현재 브랜치, 태그 정보
+        branch_r = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            cwd=str(_PROJECT_ROOT), capture_output=True, timeout=5, encoding="utf-8", errors="replace",
+            creationflags=no_window,
+        )
+        branch = branch_r.stdout.strip() if branch_r.returncode == 0 else "unknown"
+
+        tag_r = subprocess.run(
+            ["git", "tag", "--sort=-creatordate"],
+            cwd=str(_PROJECT_ROOT), capture_output=True, timeout=5, encoding="utf-8", errors="replace",
+            creationflags=no_window,
+        )
+        tags = [t for t in tag_r.stdout.strip().split("\n") if t] if tag_r.returncode == 0 else []
+
+        return {"branch": branch, "tags": tags, "commits": commits}
+    except subprocess.TimeoutExpired:
+        raise HTTPException(status_code=500, detail="git command timed out")
+    except FileNotFoundError:
+        raise HTTPException(status_code=500, detail="git not found")
 
 
 @router.post("/open-results-folder")

@@ -1,9 +1,11 @@
 """Device management API routes."""
 
 import base64
+import json as _json
 import logging
+from pathlib import Path
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 from typing import Optional
 
@@ -12,6 +14,36 @@ logger = logging.getLogger(__name__)
 from ..dependencies import adb_service as adb, device_manager as dm
 from ..services.adb_service import resolve_sf_display_id
 from ..services.module_service import list_available_modules, get_module_functions, execute_module_function
+
+# ── 스캔 설정 ──────────────────────────────────────────────
+_SCAN_SETTINGS_FILE = Path(__file__).resolve().parent.parent.parent / "scan_settings.json"
+
+_DEFAULT_SCAN_SETTINGS = {
+    "builtin": {
+        "adb":            {"enabled": True,  "module": ""},
+        "serial":         {"enabled": True,  "module": "SerialLogging"},
+        "hkmc":           {"enabled": True,  "module": ""},
+        "dlt":            {"enabled": True,  "module": "DLTLogging"},
+        "bench":          {"enabled": True,  "module": "CCIC_BENCH"},
+        "vision_camera":  {"enabled": False, "module": "VisionCamera"},
+    },
+    # type: "tcp" | "udp"
+    # [{"label": "MLP", "type": "tcp", "port": 5001, "module": "MLP", "enabled": true}, ...]
+    "custom": [],
+}
+
+
+def _load_scan_settings() -> dict:
+    if _SCAN_SETTINGS_FILE.exists():
+        try:
+            return _json.loads(_SCAN_SETTINGS_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return dict(_DEFAULT_SCAN_SETTINGS)
+
+
+def _save_scan_settings(settings: dict) -> None:
+    _SCAN_SETTINGS_FILE.write_text(_json.dumps(settings, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def _parse_adb_display_id(screen_type: str | None) -> int | None:
@@ -32,7 +64,12 @@ def _build_constructor_kwargs(dev) -> dict | None:
         return None
     connect_type = dev.info.get("connect_type", "serial" if dev.type == "serial" else "none")
     if connect_type == "serial":
-        return {"port": dev.address, "bps": dev.info.get("baudrate", 115200)}
+        kwargs = {"port": dev.address, "bps": dev.info.get("baudrate", 115200)}
+        # connect_fields의 추가 필드도 포함 (e.g. CANAT의 log_path, ch1_fd 등)
+        for k, v in dev.info.items():
+            if k not in ("module", "connect_type", "baudrate"):
+                kwargs[k] = v
+        return kwargs
     elif connect_type == "socket":
         kwargs = {"host": dev.address}
         # 추가 필드 전달 (예: udp_port) — 생성자 시그니처 매칭으로 필터링됨
@@ -60,6 +97,7 @@ class ConnectRequest(BaseModel):
     module: Optional[str] = None  # lge.auto module name (e.g. "POWER", "CAN")
     connect_type: Optional[str] = None  # "serial" | "socket" | "can" | "none" | "vision_camera"
     extra_fields: Optional[dict] = None  # Additional module-specific fields
+    device_model: Optional[str] = None  # 장비 모델 (GVM, ccNC, Phone 등) — 하드키 매칭용
 
 
 class DisconnectRequest(BaseModel):
@@ -87,27 +125,97 @@ async def list_devices():
     }
 
 
+@router.get("/scan-settings")
+async def get_scan_settings():
+    """현재 스캔 설정 조회."""
+    return _load_scan_settings()
+
+
+@router.post("/scan-settings")
+async def save_scan_settings(request: Request):
+    """스캔 설정 저장."""
+    body = await request.json()
+    _save_scan_settings(body)
+    return {"status": "ok"}
+
+
 @router.get("/scan")
 async def scan_ports():
-    """Scan all available connection targets: ADB + serial + HKMC (TCP) + UDP bench + VisionCamera + DLT."""
+    """Scan available connection targets — 스캔 설정에 따라 활성화된 항목만 실행."""
     import asyncio
-    adb_task = adb.list_devices()
-    serial_task = dm.scan_serial()
-    hkmc_task = dm.scan_hkmc()
-    bench_task = dm.scan_bench()
-    vision_task = dm.scan_vision_cameras()
-    dlt_task = dm.scan_dlt()
-    adb_devices, serial_ports, hkmc_devices, bench_devices, vision_cameras, dlt_devices = await asyncio.gather(
-        adb_task, serial_task, hkmc_task, bench_task, vision_task, dlt_task
-    )
-    return {
-        "adb_devices": [d.to_dict() for d in adb_devices],
-        "serial_ports": serial_ports,
-        "hkmc_devices": hkmc_devices,
-        "bench_devices": bench_devices,
-        "vision_cameras": vision_cameras,
-        "dlt_devices": dlt_devices,
+    from ..services.device_manager import scan_tcp_port
+
+    settings = _load_scan_settings()
+    builtin = settings.get("builtin", {})
+    custom = settings.get("custom", [])
+
+    def _enabled(key: str) -> bool:
+        v = builtin.get(key, {})
+        if isinstance(v, dict):
+            return v.get("enabled", True)
+        return bool(v)  # 레거시 호환 (단순 bool)
+
+    tasks: dict[str, asyncio.Task] = {}
+
+    if _enabled("adb"):
+        tasks["adb_devices"] = asyncio.ensure_future(adb.list_devices())
+    if _enabled("serial"):
+        tasks["serial_ports"] = asyncio.ensure_future(dm.scan_serial())
+    if _enabled("hkmc"):
+        tasks["hkmc_devices"] = asyncio.ensure_future(dm.scan_hkmc())
+    if _enabled("bench"):
+        tasks["bench_devices"] = asyncio.ensure_future(dm.scan_bench())
+    if _enabled("vision_camera"):
+        tasks["vision_cameras"] = asyncio.ensure_future(dm.scan_vision_cameras())
+    if _enabled("dlt"):
+        tasks["dlt_devices"] = asyncio.ensure_future(dm.scan_dlt())
+    if _enabled("smartbench"):
+        tasks["smartbench_devices"] = asyncio.ensure_future(dm.scan_smartbench())
+
+    # 커스텀 TCP/UDP 포트 스캔
+    custom_tasks: list[tuple[str, asyncio.Task]] = []
+    for entry in custom:
+        if entry.get("enabled") and entry.get("port"):
+            label = entry.get("label", f"{entry.get('type','tcp').upper()}:{entry['port']}")
+            proto = entry.get("type", "tcp")
+            port = int(entry["port"])
+            if proto == "udp":
+                custom_tasks.append((label, asyncio.ensure_future(dm.scan_udp_port(port))))
+            else:
+                custom_tasks.append((label, asyncio.ensure_future(scan_tcp_port(port))))
+
+    # 모든 태스크 병렬 실행
+    all_keys = list(tasks.keys())
+    all_futures = list(tasks.values())
+    for label, fut in custom_tasks:
+        all_keys.append(f"custom_{label}")
+        all_futures.append(fut)
+
+    results = await asyncio.gather(*all_futures, return_exceptions=True)
+
+    response: dict = {
+        "adb_devices": [],
+        "serial_ports": [],
+        "hkmc_devices": [],
+        "bench_devices": [],
+        "vision_cameras": [],
+        "dlt_devices": [],
+        "smartbench_devices": [],
+        "custom_results": [],
     }
+    for key, result in zip(all_keys, results):
+        if isinstance(result, Exception):
+            logger.warning("Scan %s failed: %s", key, result)
+            continue
+        if key == "adb_devices":
+            response["adb_devices"] = [d.to_dict() for d in result]
+        elif key.startswith("custom_"):
+            label = key[len("custom_"):]
+            response["custom_results"].append({"label": label, "hosts": result})
+        else:
+            response[key] = result
+
+    return response
 
 
 @router.get("/local-interfaces")
@@ -158,7 +266,7 @@ async def connect_device(req: ConnectRequest):
         if ":" in req.address:
             # WiFi ADB — connect first
             await dm.adb.connect_device(req.address)
-        dev = await dm.add_adb_device(req.address, device_id=custom_id, name=req.name or "")
+        dev = await dm.add_adb_device(req.address, device_id=custom_id, name=req.name or "", device_model=req.device_model or "")
         return {
             "result": f"Connected: {dev.name} (ID: {dev.id})",
             "primary": [d.to_dict() for d in dm.list_primary()],
@@ -183,7 +291,7 @@ async def connect_device(req: ConnectRequest):
         if not req.address or not req.port:
             raise HTTPException(status_code=400, detail="HKMC6th requires address (IP) and port (TCP port)")
         try:
-            dev = await dm.add_hkmc6th_device(req.address, req.port, device_id=custom_id, name=req.name or "")
+            dev = await dm.add_hkmc6th_device(req.address, req.port, device_id=custom_id, name=req.name or "", device_model=req.device_model or "")
             return {
                 "result": f"HKMC connected: {dev.name} (ID: {dev.id})",
                 "primary": [d.to_dict() for d in dm.list_primary()],
@@ -312,9 +420,7 @@ async def device_input(req: InputRequest):
             )
             return {"result": "ok", "response": response}
 
-        if req.action in ("hkmc_touch", "hkmc_swipe", "hkmc_key"):
-            if not dev or dev.type != "hkmc6th":
-                raise HTTPException(status_code=400, detail=f"HKMC device {req.device_id} not found")
+        if req.action in ("hkmc_touch", "hkmc_swipe", "hkmc_key", "repeat_tap") and dev and dev.type == "hkmc6th":
             hkmc = dm.get_hkmc_service(req.device_id)
             if not hkmc:
                 raise HTTPException(status_code=400, detail=f"HKMC device {req.device_id} not connected")
@@ -322,7 +428,10 @@ async def device_input(req: InputRequest):
                         req.device_id, req.action, req.params, hkmc.is_connected)
             p = req.params
             screen_type = p.get("screen_type", "front_center")
-            if req.action == "hkmc_touch":
+            if req.action == "repeat_tap":
+                await hkmc.async_repeat_tap(p["x"], p["y"], int(p.get("count", 5)),
+                                            int(p.get("interval_ms", 100)), screen_type)
+            elif req.action == "hkmc_touch":
                 await hkmc.async_tap(p["x"], p["y"], screen_type)
                 logger.info("[HKMC INPUT] tap sent: x=%s y=%s screen=%s", p["x"], p["y"], screen_type)
             elif req.action == "hkmc_swipe":
@@ -352,6 +461,9 @@ async def device_input(req: InputRequest):
         p = req.params
         if req.action == "tap":
             await adb.tap(p["x"], p["y"], serial=adb_serial, display_id=display_id)
+        elif req.action == "repeat_tap":
+            await adb.repeat_tap(p["x"], p["y"], int(p.get("count", 5)), int(p.get("interval_ms", 100)),
+                                 serial=adb_serial, display_id=display_id)
         elif req.action == "long_press":
             await adb.long_press(p["x"], p["y"], p.get("duration_ms", 1000), serial=adb_serial, display_id=display_id)
         elif req.action == "swipe":
@@ -362,11 +474,25 @@ async def device_input(req: InputRequest):
             await adb.key_event(p["keycode"], serial=adb_serial, display_id=display_id)
         elif req.action == "adb_command":
             await adb.run_shell_command(p["command"], serial=adb_serial)
+        elif req.action == "multi_touch":
+            fingers = p.get("fingers", [])
+            if not fingers:
+                raise HTTPException(status_code=400, detail="fingers array required")
+            # 탭 vs 스와이프 판별: 시작점과 끝점이 같으면 탭
+            is_tap = all(f.get("x1") == f.get("x2") and f.get("y1") == f.get("y2") for f in fingers)
+            if is_tap:
+                points = [{"x": f["x1"], "y": f["y1"]} for f in fingers]
+                await adb.multi_finger_tap(points, serial=adb_serial, display_id=display_id)
+            else:
+                await adb.multi_finger_swipe(fingers, p.get("duration_ms", 500), serial=adb_serial, display_id=display_id)
         else:
             raise HTTPException(status_code=400, detail=f"Unknown action: {req.action}")
 
         return {"result": "ok"}
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.error("device_input error: action=%s device=%s error=%s", req.action, req.device_id, e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -406,8 +532,27 @@ async def connect_registered_devices(req: ConnectRegisteredRequest):
     }
 
 
+class ReorderDevicesRequest(BaseModel):
+    prefix: str
+    ordered_ids: list[str]
+
+
+@router.post("/reorder")
+async def reorder_devices(req: ReorderDevicesRequest):
+    """그룹 내 디바이스 순서 변경 (ID 번호 재할당)."""
+    try:
+        dm.reorder_devices(req.prefix, req.ordered_ids)
+        return {
+            "primary": [d.to_dict() for d in dm.list_primary()],
+            "auxiliary": [d.to_dict() for d in dm.list_auxiliary()],
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 class UpdateDeviceRequest(BaseModel):
     device_id: str
+    new_device_id: Optional[str] = None
     name: Optional[str] = None
     address: Optional[str] = None
     baudrate: Optional[int] = None
@@ -422,6 +567,19 @@ async def update_device(req: UpdateDeviceRequest):
     dev = dm.get_device(req.device_id)
     if not dev:
         raise HTTPException(status_code=404, detail=f"Device {req.device_id} not found")
+
+    # ID 변경
+    if req.new_device_id and req.new_device_id != req.device_id:
+        new_id = req.new_device_id.strip()
+        existing = dm.get_device(new_id)
+        if existing:
+            # 기존 디바이스와 ID 교체(swap)
+            dm.swap_device_ids(req.device_id, new_id)
+        else:
+            dm.rename_device(req.device_id, new_id)
+        dev = dm.get_device(new_id)
+        if not dev:
+            raise HTTPException(status_code=500, detail="Device rename failed")
 
     need_serial_reconnect = False
     if req.name is not None:

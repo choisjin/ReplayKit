@@ -21,6 +21,8 @@ class StepType(str, Enum):
     HKMC_KEY = "hkmc_key"
     CMD_SEND = "cmd_send"      # CMD 명령어 실행 (결과 무시)
     CMD_CHECK = "cmd_check"    # CMD 명령어 실행 후 리턴값 비교
+    MULTI_TOUCH = "multi_touch"  # 멀티핑거 제스처 (핀치, 멀티스와이프)
+    REPEAT_TAP = "repeat_tap"    # 같은 위치 연속 터치
 
 
 class TapParams(BaseModel):
@@ -125,7 +127,7 @@ class StepResult(BaseModel):
     device_id: str = ""  # which device executed this step
     command: str = ""  # human-readable action description
     description: str = ""  # user remark for the step
-    status: str  # "pass", "fail", "warning", "error"
+    status: str  # "pass", "fail", "error"
     similarity_score: Optional[float] = None
     expected_image: Optional[str] = None
     expected_annotated_image: Optional[str] = None  # expected with regions drawn

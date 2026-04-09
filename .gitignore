@@ -1,11 +1,12 @@
-# 런타임 생성 (setup.bat이 생성/관리)
+# 런타임
 venv/
 python/
 __pycache__/
 *.pyc
 *.c
+logs/
 
-# 인스톨러 전용 (Inno Setup 패키징 대상, git 불필요)
+# 인스톨러
 *.exe
 *.msi
 *.zip

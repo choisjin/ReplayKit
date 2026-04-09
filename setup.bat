@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 echo ============================================
 echo   ReplayKit - Setup
 echo ============================================
@@ -176,14 +177,14 @@ if exist "tools\ffmpeg.exe" (
 )
 
 :: -------------------------------------------------------
-:: [4/5] Node.js (dev mode only)
+:: [4/4] Node.js (dev mode only)
 :: -------------------------------------------------------
 if "%PRODUCTION%"=="1" (
-    echo [4/5] Production mode - skipping Node.js
+    echo [4/4] Production mode - skipping Node.js
     goto :skip_npm
 )
 
-echo [4/5] Checking Node.js...
+echo [4/4] Checking Node.js...
 where npm.cmd >nul 2>&1
 if %ERRORLEVEL% neq 0 (
     echo.
@@ -227,67 +228,6 @@ if exist "frontend\package.json" (
 )
 
 :skip_npm
-
-:: -------------------------------------------------------
-:: [5/5] Git repository setup (production only)
-:: -------------------------------------------------------
-if not "%PRODUCTION%"=="1" goto :git_done
-
-:: Refresh PATH (Git may have been installed by the installer just before this)
-for /f "tokens=2*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path 2^>nul') do set "SYS_PATH=%%b"
-for /f "tokens=2*" %%a in ('reg query "HKCU\Environment" /v Path 2^>nul') do set "USR_PATH=%%b"
-if defined SYS_PATH set "PATH=%SYS_PATH%"
-if defined USR_PATH set "PATH=%PATH%;%USR_PATH%"
-
-where git.exe >nul 2>&1
-if %ERRORLEVEL% equ 0 goto :git_installed
-
-echo [5/5] Git is not installed.
-if not exist "Git-*.exe" goto :git_skip_no_installer
-echo.
-echo       ================================================
-echo       Git installer will now open.
-echo       Use default settings (just click Next).
-echo       ================================================
-echo.
-for %%f in (Git-*.exe) do start "" /wait "%%f"
-echo.
-echo       ------------------------------------------
-echo       Installation complete. Press any key to continue...
-echo       ------------------------------------------
-pause >nul
-for /f "tokens=2*" %%a in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path 2^>nul') do set "SYS_PATH=%%b"
-for /f "tokens=2*" %%a in ('reg query "HKCU\Environment" /v Path 2^>nul') do set "USR_PATH=%%b"
-if defined SYS_PATH set "PATH=%SYS_PATH%"
-if defined USR_PATH set "PATH=%PATH%;%USR_PATH%"
-where git.exe >nul 2>&1
-if %ERRORLEVEL% equ 0 goto :git_installed
-echo       [Warning] Git not detected - git setup skipped.
-goto :git_done
-
-:git_skip_no_installer
-echo       [Note] Git installer not found - git setup skipped.
-goto :git_done
-
-:git_installed
-if exist ".git" goto :git_done
-if not exist "git_remote.txt" goto :git_done
-echo [5/5] Setting up git repository...
-set /p GIT_REMOTE=<git_remote.txt
-git init -b main
-:: 관리자 설치 → 일반 사용자 실행 시 dubious ownership 방지
-set "SAFE_DIR=%CD:\=/%"
-git config --global --add safe.directory "%SAFE_DIR%"
-git remote add origin "%GIT_REMOTE%"
-git fetch --depth 1 origin main
-git branch --set-upstream-to=origin/main main
-git reset origin/main
-git checkout origin/main -- .gitignore
-echo       git repository initialized
-echo       remote: %GIT_REMOTE%
-goto :git_done
-
-:git_done
 
 echo.
 echo ============================================
