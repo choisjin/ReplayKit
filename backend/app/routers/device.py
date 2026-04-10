@@ -15,6 +15,16 @@ from ..dependencies import adb_service as adb, device_manager as dm
 from ..services.adb_service import resolve_sf_display_id
 from ..services.module_service import list_available_modules, get_module_functions, execute_module_function
 
+
+def _with_protected_flag(devices: list) -> list[dict]:
+    """ManagedDevice 리스트를 dict로 직렬화하면서 protected 플래그를 주입."""
+    result = []
+    for d in devices:
+        data = d.to_dict()
+        data["protected"] = dm.is_protected_device(d.id)
+        result.append(data)
+    return result
+
 # ── 스캔 설정 ──────────────────────────────────────────────
 _SCAN_SETTINGS_FILE = Path(__file__).resolve().parent.parent.parent / "scan_settings.json"
 
@@ -87,16 +97,16 @@ def _build_constructor_kwargs(dev) -> dict | None:
 
 
 class ConnectRequest(BaseModel):
-    type: str  # "adb" | "serial" | "module" | "hkmc6th" | "vision_camera"
+    type: str  # "adb" | "serial" | "module" | "hkmc6th" | "vision_camera" | "ssh"
     category: str = ""  # "primary" | "auxiliary" — auto-detected if empty
-    address: str = ""  # COM port for serial, IP for socket/HKMC, etc.
+    address: str = ""  # COM port for serial, IP for socket/HKMC/SSH, etc.
     baudrate: Optional[int] = 115200
-    port: Optional[int] = None  # TCP port for HKMC6th
+    port: Optional[int] = None  # TCP port for HKMC6th / SSH (default 22)
     name: Optional[str] = ""
     device_id: Optional[str] = ""  # custom device ID/alias (e.g. "Android_1", "HKMC_1")
     module: Optional[str] = None  # lge.auto module name (e.g. "POWER", "CAN")
-    connect_type: Optional[str] = None  # "serial" | "socket" | "can" | "none" | "vision_camera"
-    extra_fields: Optional[dict] = None  # Additional module-specific fields
+    connect_type: Optional[str] = None  # "serial" | "socket" | "can" | "none" | "vision_camera" | "ssh"
+    extra_fields: Optional[dict] = None  # Additional module-specific fields (SSH: username, password, key_file_path)
     device_model: Optional[str] = None  # 장비 모델 (GVM, ccNC, Phone 등) — 하드키 매칭용
 
 
@@ -120,8 +130,8 @@ async def list_devices():
     # auxiliary는 빠른 상태 확인만 (네트워크 I/O 없음)
     await dm.refresh_auxiliary()
     return {
-        "primary": [d.to_dict() for d in dm.list_primary()],
-        "auxiliary": [d.to_dict() for d in dm.list_auxiliary()],
+        "primary": _with_protected_flag(dm.list_primary()),
+        "auxiliary": _with_protected_flag(dm.list_auxiliary()),
     }
 
 
@@ -269,8 +279,8 @@ async def connect_device(req: ConnectRequest):
         dev = await dm.add_adb_device(req.address, device_id=custom_id, name=req.name or "", device_model=req.device_model or "")
         return {
             "result": f"Connected: {dev.name} (ID: {dev.id})",
-            "primary": [d.to_dict() for d in dm.list_primary()],
-            "auxiliary": [d.to_dict() for d in dm.list_auxiliary()],
+            "primary": _with_protected_flag(dm.list_primary()),
+            "auxiliary": _with_protected_flag(dm.list_auxiliary()),
         }
     elif req.type == "serial":
         category = req.category or "auxiliary"
@@ -282,8 +292,8 @@ async def connect_device(req: ConnectRequest):
                 dm._save_auxiliary_devices()
             return {
                 "result": f"Serial {req.address} added (ID: {dev.id})",
-                "primary": [d.to_dict() for d in dm.list_primary()],
-                "auxiliary": [d.to_dict() for d in dm.list_auxiliary()],
+                "primary": _with_protected_flag(dm.list_primary()),
+                "auxiliary": _with_protected_flag(dm.list_auxiliary()),
             }
         except RuntimeError as e:
             raise HTTPException(status_code=400, detail=str(e))
@@ -294,8 +304,8 @@ async def connect_device(req: ConnectRequest):
             dev = await dm.add_hkmc6th_device(req.address, req.port, device_id=custom_id, name=req.name or "", device_model=req.device_model or "")
             return {
                 "result": f"HKMC connected: {dev.name} (ID: {dev.id})",
-                "primary": [d.to_dict() for d in dm.list_primary()],
-                "auxiliary": [d.to_dict() for d in dm.list_auxiliary()],
+                "primary": _with_protected_flag(dm.list_primary()),
+                "auxiliary": _with_protected_flag(dm.list_auxiliary()),
             }
         except RuntimeError as e:
             raise HTTPException(status_code=400, detail=str(e))
@@ -311,9 +321,40 @@ async def connect_device(req: ConnectRequest):
         )
         return {
             "result": f"Module device {req.module} added (ID: {dev.id})",
-            "primary": [d.to_dict() for d in dm.list_primary()],
-            "auxiliary": [d.to_dict() for d in dm.list_auxiliary()],
+            "primary": _with_protected_flag(dm.list_primary()),
+            "auxiliary": _with_protected_flag(dm.list_auxiliary()),
         }
+    elif req.type == "ssh":
+        ef = req.extra_fields or {}
+        username = ef.get("username", "")
+        password = ef.get("password", "")
+        key_file_path = ef.get("key_file_path", "")
+        if not req.address:
+            raise HTTPException(status_code=400, detail="SSH requires address (host)")
+        if not username:
+            raise HTTPException(status_code=400, detail="SSH requires username")
+        if not password and not key_file_path:
+            raise HTTPException(status_code=400, detail="SSH requires password or key_file_path")
+        category = req.category or "auxiliary"
+        try:
+            dev = await dm.add_ssh_device(
+                host=req.address,
+                port=int(req.port or 22),
+                username=username,
+                password=password,
+                category=category,
+                name=req.name or "",
+                device_id=custom_id,
+                key_file_path=key_file_path,
+            )
+            return {
+                "result": f"SSH connected: {dev.name} (ID: {dev.id})",
+                "primary": _with_protected_flag(dm.list_primary()),
+                "auxiliary": _with_protected_flag(dm.list_auxiliary()),
+            }
+        except RuntimeError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
     elif req.type == "vision_camera":
         ef = req.extra_fields or {}
         mac = ef.get("mac", "")
@@ -332,8 +373,8 @@ async def connect_device(req: ConnectRequest):
             )
             return {
                 "result": f"VisionCamera connected: {dev.name} (ID: {dev.id})",
-                "primary": [d.to_dict() for d in dm.list_primary()],
-                "auxiliary": [d.to_dict() for d in dm.list_auxiliary()],
+                "primary": _with_protected_flag(dm.list_primary()),
+                "auxiliary": _with_protected_flag(dm.list_auxiliary()),
             }
         except Exception as e:
             logger.error("[VisionCamera] connect failed: %s", e, exc_info=True)
@@ -345,11 +386,19 @@ async def connect_device(req: ConnectRequest):
 @router.post("/disconnect")
 async def disconnect_device(req: DisconnectRequest):
     """Disconnect/remove a device."""
-    result = await dm.remove_device(req.address)
+    if dm.is_protected_device(req.address):
+        raise HTTPException(
+            status_code=403,
+            detail=f"Device '{req.address}' is a protected system default and cannot be removed",
+        )
+    try:
+        result = await dm.remove_device(req.address)
+    except ValueError as e:
+        raise HTTPException(status_code=403, detail=str(e))
     return {
         "result": result,
-        "primary": [d.to_dict() for d in dm.list_primary()],
-        "auxiliary": [d.to_dict() for d in dm.list_auxiliary()],
+        "primary": _with_protected_flag(dm.list_primary()),
+        "auxiliary": _with_protected_flag(dm.list_auxiliary()),
     }
 
 
@@ -362,8 +411,8 @@ async def disconnect_one_device(req: DisconnectOneRequest):
     result = await dm.disconnect_device_by_id(req.device_id)
     return {
         "result": result,
-        "primary": [d.to_dict() for d in dm.list_primary()],
-        "auxiliary": [d.to_dict() for d in dm.list_auxiliary()],
+        "primary": _with_protected_flag(dm.list_primary()),
+        "auxiliary": _with_protected_flag(dm.list_auxiliary()),
     }
 
 
@@ -527,8 +576,8 @@ async def connect_registered_devices(req: ConnectRegisteredRequest):
 
     return {
         "results": results,
-        "primary": [d.to_dict() for d in dm.list_primary()],
-        "auxiliary": [d.to_dict() for d in dm.list_auxiliary()],
+        "primary": _with_protected_flag(dm.list_primary()),
+        "auxiliary": _with_protected_flag(dm.list_auxiliary()),
     }
 
 
@@ -543,8 +592,8 @@ async def reorder_devices(req: ReorderDevicesRequest):
     try:
         dm.reorder_devices(req.prefix, req.ordered_ids)
         return {
-            "primary": [d.to_dict() for d in dm.list_primary()],
-            "auxiliary": [d.to_dict() for d in dm.list_auxiliary()],
+            "primary": _with_protected_flag(dm.list_primary()),
+            "auxiliary": _with_protected_flag(dm.list_auxiliary()),
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -567,6 +616,13 @@ async def update_device(req: UpdateDeviceRequest):
     dev = dm.get_device(req.device_id)
     if not dev:
         raise HTTPException(status_code=404, detail=f"Device {req.device_id} not found")
+
+    # 시스템 기본 디바이스(Common 등)는 수정 금지
+    if dm.is_protected_device(req.device_id):
+        raise HTTPException(
+            status_code=403,
+            detail=f"Device '{req.device_id}' is a protected system default and cannot be modified",
+        )
 
     # ID 변경
     if req.new_device_id and req.new_device_id != req.device_id:
@@ -624,15 +680,15 @@ async def update_device(req: UpdateDeviceRequest):
             return {
                 "result": f"updated (reconnect failed: {e})",
                 "device": dev.to_dict(),
-                "primary": [d.to_dict() for d in dm.list_primary()],
-                "auxiliary": [d.to_dict() for d in dm.list_auxiliary()],
+                "primary": _with_protected_flag(dm.list_primary()),
+                "auxiliary": _with_protected_flag(dm.list_auxiliary()),
             }
 
     return {
         "result": "updated",
         "device": dev.to_dict(),
-        "primary": [d.to_dict() for d in dm.list_primary()],
-        "auxiliary": [d.to_dict() for d in dm.list_auxiliary()],
+        "primary": _with_protected_flag(dm.list_primary()),
+        "auxiliary": _with_protected_flag(dm.list_auxiliary()),
     }
 
 
