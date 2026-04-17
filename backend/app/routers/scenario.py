@@ -151,6 +151,7 @@ class SaveExpectedImageRequest(BaseModel):
     crop: Optional[dict] = None  # {x, y, width, height} in image pixels
     compare_mode: Optional[str] = None  # "multi_crop" to append to expected_images
     crop_label: str = ""  # label for multi_crop item
+    preserve_crops: bool = False  # True: multi_crop items 유지 (multi_crop base 이미지 갱신 시 사용)
 
 
 async def _resolve_scenario(scenario_name: str):
@@ -207,8 +208,29 @@ async def save_expected_image(req: SaveExpectedImageRequest):
                        width=int(req.crop["width"]), height=int(req.crop["height"])) if req.crop else None
         step.expected_images.append(CropItem(image=filename, label=req.crop_label, roi=crop_roi))
     else:
-        # Single image (full or single_crop)
-        filename = f"{req.scenario_name}_step_{step.id:03d}.png"
+        # Single image (full / single_crop / full_exclude / multi_crop base)
+        # 타임스탬프로 캐시 충돌 방지 (capture-expected-image와 동일 패턴)
+        import time as _time
+        ts = int(_time.time() * 1000) % 1000000
+        filename = f"{req.scenario_name}_step_{step.id:03d}_{ts}.png"
+        # 이전 기대이미지 파일 삭제
+        if step.expected_image and step.expected_image != filename:
+            old_file = save_dir / step.expected_image
+            if old_file.exists():
+                old_file.unlink(missing_ok=True)
+        # 이전 multi_crop 이미지 파일 삭제 + 관련 필드 초기화
+        # (이전 모드가 multi_crop / full_exclude였다면 stale ROI가 렌더링에 끼어들어
+        # 다른 스텝 ROI처럼 보이는 버그 방지). preserve_crops=True면 유지 (multi_crop base 갱신용)
+        if not req.preserve_crops:
+            for ci in step.expected_images:
+                if ci.image:
+                    old_crop = save_dir / ci.image
+                    if old_crop.exists():
+                        old_crop.unlink(missing_ok=True)
+            step.expected_images.clear()
+        # single_crop (crop 있음) 저장 시에만 exclude_rois 초기화 — 이전 full_exclude 잔재 제거
+        if req.crop:
+            step.exclude_rois.clear()
         (save_dir / filename).write_bytes(png_bytes)
         step.expected_image = filename
         if req.crop:
@@ -250,10 +272,22 @@ async def capture_expected_image(req: CaptureExpectedImageRequest):
             if not hkmc:
                 raise HTTPException(status_code=400, detail=f"HKMC device {req.device_id} not connected")
             png_bytes = await hkmc.async_screencap_bytes(screen_type=req.screen_type, fmt="png")
+        elif dev and dev.type == "isap_agent":
+            isap = dm.get_isap_service(req.device_id)
+            if not isap:
+                raise HTTPException(status_code=400, detail=f"iSAP device {req.device_id} not connected")
+            png_bytes = await isap.async_screencap_bytes(screen_type=req.screen_type, fmt="png")
         elif dev and dev.type == "vision_camera":
             cam = dm.get_vision_camera(req.device_id)
             if not cam or not cam.IsConnected():
                 raise HTTPException(status_code=400, detail=f"VisionCamera {req.device_id} not connected")
+            import asyncio
+            loop = asyncio.get_event_loop()
+            png_bytes = await loop.run_in_executor(None, cam.CaptureBytes, "png")
+        elif dev and dev.type == "webcam":
+            cam = dm.get_webcam_device(req.device_id)
+            if not cam or not cam.IsConnected():
+                raise HTTPException(status_code=400, detail=f"Webcam {req.device_id} not connected")
             import asyncio
             loop = asyncio.get_event_loop()
             png_bytes = await loop.run_in_executor(None, cam.CaptureBytes, "png")
@@ -776,26 +810,39 @@ class TestStepRequest(BaseModel):
     scenario_name: str
     step_index: int  # 0-based
     step_data: Optional[dict] = None  # current (unsaved) step data from frontend
+    # 프론트엔드 라이브 뷰가 현재 보고 있는 화면과 동일한 장면을 캡처하도록 강제하는 override.
+    # 스텝에 저장된 screenshot_device_id/screen_type이 사용자가 보고 있는 화면과 다를 때
+    # 발생하는 "stale image" 이슈를 차단한다.
+    screenshot_device_id_override: Optional[str] = None
+    screen_type_override: Optional[str] = None
 
 
 @router.post("/clean-test-screenshots")
 async def clean_test_screenshots(scenario_name: str = ""):
-    """단일 스텝 테스트 임시 스크린샷(actual/) 삭제."""
+    """단일 스텝 테스트 임시 스크린샷(actual*/) 삭제.
+
+    execute_single_step이 매 호출마다 ``actual_<ms_timestamp>/`` 서브디렉토리에
+    캡처를 저장하므로, 패턴으로 일괄 삭제한다. 레거시 ``actual/`` 디렉토리도 함께.
+    """
     import shutil
     cleaned = 0
+
+    def _wipe(scenario_dir: Path) -> int:
+        n = 0
+        if not scenario_dir.is_dir():
+            return 0
+        for entry in scenario_dir.iterdir():
+            if entry.is_dir() and (entry.name == "actual" or entry.name.startswith("actual_")):
+                shutil.rmtree(str(entry), ignore_errors=True)
+                n += 1
+        return n
+
     if scenario_name:
-        actual = SCREENSHOTS_DIR / scenario_name / "actual"
-        if actual.is_dir():
-            shutil.rmtree(str(actual), ignore_errors=True)
-            cleaned += 1
+        cleaned += _wipe(SCREENSHOTS_DIR / scenario_name)
     else:
-        # 전체 시나리오의 actual 폴더 삭제
         if SCREENSHOTS_DIR.is_dir():
             for d in SCREENSHOTS_DIR.iterdir():
-                actual = d / "actual"
-                if actual.is_dir():
-                    shutil.rmtree(str(actual), ignore_errors=True)
-                    cleaned += 1
+                cleaned += _wipe(d)
     return {"cleaned": cleaned}
 
 
@@ -836,6 +883,22 @@ async def test_step(req: TestStepRequest):
         step = scenario.steps[req.step_index]
         scenario_name = scenario.name
         device_map = dict(scenario.device_map) if scenario.device_map else {}
+
+    # 프론트엔드가 라이브 뷰 기준으로 보낸 override를 스텝 복사본에 적용.
+    # 이후 execute_single_step은 이 override된 값으로 스크린샷 디바이스를 해결한다.
+    if req.screenshot_device_id_override:
+        step = step.model_copy(update={
+            "screenshot_device_id": req.screenshot_device_id_override,
+            "screen_type": req.screen_type_override or step.screen_type,
+        })
+    elif req.screen_type_override:
+        step = step.model_copy(update={"screen_type": req.screen_type_override})
+
+    logger.info(
+        "test-step: scenario=%s step_id=%s type=%s screenshot_dev=%s screen_type=%s",
+        scenario_name, step.id, step.type,
+        step.screenshot_device_id, step.screen_type,
+    )
 
     result = await playback_svc.execute_single_step(step, scenario_name, device_map=device_map)
     return result.model_dump()
@@ -915,12 +978,13 @@ async def stop_playback():
         publish_event, mark_playback_active,
     )
     was_running = playback_svc.is_running
-    await playback_svc.stop()
-    # 새 WS 연결 시 이전 run의 버퍼가 replay되지 않도록 즉시 inactive 처리
+    # race 방지: stop이 bg task 종료를 기다리는 동안 새 WS가 연결되더라도
+    # 이전 run의 버퍼가 replay되지 않도록 먼저 inactive로 표시.
     mark_playback_active(False)
-    # 연결되어 있는 기존 subscriber들에게도 알림
+    # stop()은 내부적으로 bg 재생 태스크 종료까지 대기 (최대 15초).
+    await playback_svc.stop()
     publish_event({"type": "playback_stopped", "result_filename": "", "source": "rest"})
-    return {"status": "stopping", "was_running": was_running}
+    return {"status": "stopped", "was_running": was_running}
 
 
 @router.get("/playback/status")

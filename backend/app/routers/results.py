@@ -1,12 +1,14 @@
 """Test results API routes."""
 
-import json
+import html as _html
 import io
-import subprocess
+import json
+import os
 import shutil
+import subprocess
 import zipfile
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Query, UploadFile, File
 from fastapi.responses import FileResponse, StreamingResponse
@@ -104,6 +106,386 @@ def _resolve_image_path(rel_path: str | None) -> Path | None:
         p = p[idx + len("/screenshots/"):]
     full = SCREENSHOTS_DIR / p
     return full if full.exists() else None
+
+
+def _html_image_src(rel_path: str | None, html_dir: Path) -> str:
+    """저장된 이미지 경로(RESULTS_DIR 또는 SCREENSHOTS_DIR 기준)를 HTML이 위치한
+    디렉토리 기준 상대 경로로 변환. 파일이 존재하지 않으면 빈 문자열."""
+    if not rel_path:
+        return ""
+    rp = str(rel_path).replace("\\", "/")
+    # /screenshots/ 프리픽스가 포함된 경우 제거
+    idx = rp.find("/screenshots/")
+    if idx >= 0:
+        rp_ss = rp[idx + len("/screenshots/"):]
+    else:
+        rp_ss = rp
+    candidates = [
+        RESULTS_DIR / rp,
+        SCREENSHOTS_DIR / rp_ss,
+    ]
+    for abs_path in candidates:
+        try:
+            if abs_path.exists():
+                try:
+                    return abs_path.relative_to(html_dir).as_posix()
+                except ValueError:
+                    return os.path.relpath(str(abs_path), str(html_dir)).replace("\\", "/")
+        except OSError:
+            continue
+    return ""
+
+
+_HTML_STYLE = """
+*,*::before,*::after { box-sizing: border-box; }
+body { font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  margin: 0; padding: 16px 20px; font-size: 13px; color: #1a1a2e; background: #f5f7fa; }
+h1 { font-size: 20px; font-weight: 700; margin: 0 0 6px; color: #1a1a2e; letter-spacing: -0.3px; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0 0 14px; color: #555; font-size: 12px; }
+.meta .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px;
+  border-radius: 12px; font-weight: 600; font-size: 12px; }
+.meta .badge.pass { background: #dcfce7; color: #15803d; }
+.meta .badge.fail { background: #fee2e2; color: #b91c1c; }
+.meta .badge.error { background: #ffedd5; color: #9a3412; }
+.meta .stat { padding: 2px 8px; border-radius: 4px; background: #e8ecf1; font-weight: 500; }
+.controls { position: sticky; top: 0; z-index: 20; background: #fff; padding: 10px 16px;
+  border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 12px;
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.controls input[type="text"] { font-size: 12px; padding: 6px 10px; border: 1px solid #d1d5db;
+  border-radius: 6px; min-width: 260px; outline: none; transition: border-color 0.15s; }
+.controls input[type="text"]:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59,130,246,0.15); }
+.controls button { font-size: 12px; padding: 6px 14px; border: none; border-radius: 6px;
+  cursor: pointer; font-weight: 500; transition: all 0.15s; }
+.controls .btn-primary { background: #3b82f6; color: #fff; }
+.controls .btn-primary:hover { background: #2563eb; }
+.controls .btn-secondary { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+.controls .btn-secondary:hover { background: #e5e7eb; }
+.controls .count { margin-left: auto; color: #6b7280; font-size: 12px; }
+/* Tabulator 테마 오버라이드 */
+.tabulator { border: none; border-radius: 8px; overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08); font-size: 12px; background: #fff; }
+.tabulator .tabulator-header { background: #1e3a5f; color: #fff; font-weight: 600;
+  border-bottom: 2px solid #15294a; }
+.tabulator .tabulator-header .tabulator-col { background: transparent; color: #fff;
+  border-right: 1px solid rgba(255,255,255,0.1); }
+.tabulator .tabulator-header .tabulator-col.tabulator-sortable:hover { background: rgba(255,255,255,0.1); }
+.tabulator .tabulator-header .tabulator-col .tabulator-col-title { color: #fff; padding: 8px 6px;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; }
+.tabulator .tabulator-header .tabulator-col .tabulator-col-sorter { color: rgba(255,255,255,0.5); }
+.tabulator .tabulator-header .tabulator-header-filter { padding: 4px 4px 6px; }
+.tabulator .tabulator-header .tabulator-header-filter input,
+.tabulator .tabulator-header .tabulator-header-filter select {
+  font-size: 11px; padding: 4px 6px; border: 1px solid #d1d5db; border-radius: 4px;
+  background: #fff; color: #374151; width: 100%; outline: none; }
+.tabulator .tabulator-header .tabulator-header-filter input:focus,
+.tabulator .tabulator-header .tabulator-header-filter select:focus {
+  border-color: #60a5fa; box-shadow: 0 0 0 2px rgba(96,165,250,0.2); }
+.tabulator .tabulator-tableholder { background: #fff; }
+.tabulator-row { border-bottom: 1px solid #f0f0f0; }
+.tabulator-row .tabulator-cell { padding: 4px 6px; border-right: 1px solid #f3f4f6; }
+.tabulator-row.tabulator-row-even { background: #fafbfc; }
+.tabulator-row:hover { background: #eff6ff !important; }
+.tabulator-row.tabulator-row-even:hover { background: #eff6ff !important; }
+/* Status 배지 */
+.st-badge { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 11px;
+  font-weight: 700; letter-spacing: 0.3px; text-transform: uppercase; }
+.st-badge.pass { background: #dcfce7; color: #15803d; }
+.st-badge.fail { background: #fee2e2; color: #b91c1c; }
+.st-badge.warning { background: #fef9c3; color: #854d0e; }
+.st-badge.error { background: #ffedd5; color: #9a3412; }
+.img-thumb { max-width: 170px; max-height: 130px; display: block; margin: 0 auto;
+  cursor: pointer; border-radius: 4px; border: 1px solid #e5e7eb; transition: transform 0.15s; }
+.img-thumb:hover { transform: scale(1.03); box-shadow: 0 2px 8px rgba(0,0,0,0.12); }
+/* 이미지 프리뷰 */
+.preview-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.88); display: none;
+  align-items: center; justify-content: center; z-index: 9999; cursor: zoom-out; }
+.preview-overlay.open { display: flex; }
+.preview-overlay img { max-width: 95vw; max-height: 95vh; border-radius: 6px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.4); }
+@media print {
+  body { margin: 8px; padding: 0; background: #fff; }
+  .controls { display: none !important; }
+  .tabulator .tabulator-header .tabulator-header-filter { display: none !important; }
+  .tabulator { box-shadow: none; border: 1px solid #ccc; height: auto !important;
+    max-height: none !important; overflow: visible !important; }
+  .tabulator .tabulator-tableholder { height: auto !important; max-height: none !important;
+    overflow: visible !important; }
+  .tabulator-row { page-break-inside: avoid; }
+  .img-thumb { max-width: 140px; max-height: 110px; border: none; }
+}
+"""
+
+# Tabulator 기반 리포트 초기화 스크립트 — 데이터는 window.__REPORT_DATA__ 전역에서 읽는다.
+_HTML_SCRIPT = r"""
+(function(){
+  /* ---------- 셀 포맷터 ---------- */
+  function statusFmt(cell){
+    var v = (cell.getValue() || '').toString().toLowerCase();
+    return '<span class="st-badge ' + v + '">' + v.toUpperCase() + '</span>';
+  }
+  function imgFmt(cell){
+    var v = cell.getValue();
+    if (!v) return '<span style="color:#bbb">—</span>';
+    return '<img class="img-thumb" loading="lazy" src="' + v + '" alt="">';
+  }
+
+  /* ---------- 고유값 수집 헬퍼 ---------- */
+  function uniqueVals(data, field){
+    var seen = {};
+    var out = [];
+    for (var i = 0; i < data.length; i++){
+      var v = data[i][field];
+      if (v == null || v === '') continue;
+      var s = String(v);
+      if (!seen[s]) { seen[s] = true; out.push(s); }
+    }
+    out.sort(function(a,b){ return a.localeCompare(b, undefined, {numeric:true}); });
+    return out;
+  }
+
+  /* ---------- 드롭다운 헤더 필터 에디터 (리스트형) ---------- */
+  function listEditor(field, placeholder){
+    return function(cell, onRendered, success, cancel, editorParams){
+      var vals = editorParams.values || [];
+      var select = document.createElement('select');
+      select.style.cssText = 'width:100%; font-size:11px; padding:3px 4px; border:1px solid #d1d5db; border-radius:4px; background:#fff; color:#374151; cursor:pointer;';
+      var opt0 = document.createElement('option');
+      opt0.value = ''; opt0.textContent = placeholder || '전체';
+      select.appendChild(opt0);
+      for (var i = 0; i < vals.length; i++){
+        var opt = document.createElement('option');
+        opt.value = vals[i]; opt.textContent = vals[i];
+        select.appendChild(opt);
+      }
+      var cur = cell.getValue();
+      if (cur) select.value = cur;
+      select.addEventListener('change', function(){ success(select.value); });
+      return select;
+    };
+  }
+
+  /* ---------- 이미지 프리뷰 ---------- */
+  function onImgClick(e){
+    if (e.target && e.target.classList.contains('img-thumb')){
+      document.getElementById('preview-img').src = e.target.src;
+      document.getElementById('preview-overlay').classList.add('open');
+    }
+  }
+  function closePreview(){
+    document.getElementById('preview-overlay').classList.remove('open');
+    document.getElementById('preview-img').src = '';
+  }
+
+  /* ---------- 컬럼 정의 ---------- */
+  function buildColumns(data){
+    var tsVals   = uniqueVals(data, 'timestamp');
+    var cyVals   = uniqueVals(data, 'cycle');
+    var stepVals = uniqueVals(data, 'step_id');
+    var devVals  = uniqueVals(data, 'device');
+    var delVals  = uniqueVals(data, 'delay');
+    var durVals  = uniqueVals(data, 'duration');
+
+    var va = "middle";
+    return [
+      { title:"Time Stamp", field:"timestamp", width:150, vertAlign:va,
+        headerFilter:listEditor('timestamp','전체'), headerFilterParams:{values:tsVals}, headerFilterFunc:"=" },
+      { title:"Cycle", field:"cycle", width:70, hozAlign:"center", vertAlign:va,
+        headerFilter:listEditor('cycle','전체'), headerFilterParams:{values:cyVals}, headerFilterFunc:"=" },
+      { title:"Step", field:"step_id", width:70, hozAlign:"center", vertAlign:va,
+        headerFilter:listEditor('step_id','전체'), headerFilterParams:{values:stepVals}, headerFilterFunc:"=" },
+      { title:"Device", field:"device", width:120, hozAlign:"center", vertAlign:va,
+        headerFilter:listEditor('device','전체'), headerFilterParams:{values:devVals}, headerFilterFunc:"=" },
+      { title:"Command", field:"command", widthGrow:2, vertAlign:va,
+        headerFilter:listEditor('command','전체'), headerFilterParams:{values:uniqueVals(data,'command')}, headerFilterFunc:"=" },
+      { title:"Remark", field:"description", widthGrow:2, vertAlign:va,
+        headerFilter:listEditor('description','전체'), headerFilterParams:{values:uniqueVals(data,'description')}, headerFilterFunc:"=" },
+      { title:"Status", field:"status", width:90, hozAlign:"center", vertAlign:va, formatter:statusFmt,
+        headerFilter:listEditor('status','전체'), headerFilterParams:{values:["pass","fail","warning","error"]}, headerFilterFunc:"=" },
+      { title:"Delay", field:"delay", width:80, hozAlign:"center", vertAlign:va,
+        headerFilter:listEditor('delay','전체'), headerFilterParams:{values:delVals}, headerFilterFunc:"=" },
+      { title:"Duration", field:"duration", width:90, hozAlign:"center", vertAlign:va,
+        headerFilter:listEditor('duration','전체'), headerFilterParams:{values:durVals}, headerFilterFunc:"=" },
+      { title:"Expected", field:"expected_src", width:200, hozAlign:"center", vertAlign:va,
+        formatter:imgFmt, headerSort:false },
+      { title:"Actual", field:"actual_src", width:200, hozAlign:"center", vertAlign:va,
+        formatter:imgFmt, headerSort:false },
+    ];
+  }
+
+  /* ---------- 전역 검색 필터 ---------- */
+  var TEXT_FIELDS = ["timestamp","cycle","step_id","device","command","description","status","delay","duration"];
+  function globalFilter(row, params){
+    var q = params.q;
+    if (!q) return true;
+    for (var i = 0; i < TEXT_FIELDS.length; i++){
+      var v = row[TEXT_FIELDS[i]];
+      if (v != null && String(v).toLowerCase().indexOf(q) !== -1) return true;
+    }
+    return false;
+  }
+
+  /* ---------- 초기화 ---------- */
+  function init(){
+    var data = (window.__REPORT_DATA__ && window.__REPORT_DATA__.rows) || [];
+    document.getElementById('filter-total').textContent = data.length;
+
+    var table = new Tabulator("#results-table", {
+      data: data,
+      columns: buildColumns(data),
+      layout: "fitDataStretch",
+      maxHeight: "calc(100vh - 170px)",
+      renderVertical: "basic",
+      placeholder: "표시할 결과가 없습니다",
+      headerSortClickElement: "icon",
+      rowHeight: false,
+      cellVertAlign: "middle",
+    });
+    window.__table = table;
+
+    table.on("dataFiltered", function(filters, rows){
+      document.getElementById('filter-visible').textContent = rows.length;
+    });
+
+    // 전역 검색
+    var gEl = document.getElementById('filter-text');
+    gEl.addEventListener('input', function(){
+      var v = (gEl.value || '').trim().toLowerCase();
+      table.removeFilter(globalFilter);
+      if (v) table.addFilter(globalFilter, { q: v });
+    });
+
+    // 필터 초기화
+    document.getElementById('filter-reset').addEventListener('click', function(){
+      table.clearHeaderFilter();
+      gEl.value = '';
+      table.removeFilter(globalFilter);
+    });
+
+    // PDF 저장 — window.print()로 전체 행 출력 (가상 렌더링 우회)
+    document.getElementById('pdf-btn').addEventListener('click', function(){ window.print(); });
+
+    // 이미지 프리뷰
+    document.getElementById('results-table').addEventListener('click', onImgClick);
+    document.getElementById('preview-overlay').addEventListener('click', closePreview);
+    document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closePreview(); });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+})();
+"""
+
+
+def _build_html_report(data: dict, output_path: Path) -> str:
+    """Tabulator 기반 경량 HTML 리포트.
+
+    데이터는 window.__REPORT_DATA__에 JSON으로 임베드되고,
+    Tabulator가 열별 필터/정렬/검색/이미지 썸네일을 모두 렌더링한다.
+    라이브러리 파일은 /static/tabulator/ 에서 서빙 (별도 복사 불필요).
+    export-bundle ZIP에만 assets/로 포함된다.
+    """
+    html_dir = output_path.parent
+
+    def e(v) -> str:
+        return _html.escape("" if v is None else str(v))
+
+    scenario_name = data.get("scenario_name", "")
+    status = data.get("status", "")
+    total_steps = data.get("total_steps", 0)
+    total_repeat = data.get("total_repeat", 1)
+    passed = data.get("passed_steps", 0)
+    failed = data.get("failed_steps", 0)
+    warned = data.get("warning_steps", 0)
+    errored = data.get("error_steps", 0)
+    started_at = data.get("started_at", "")
+    finished_at = data.get("finished_at", "")
+
+    def _fmt_ts(iso: str) -> str:
+        try:
+            from datetime import datetime as _dt
+            ts = _dt.fromisoformat(iso.replace("Z", "+00:00"))
+            return ts.astimezone().strftime("%Y-%m-%d %H:%M:%S")
+        except Exception:
+            return iso or ""
+
+    # Tabulator에 넘길 행 데이터 구성
+    rows_json: list[dict] = []
+    for sr in data.get("step_results", []):
+        duration_ms = sr.get("execution_time_ms", 0) or 0
+        delay_ms = sr.get("delay_ms", 0) or 0
+        dur_str = f"{duration_ms}ms" if duration_ms < 1000 else f"{duration_ms / 1000:.1f}s"
+        delay_str = f"{delay_ms}ms" if delay_ms else "-"
+        exp_src = _html_image_src(sr.get("expected_image"), html_dir)
+        act_src = _html_image_src(
+            sr.get("actual_annotated_image") or sr.get("actual_image"), html_dir
+        )
+        rows_json.append({
+            "timestamp": _fmt_ts(sr.get("timestamp", started_at)),
+            "cycle": sr.get("repeat_index", 1),
+            "step_id": sr.get("step_id", ""),
+            "device": sr.get("device_id", ""),
+            "command": sr.get("command", sr.get("message", "")),
+            "description": sr.get("description", ""),
+            "status": sr.get("status", ""),
+            "delay": delay_str,
+            "duration": dur_str,
+            "expected_src": exp_src or "",
+            "actual_src": act_src or "",
+        })
+
+    report_payload = {
+        "scenario_name": scenario_name,
+        "status": status,
+        "total_repeat": total_repeat,
+        "rows": rows_json,
+    }
+    # </script> 이스케이프 — 임베드 JSON 안에 script 종료 태그가 포함되면 파싱이 깨진다
+    payload_json = json.dumps(report_payload, ensure_ascii=False).replace("</", "<\\/")
+
+    parts: list[str] = []
+    parts.append("<!DOCTYPE html>")
+    parts.append('<html lang="ko"><head><meta charset="utf-8">')
+    parts.append(f"<title>{e(scenario_name)} - Test Report</title>")
+    parts.append('<script>var _tBase = location.protocol==="file:" ? "../../app/static/tabulator/" : "/static/tabulator/";</script>')
+    parts.append('<script>document.write(\'<link rel="stylesheet" href="\'+_tBase+\'tabulator_simple.min.css">\');</script>')
+    parts.append(f"<style>{_HTML_STYLE}</style>")
+    parts.append("</head><body>")
+    parts.append(f"<h1>{e(scenario_name)}</h1>")
+    status_cls = status if status in ("pass", "fail", "error") else ""
+    parts.append('<div class="meta">')
+    parts.append(f'<span class="badge {status_cls}">{e(status.upper())}</span>')
+    parts.append(f'<span class="stat">Step: {total_steps}</span>')
+    parts.append(f'<span class="stat">Repeat: {total_repeat}</span>')
+    parts.append(f'<span class="stat" style="background:#dcfce7;color:#15803d">Pass: {passed}</span>')
+    if failed:
+        parts.append(f'<span class="stat" style="background:#fee2e2;color:#b91c1c">Fail: {failed}</span>')
+    if warned:
+        parts.append(f'<span class="stat" style="background:#fef9c3;color:#854d0e">Warn: {warned}</span>')
+    if errored:
+        parts.append(f'<span class="stat" style="background:#ffedd5;color:#9a3412">Error: {errored}</span>')
+    parts.append(f"<span>{e(_fmt_ts(started_at))} ~ {e(_fmt_ts(finished_at))}</span>")
+    parts.append("</div>")
+
+    # 상단 컨트롤 — 전역 검색, 필터 초기화, PDF 저장
+    parts.append('<div class="controls">')
+    parts.append('<input id="filter-text" type="text" placeholder="전체 검색 (모든 열)">')
+    parts.append('<button id="filter-reset" class="btn-secondary" type="button">필터 초기화</button>')
+    parts.append('<button id="pdf-btn" class="btn-primary" type="button">PDF 저장</button>')
+    parts.append('<span class="count"><b id="filter-visible">0</b> / <b id="filter-total">0</b></span>')
+    parts.append("</div>")
+
+    # Tabulator 렌더 타겟
+    parts.append('<div id="results-table"></div>')
+
+    # 이미지 프리뷰 오버레이
+    parts.append('<div id="preview-overlay" class="preview-overlay"><img id="preview-img" src="" alt=""></div>')
+
+    # 데이터 임베드 + 라이브러리 로드 + 초기화
+    parts.append(f'<script>window.__REPORT_DATA__ = {payload_json};</script>')
+    parts.append('<script>document.write(\'<script src="\'+_tBase+\'tabulator.min.js"><\\/script>\');</script>')
+    parts.append(f"<script>{_HTML_SCRIPT}</script>")
+    parts.append("</body></html>")
+    return "".join(parts)
 
 
 def _build_excel_workbook(data: dict, filepath: Path = None):
@@ -288,6 +670,16 @@ async def export_result_bundle(filename: str, export_path: str = ""):
     if filepath.name == "result.json" and filepath.parent != RESULTS_DIR:
         run_dir = filepath.parent
         folder_name = run_dir.name
+        # 런 폴더에는 result.html만 자동 생성되고 xlsx는 없을 수 있다.
+        # 번들 다운로드 시점에만 lazy로 xlsx를 생성하여 파일에 포함시킨다.
+        excel_path = run_dir / "result.xlsx"
+        if not excel_path.exists():
+            try:
+                data = json.loads(filepath.read_text(encoding="utf-8"))
+                wb = _build_excel_workbook(data, filepath)
+                wb.save(str(excel_path))
+            except Exception:
+                pass
     else:
         # 레거시: 임시 폴더에 결과물 수집
         data = json.loads(filepath.read_text(encoding="utf-8"))
@@ -323,25 +715,63 @@ async def export_result_bundle(filename: str, export_path: str = ""):
                     except Exception:
                         pass
 
+    # result.html이 /static/tabulator/ 절대경로를 참조하므로, ZIP 배포용으로
+    # assets/를 런 폴더에 임시 복사 + HTML 내 경로를 상대경로로 패치한다.
+    _tabulator_src = Path(__file__).resolve().parent.parent / "static" / "tabulator"
+    _tmp_assets_dir = run_dir / "assets"
+    _patched_html = False
+    if _tabulator_src.is_dir():
+        _tmp_assets_dir.mkdir(exist_ok=True)
+        for _tf in ("tabulator.min.js", "tabulator_simple.min.css"):
+            _src = _tabulator_src / _tf
+            _dst = _tmp_assets_dir / _tf
+            if _src.is_file() and not _dst.exists():
+                shutil.copy2(str(_src), str(_dst))
+        _html_file = run_dir / "result.html"
+        if _html_file.is_file():
+            _htxt = _html_file.read_text(encoding="utf-8")
+            # 프로토콜 감지 로직을 ./assets/ 고정으로 교체
+            _htxt_new = _htxt.replace(
+                'var _tBase = location.protocol==="file:" ? "../../app/static/tabulator/" : "/static/tabulator/";',
+                'var _tBase = "./assets/";',
+            )
+            if _htxt_new != _htxt:
+                _html_file.write_text(_htxt_new, encoding="utf-8")
+                _patched_html = True
+
     # ZIP 압축
-    if export_path:
-        # 지정 경로에 저장
-        zip_path = Path(export_path)
-        if zip_path.is_dir():
-            zip_path = zip_path / f"{folder_name}.zip"
-        zip_path.parent.mkdir(parents=True, exist_ok=True)
-        _zip_directory(run_dir, zip_path)
-        return {"path": str(zip_path), "folder": folder_name, "size": zip_path.stat().st_size}
-    else:
-        # 브라우저 다운로드
-        buf = io.BytesIO()
-        _zip_directory_to_buffer(run_dir, buf)
-        buf.seek(0)
-        return StreamingResponse(
-            buf,
-            media_type="application/zip",
-            headers={"Content-Disposition": f'attachment; filename="{folder_name}.zip"'},
-        )
+    try:
+        if export_path:
+            zip_path = Path(export_path)
+            if zip_path.is_dir():
+                zip_path = zip_path / f"{folder_name}.zip"
+            zip_path.parent.mkdir(parents=True, exist_ok=True)
+            _zip_directory(run_dir, zip_path)
+            return {"path": str(zip_path), "folder": folder_name, "size": zip_path.stat().st_size}
+        else:
+            buf = io.BytesIO()
+            _zip_directory_to_buffer(run_dir, buf)
+            buf.seek(0)
+            return StreamingResponse(
+                buf,
+                media_type="application/zip",
+                headers={"Content-Disposition": f'attachment; filename="{folder_name}.zip"'},
+            )
+    finally:
+        # ZIP용 임시 assets 정리 + HTML 경로 복원 (런 폴더가 원본이면 패치 원복)
+        if _patched_html:
+            _html_file = run_dir / "result.html"
+            if _html_file.is_file():
+                _htxt = _html_file.read_text(encoding="utf-8")
+                _html_file.write_text(
+                    _htxt.replace(
+                        'var _tBase = "./assets/";',
+                        'var _tBase = location.protocol==="file:" ? "../../app/static/tabulator/" : "/static/tabulator/";',
+                    ),
+                    encoding="utf-8",
+                )
+        if _tmp_assets_dir.is_dir() and _tabulator_src.is_dir():
+            shutil.rmtree(str(_tmp_assets_dir), ignore_errors=True)
 
 
 @router.post("/open-folder")

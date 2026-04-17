@@ -32,10 +32,12 @@ _DEFAULT_SCAN_SETTINGS = {
     "builtin": {
         "adb":            {"enabled": True,  "module": ""},
         "serial":         {"enabled": True,  "module": "SerialLogging"},
-        "hkmc":           {"enabled": True,  "module": ""},
-        "dlt":            {"enabled": True,  "module": "DLTLogging"},
-        "bench":          {"enabled": True,  "module": "CCIC_BENCH"},
+        "hkmc":           {"enabled": True,  "module": "", "ports": [6655, 5000]},
+        "isap":           {"enabled": False, "module": "", "ports": [20000]},
+        "dlt":            {"enabled": True,  "module": "DLTLogging", "ports": [3490]},
+        "bench":          {"enabled": True,  "module": "CCIC_BENCH", "ports": [25000]},
         "vision_camera":  {"enabled": False, "module": "VisionCamera"},
+        "webcam":         {"enabled": True,  "module": "WebcamDevice"},
         "ssh":            {"enabled": True,  "module": "SSHManager", "port": 22},
     },
     # type: "tcp" | "udp"
@@ -98,7 +100,7 @@ def _build_constructor_kwargs(dev) -> dict | None:
 
 
 class ConnectRequest(BaseModel):
-    type: str  # "adb" | "serial" | "module" | "hkmc6th" | "vision_camera" | "ssh"
+    type: str  # "adb" | "serial" | "module" | "hkmc6th" | "isap_agent" | "vision_camera" | "webcam" | "ssh"
     category: str = ""  # "primary" | "auxiliary" — auto-detected if empty
     address: str = ""  # COM port for serial, IP for socket/HKMC/SSH, etc.
     baudrate: Optional[int] = 115200
@@ -106,8 +108,8 @@ class ConnectRequest(BaseModel):
     name: Optional[str] = ""
     device_id: Optional[str] = ""  # custom device ID/alias (e.g. "Android_1", "HKMC_1")
     module: Optional[str] = None  # lge.auto module name (e.g. "POWER", "CAN")
-    connect_type: Optional[str] = None  # "serial" | "socket" | "can" | "none" | "vision_camera" | "ssh"
-    extra_fields: Optional[dict] = None  # Additional module-specific fields (SSH: username, password, key_file_path)
+    connect_type: Optional[str] = None  # "serial" | "socket" | "can" | "none" | "vision_camera" | "webcam" | "ssh"
+    extra_fields: Optional[dict] = None  # Additional module-specific fields (SSH: username, password, key_file_path; webcam: device_index, width, height)
     device_model: Optional[str] = None  # 장비 모델 (GVM, ccNC, Phone 등) — 하드키 매칭용
 
 
@@ -172,14 +174,54 @@ async def scan_ports():
         tasks["adb_devices"] = asyncio.ensure_future(adb.list_devices())
     if _enabled("serial"):
         tasks["serial_ports"] = asyncio.ensure_future(dm.scan_serial())
+    def _ports_of(key: str) -> list[int]:
+        entry = builtin.get(key, {}) if isinstance(builtin.get(key), dict) else {}
+        raw = entry.get("ports") or []
+        result: list[int] = []
+        for p in raw:
+            try:
+                result.append(int(p))
+            except (TypeError, ValueError):
+                pass
+        return result
+
     if _enabled("hkmc"):
-        tasks["hkmc_devices"] = asyncio.ensure_future(dm.scan_hkmc())
+        tasks["hkmc_devices"] = asyncio.ensure_future(dm.scan_hkmc(ports=_ports_of("hkmc")))
+    if _enabled("isap"):
+        tasks["isap_hosts"] = asyncio.ensure_future(dm.scan_isap(ports=_ports_of("isap")))
     if _enabled("bench"):
-        tasks["bench_devices"] = asyncio.ensure_future(dm.scan_bench())
+        tasks["bench_devices"] = asyncio.ensure_future(dm.scan_bench(ports=_ports_of("bench")))
     if _enabled("vision_camera"):
         tasks["vision_cameras"] = asyncio.ensure_future(dm.scan_vision_cameras())
+    if _enabled("webcam"):
+        async def _scan_webcams():
+            from ..plugins.WebcamDevice import WebcamDevice
+            loop = asyncio.get_event_loop()
+            cams = await loop.run_in_executor(None, WebcamDevice.list_available)
+            # 이미 등록된 인덱스는 중복 추가 방지를 위해 표시
+            registered_indices: set[int] = set()
+            for d in dm.list_primary():
+                if d.type == "webcam":
+                    try:
+                        registered_indices.add(int(d.info.get("device_index", -1)))
+                    except (TypeError, ValueError):
+                        pass
+            # 녹화용 싱글톤이 점유 중인 인덱스도 표시
+            recording_index = None
+            try:
+                from ..services.webcam_service import get_webcam_service
+                svc = get_webcam_service()
+                if svc.is_open():
+                    recording_index = getattr(svc, "_device_index", None)
+            except Exception:
+                pass
+            for cam in cams:
+                cam["already_registered"] = cam["index"] in registered_indices
+                cam["in_use_by_recording"] = (recording_index is not None and cam["index"] == recording_index)
+            return cams
+        tasks["webcams"] = asyncio.ensure_future(_scan_webcams())
     if _enabled("dlt"):
-        tasks["dlt_devices"] = asyncio.ensure_future(dm.scan_dlt())
+        tasks["dlt_devices"] = asyncio.ensure_future(dm.scan_dlt(ports=_ports_of("dlt")))
     if _enabled("smartbench"):
         tasks["smartbench_devices"] = asyncio.ensure_future(dm.scan_smartbench())
     if _enabled("ssh"):
@@ -214,6 +256,8 @@ async def scan_ports():
         "hkmc_devices": [],
         "bench_devices": [],
         "vision_cameras": [],
+        "webcams": [],
+        "isap_hosts": [],
         "dlt_devices": [],
         "smartbench_devices": [],
         "ssh_hosts": [],
@@ -315,6 +359,18 @@ async def connect_device(req: ConnectRequest):
             }
         except RuntimeError as e:
             raise HTTPException(status_code=400, detail=str(e))
+    elif req.type == "isap_agent":
+        if not req.address or not req.port:
+            raise HTTPException(status_code=400, detail="iSAP Agent requires address (IP) and port (TCP port, default 20000)")
+        try:
+            dev = await dm.add_isap_agent_device(req.address, req.port, device_id=custom_id, name=req.name or "", device_model=req.device_model or "")
+            return {
+                "result": f"iSAP registered: {dev.name} (ID: {dev.id})",
+                "primary": _with_protected_flag(dm.list_primary()),
+                "auxiliary": _with_protected_flag(dm.list_auxiliary()),
+            }
+        except RuntimeError as e:
+            raise HTTPException(status_code=400, detail=str(e))
     elif req.type == "module":
         category = req.category or "auxiliary"
         dev = await dm.add_module_device(
@@ -385,6 +441,37 @@ async def connect_device(req: ConnectRequest):
         except Exception as e:
             logger.error("[VisionCamera] connect failed: %s", e, exc_info=True)
             raise HTTPException(status_code=400, detail=str(e))
+
+    elif req.type == "webcam":
+        ef = req.extra_fields or {}
+        # address 또는 extra_fields.device_index 중 하나로 카메라 인덱스 전달
+        try:
+            device_index = int(ef.get("device_index", req.address or 0))
+        except (TypeError, ValueError):
+            raise HTTPException(status_code=400, detail="Webcam requires numeric device_index")
+        width = int(ef.get("width") or 0)
+        height = int(ef.get("height") or 0)
+        logger.info("[Webcam] connect request: index=%d %dx%d", device_index, width, height)
+        try:
+            dev = await dm.add_webcam_device(
+                device_index=device_index,
+                width=width,
+                height=height,
+                device_id=custom_id,
+                name=req.name or "",
+            )
+            # 즉시 연결 시도 (VisionCamera와 동일한 패턴 — 등록 후 connect)
+            result = await dm.connect_device_by_id(dev.id)
+            return {
+                "result": result,
+                "primary": _with_protected_flag(dm.list_primary()),
+                "auxiliary": _with_protected_flag(dm.list_auxiliary()),
+            }
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("[Webcam] connect failed: %s", e, exc_info=True)
+            raise HTTPException(status_code=400, detail=str(e))
     else:
         raise HTTPException(status_code=400, detail=f"Unknown type: {req.type}")
 
@@ -439,6 +526,12 @@ async def get_device_info(device_id: str):
         if hkmc:
             info["hkmc_info"] = hkmc.get_info()
         return info
+    elif dev.type == "isap_agent":
+        isap = dm.get_isap_service(device_id)
+        info = dev.to_dict()
+        if isap:
+            info["isap_info"] = isap.get_info()
+        return info
     else:
         return dev.to_dict()
 
@@ -474,6 +567,34 @@ async def device_input(req: InputRequest):
                 req.device_id, req.params.get("data", ""), req.params.get("read_timeout", 1.0)
             )
             return {"result": "ok", "response": response}
+
+        if req.action in ("hkmc_touch", "hkmc_swipe", "hkmc_key", "repeat_tap") and dev and dev.type == "isap_agent":
+            isap = dm.get_isap_service(req.device_id)
+            if not isap:
+                raise HTTPException(status_code=400, detail=f"iSAP device {req.device_id} not connected")
+            logger.info("[iSAP INPUT] device=%s action=%s params=%s connected=%s",
+                        req.device_id, req.action, req.params, isap.is_connected)
+            p = req.params
+            screen_type = p.get("screen_type", "front_center")
+            if req.action == "repeat_tap":
+                await isap.async_repeat_tap(p["x"], p["y"], int(p.get("count", 5)),
+                                            int(p.get("interval_ms", 100)), screen_type)
+            elif req.action == "hkmc_touch":
+                await isap.async_tap(p["x"], p["y"], screen_type)
+            elif req.action == "hkmc_swipe":
+                await isap.async_swipe(p["x1"], p["y1"], p["x2"], p["y2"], screen_type,
+                                       int(p.get("duration_ms", 0)))
+            elif req.action == "hkmc_key":
+                key_name = p.get("key_name")
+                if key_name:
+                    await isap.async_send_key_by_name(
+                        key_name, p.get("sub_cmd", 0x43), screen_type, p.get("direction")
+                    )
+                else:
+                    await isap.async_send_key(
+                        p["cmd"], p["sub_cmd"], p["key_data"], screen_type, p.get("direction")
+                    )
+            return {"result": "ok"}
 
         if req.action in ("hkmc_touch", "hkmc_swipe", "hkmc_key", "repeat_tap") and dev and dev.type == "hkmc6th":
             hkmc = dm.get_hkmc_service(req.device_id)
@@ -750,17 +871,130 @@ async def close_dlt_viewer():
     return {"result": result}
 
 
-@router.get("/hkmc-keys")
-async def list_hkmc_keys():
-    """List all available HKMC hardware key names."""
-    from ..services.hkmc6th_service import HKMC_KEYS, SHORT_KEY, LONG_KEY, PRESS_KEY, RELEASE_KEY, DIAL_ACTION
+@router.get("/isap-keys")
+async def list_isap_keys(device_id: Optional[str] = None):
+    """List iSAP Agent hardware keys (merged with per-device override).
+
+    device_id가 지정되면 해당 디바이스의 info["isap_keys"] 오버라이드를
+    spec default에 병합하여 반환한다. cmd/key/dial/visible 각 항목별로
+    override가 있으면 덮어쓰고, 없으면 spec 값을 사용 (visible 기본 True).
+    """
+    from ..services.isap_agent_service import (
+        ISAP_KEYS, SHORT_KEY, LONG_KEY, PRESS_KEY, RELEASE_KEY, KNOB_KEY,
+        MONITOR_MAP, SCREEN_PORT_MAP,
+    )
+    overrides: dict[str, dict] = {}
+    if device_id:
+        dev = dm.get_device(device_id)
+        if dev:
+            overrides = dev.info.get("isap_keys") or {}
     keys = []
-    for name, info in HKMC_KEYS.items():
-        group = name.split("_")[0]  # MKBD, CCP, RRC, SWRC, MIRROR
+    for name, info in ISAP_KEYS.items():
+        ov = overrides.get(name, {})
+        group = name.split("_")[0]  # MKBD, CCP, SWRC, RRC, MIRROR, OVERHEAD, TRIP, GRIP, OPTICAL, RHEOSTAT
+        cmd = ov.get("cmd", info["cmd"])
+        key = ov.get("key", info["key"])
+        is_dial = ov.get("dial", info.get("dial", False))
+        visible = ov.get("visible", True)
         keys.append({
             "name": name,
             "group": group,
-            "is_dial": info.get("dial", False),
+            "cmd": cmd,
+            "key": key,
+            "is_dial": is_dial,
+            "visible": visible,
+        })
+    return {
+        "keys": keys,
+        "sub_commands": {
+            "SHORT_KEY": SHORT_KEY,
+            "LONG_KEY": LONG_KEY,
+            "PRESS_KEY": PRESS_KEY,
+            "RELEASE_KEY": RELEASE_KEY,
+            "KNOB_KEY": KNOB_KEY,
+        },
+        "monitors": MONITOR_MAP,
+        "screen_ports": SCREEN_PORT_MAP,
+    }
+
+
+class UpdateIsapKeysRequest(BaseModel):
+    device_id: str
+    # name → {cmd?, key?, dial?, visible?}  (각 필드 선택적)
+    keys: dict[str, dict]
+
+
+@router.post("/isap-keys")
+async def update_isap_keys(req: UpdateIsapKeysRequest):
+    """Save per-device iSAP key overrides (차종별 키 값 + 표시 여부)."""
+    from ..services.isap_agent_service import ISAP_KEYS
+    dev = dm.get_device(req.device_id)
+    if not dev:
+        raise HTTPException(status_code=404, detail=f"Device {req.device_id} not found")
+    if dev.type != "isap_agent":
+        raise HTTPException(status_code=400, detail=f"Device {req.device_id} is not an iSAP agent")
+    # 정규화: 알려진 키만 수용, 빈/잘못된 값 필터
+    clean: dict[str, dict] = {}
+    for name, ov in (req.keys or {}).items():
+        if name not in ISAP_KEYS:
+            continue
+        entry: dict = {}
+        if "cmd" in ov and ov["cmd"] is not None:
+            try:
+                entry["cmd"] = int(ov["cmd"])
+            except (TypeError, ValueError):
+                pass
+        if "key" in ov and ov["key"] is not None:
+            try:
+                entry["key"] = int(ov["key"])
+            except (TypeError, ValueError):
+                pass
+        if "dial" in ov and ov["dial"] is not None:
+            entry["dial"] = bool(ov["dial"])
+        if "visible" in ov and ov["visible"] is not None:
+            entry["visible"] = bool(ov["visible"])
+        if entry:
+            clean[name] = entry
+    if clean:
+        dev.info["isap_keys"] = clean
+    else:
+        dev.info.pop("isap_keys", None)
+    # 연결된 service에 즉시 반영
+    svc = dm.get_isap_service(req.device_id)
+    if svc:
+        svc.set_key_overrides(dev.info.get("isap_keys"))
+    dm._save_auxiliary_devices()
+    return {"status": "ok", "device_id": req.device_id, "count": len(clean)}
+
+
+@router.get("/hkmc-keys")
+async def list_hkmc_keys(device_id: Optional[str] = None):
+    """List HKMC hardware keys (merged with per-device override).
+
+    device_id가 지정되면 해당 디바이스의 info["hkmc_keys"] 오버라이드를
+    spec default에 병합하여 반환한다.
+    """
+    from ..services.hkmc6th_service import HKMC_KEYS, SHORT_KEY, LONG_KEY, PRESS_KEY, RELEASE_KEY, DIAL_ACTION
+    overrides: dict[str, dict] = {}
+    if device_id:
+        dev = dm.get_device(device_id)
+        if dev:
+            overrides = dev.info.get("hkmc_keys") or {}
+    keys = []
+    for name, info in HKMC_KEYS.items():
+        ov = overrides.get(name, {})
+        group = name.split("_")[0]  # MKBD, MKBD2, CCP, RRC, SWRC, SWRC2, MIRROR
+        cmd = ov.get("cmd", info["cmd"])
+        key = ov.get("key", info["key"])
+        is_dial = ov.get("dial", info.get("dial", False))
+        visible = ov.get("visible", True)
+        keys.append({
+            "name": name,
+            "group": group,
+            "cmd": cmd,
+            "key": key,
+            "is_dial": is_dial,
+            "visible": visible,
         })
     return {
         "keys": keys,
@@ -772,6 +1006,90 @@ async def list_hkmc_keys():
             "DIAL_ACTION": DIAL_ACTION,
         },
     }
+
+
+class UpdateHkmcKeysRequest(BaseModel):
+    device_id: str
+    keys: dict[str, dict]  # name → {cmd?, key?, dial?, visible?}
+
+
+@router.post("/hkmc-keys")
+async def update_hkmc_keys(req: UpdateHkmcKeysRequest):
+    """Save per-device HKMC key overrides (차종별 키 값 + 표시 여부)."""
+    from ..services.hkmc6th_service import HKMC_KEYS
+    dev = dm.get_device(req.device_id)
+    if not dev:
+        raise HTTPException(status_code=404, detail=f"Device {req.device_id} not found")
+    if dev.type != "hkmc6th":
+        raise HTTPException(status_code=400, detail=f"Device {req.device_id} is not an HKMC device")
+    clean: dict[str, dict] = {}
+    for name, ov in (req.keys or {}).items():
+        if name not in HKMC_KEYS:
+            continue
+        entry: dict = {}
+        if "cmd" in ov and ov["cmd"] is not None:
+            try:
+                entry["cmd"] = int(ov["cmd"])
+            except (TypeError, ValueError):
+                pass
+        if "key" in ov and ov["key"] is not None:
+            try:
+                entry["key"] = int(ov["key"])
+            except (TypeError, ValueError):
+                pass
+        if "dial" in ov and ov["dial"] is not None:
+            entry["dial"] = bool(ov["dial"])
+        if "visible" in ov and ov["visible"] is not None:
+            entry["visible"] = bool(ov["visible"])
+        if entry:
+            clean[name] = entry
+    if clean:
+        dev.info["hkmc_keys"] = clean
+    else:
+        dev.info.pop("hkmc_keys", None)
+    svc = dm.get_hkmc_service(req.device_id)
+    if svc:
+        svc.set_key_overrides(dev.info.get("hkmc_keys"))
+    dm._save_auxiliary_devices()
+    return {"status": "ok", "device_id": req.device_id, "count": len(clean)}
+
+
+class WebcamExposureRequest(BaseModel):
+    value: Optional[float] = None
+    auto: Optional[bool] = None
+
+
+@router.get("/webcam-exposure/{device_id}")
+async def get_webcam_exposure(device_id: str):
+    """주 디바이스로 등록된 웹캠의 현재 노출값/모드 조회."""
+    dev = dm.get_device(device_id)
+    if not dev or dev.type != "webcam":
+        raise HTTPException(status_code=400, detail=f"Device {device_id} is not a webcam")
+    cam = dm.get_webcam_device(device_id)
+    if not cam:
+        raise HTTPException(status_code=400, detail=f"Webcam {device_id} not connected")
+    import asyncio
+    loop = asyncio.get_event_loop()
+    info = await loop.run_in_executor(None, cam.GetExposure)
+    return info
+
+
+@router.post("/webcam-exposure/{device_id}")
+async def set_webcam_exposure(device_id: str, req: WebcamExposureRequest):
+    """주 디바이스로 등록된 웹캠의 노출값 설정 (value 또는 auto 지정)."""
+    dev = dm.get_device(device_id)
+    if not dev or dev.type != "webcam":
+        raise HTTPException(status_code=400, detail=f"Device {device_id} is not a webcam")
+    cam = dm.get_webcam_device(device_id)
+    if not cam:
+        raise HTTPException(status_code=400, detail=f"Webcam {device_id} not connected")
+    import asyncio
+    loop = asyncio.get_event_loop()
+    ok = await loop.run_in_executor(None, cam.SetExposure, req.value, req.auto)
+    if not ok:
+        raise HTTPException(status_code=400, detail="Failed to set exposure")
+    info = await loop.run_in_executor(None, cam.GetExposure)
+    return info
 
 
 @router.get("/screenshot/{device_id}")
@@ -789,6 +1107,13 @@ async def get_screenshot(device_id: str, fmt: str = "jpeg", screen_type: str = "
             img_bytes = await hkmc.async_screencap_bytes(screen_type=screen_type, fmt=fmt)
             b64 = base64.b64encode(img_bytes).decode("ascii")
             return {"image": b64, "format": fmt}
+        elif dev and dev.type == "isap_agent":
+            isap = dm.get_isap_service(device_id)
+            if not isap:
+                raise HTTPException(status_code=400, detail=f"iSAP device {device_id} not connected")
+            img_bytes = await isap.async_screencap_bytes(screen_type=screen_type, fmt=fmt)
+            b64 = base64.b64encode(img_bytes).decode("ascii")
+            return {"image": b64, "format": fmt}
         elif dev and dev.type == "vision_camera":
             cam = dm.get_vision_camera(device_id)
             if not cam:
@@ -798,8 +1123,17 @@ async def get_screenshot(device_id: str, fmt: str = "jpeg", screen_type: str = "
             img_bytes = await loop.run_in_executor(None, cam.CaptureBytes, fmt)
             b64 = base64.b64encode(img_bytes).decode("ascii")
             return {"image": b64, "format": fmt}
+        elif dev and dev.type == "webcam":
+            cam = dm.get_webcam_device(device_id)
+            if not cam:
+                raise HTTPException(status_code=400, detail=f"Webcam {device_id} not connected")
+            import asyncio
+            loop = asyncio.get_event_loop()
+            img_bytes = await loop.run_in_executor(None, cam.CaptureBytes, fmt)
+            b64 = base64.b64encode(img_bytes).decode("ascii")
+            return {"image": b64, "format": fmt}
         elif dev and dev.type not in ("adb",):
-            raise HTTPException(status_code=400, detail="Screenshot only available for ADB, HKMC, or VisionCamera devices")
+            raise HTTPException(status_code=400, detail="Screenshot only available for ADB, HKMC, iSAP, VisionCamera, or Webcam devices")
         else:
             # ADB device
             adb_serial = dev.address if dev else device_id
