@@ -18,6 +18,7 @@ DLT Viewer GUI 없이 시나리오 스텝 내에서:
 
 import logging
 import os
+import queue
 import socket
 import struct
 import threading
@@ -28,6 +29,107 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 
+# ==========================================================================
+# DLT 뷰어용 Pub/Sub 허브 — 기존 StartSave/StopSave/SearchRange는 그대로 두고,
+# 뷰어 연동은 신규 StartLogging/StopLogging/SearchSection 경로만 사용한다.
+# ==========================================================================
+
+class _DLTHub:
+    """DLT 로깅 세션 + 로그 스트림 구독자 관리 (thread-safe)."""
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._sessions: dict[str, dict] = {}            # session_id -> session info
+        self._lifecycle_subs: list[queue.Queue] = []    # 전역 lifecycle 구독
+        self._log_subs: dict[str, list[queue.Queue]] = {}  # session_id -> [Queue]
+
+    # --- Session registry ---------------------------------------------------
+
+    def list_sessions(self) -> list[dict]:
+        with self._lock:
+            return [{"session_id": sid, **info} for sid, info in self._sessions.items()]
+
+    def emit_lifecycle(self, event: dict) -> None:
+        """session_started / session_stopped 이벤트를 전파."""
+        sid = event.get("session_id", "")
+        etype = event.get("type", "")
+        with self._lock:
+            if etype == "session_started" and sid:
+                self._sessions[sid] = {k: v for k, v in event.items() if k not in ("type",)}
+            elif etype == "session_stopped" and sid:
+                self._sessions.pop(sid, None)
+            subs = list(self._lifecycle_subs)
+        logger.info("[DLT_HUB] emit_lifecycle type=%s sid=%s subscribers=%d",
+                    etype, sid, len(subs))
+        for q in subs:
+            try:
+                q.put_nowait(event)
+            except queue.Full:
+                pass
+
+    # --- Lifecycle subscription (for /ws/dlt-lifecycle) ---------------------
+
+    def register_lifecycle(self) -> queue.Queue:
+        q: queue.Queue = queue.Queue(maxsize=1000)
+        with self._lock:
+            self._lifecycle_subs.append(q)
+            # 현재 활성 세션을 backfill로 즉시 전달
+            for sid, info in self._sessions.items():
+                try:
+                    q.put_nowait({"type": "session_started", "session_id": sid, **info})
+                except queue.Full:
+                    break
+        return q
+
+    def unregister_lifecycle(self, q: queue.Queue) -> None:
+        with self._lock:
+            if q in self._lifecycle_subs:
+                self._lifecycle_subs.remove(q)
+
+    # --- Log stream subscription (for /ws/dlt/{session_id}) -----------------
+
+    def register_log(self, session_id: str) -> queue.Queue:
+        q: queue.Queue = queue.Queue(maxsize=10000)
+        with self._lock:
+            self._log_subs.setdefault(session_id, []).append(q)
+        return q
+
+    def unregister_log(self, session_id: str, q: queue.Queue) -> None:
+        with self._lock:
+            lst = self._log_subs.get(session_id, [])
+            if q in lst:
+                lst.remove(q)
+
+    def emit_log(self, session_id: str, line: str) -> None:
+        with self._lock:
+            subs = list(self._log_subs.get(session_id, []))
+        for q in subs:
+            try:
+                q.put_nowait(line)
+            except queue.Full:
+                # 구독자가 소비를 못 따라오면 최신 라인을 버림 — 스트리밍 끊김 방지
+                pass
+
+
+DLT_HUB = _DLTHub()
+
+
+def get_active_session(session_id: str) -> Optional["DLTLogging"]:
+    """session_id(host:port)에 대응하는 현재 활성 DLTLogging 인스턴스를 반환.
+    module_service 싱글톤을 역참조하여 찾는다.
+    """
+    try:
+        from backend.app.services.module_service import _instances
+    except Exception:
+        return None
+    inst = _instances.get("DLTLogging")
+    if not inst:
+        return None
+    if f"{getattr(inst, '_host', '')}:{getattr(inst, '_port', 0)}" == session_id:
+        return inst
+    return None
+
+
 def _get_run_output_dir() -> Optional[Path]:
     """현재 재생 런의 출력 디렉토리. 재생 중이 아니면 None."""
     try:
@@ -35,6 +137,26 @@ def _get_run_output_dir() -> Optional[Path]:
         return get_run_output_dir()
     except Exception:
         return None
+
+
+def _auto_save_path(prefix: str = "dlt") -> str:
+    """컨텍스트별 자동 저장 경로 생성.
+
+    - 시나리오 재생 중: {run_output_dir}/logs/{prefix}_{timestamp}.log
+    - 스텝 테스트 (재생 중 아님): backend/results/Temp_logs/{prefix}_{timestamp}.log
+    """
+    ts = time.strftime("%Y%m%d_%H%M%S")
+    run_dir = _get_run_output_dir()
+    if run_dir:
+        log_dir = run_dir / "logs"
+    else:
+        try:
+            from backend.app.services.playback_service import RESULTS_DIR
+            log_dir = Path(RESULTS_DIR) / "Temp_logs"
+        except Exception:
+            log_dir = Path(__file__).resolve().parent.parent.parent / "results" / "Temp_logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    return str(log_dir / f"{prefix}_{ts}.log")
 
 
 # DLT 프로토콜 상수
@@ -137,15 +259,8 @@ class DLTLogging:
             return err
 
         if not save_path:
-            # 재생 중이면 런 폴더의 logs/ 하위에 저장
-            run_dir = _get_run_output_dir()
-            if run_dir:
-                log_dir = run_dir / "logs"
-            else:
-                log_dir = Path(__file__).resolve().parent.parent.parent / "logs"
-            log_dir.mkdir(exist_ok=True)
-            ts = time.strftime("%Y%m%d_%H%M%S")
-            save_path = str(log_dir / f"dlt_{ts}.log")
+            # 재생 중: run_dir/logs, 스텝 테스트: backend/results/Temp_logs
+            save_path = _auto_save_path("dlt")
         else:
             os.makedirs(os.path.dirname(save_path) or ".", exist_ok=True)
 
@@ -171,6 +286,276 @@ class DLTLogging:
         self._disconnect()
         logger.info("[DLTLogging] Save stopped + disconnected: %s", path)
         return f"Save stopped: {path}"
+
+    # ------------------------------------------------------------------
+    # 뷰어 연동 신규 API — StartLogging / StopLogging / SearchSection
+    # 기존 StartSave/StopSave/SearchRange와 동일 동작 + DLT_HUB에 이벤트 전파.
+    # ------------------------------------------------------------------
+
+    def _session_id(self) -> str:
+        return f"{self._host}:{self._port}"
+
+    def StartLogging(self) -> str:
+        """뷰어 연동용: DLT 연결 + 로그 캡처 시작 (메모리만, 파일 저장 없음).
+
+        실시간 저장 대신 메모리 버퍼에만 로그를 누적한다. 저장이 필요하면
+        StopLogging(save_path)로 종료 시점에 일괄 저장.
+        DLT_HUB에 session_started 이벤트를 emit하여 뷰어가 자동 오픈된다.
+
+        Returns:
+            결과 메시지
+        """
+        err = self._connect()
+        if err:
+            return err
+        DLT_HUB.emit_lifecycle({
+            "type": "session_started",
+            "session_id": self._session_id(),
+            "host": self._host,
+            "port": self._port,
+            "save_path": "",
+            "started_at": time.time(),
+        })
+        return f"Logging started: {self._host}:{self._port}"
+
+    def StopLogging(self, save_path: str = "") -> str:
+        """뷰어 연동용: DLT 연결 종료 + 메모리 버퍼를 파일로 일괄 저장.
+
+        Args:
+            save_path: 저장할 파일 경로. 빈 값이면 컨텍스트별 자동 저장:
+                - 시나리오 재생 중: {run_dir}/logs/dlt_{timestamp}.log
+                - 스텝 테스트:     backend/results/Temp_logs/dlt_{timestamp}.log
+
+        Returns:
+            결과 메시지 (저장 경로 포함)
+        """
+        sid = self._session_id()
+
+        # 메모리 버퍼 스냅샷
+        with self._lock:
+            logs_snapshot = list(self._logs)
+
+        # save_path 해석: 빈 값 → 자동 경로+파일명, 파일명만 → 자동 디렉토리 하위
+        if not save_path:
+            save_path = _auto_save_path("dlt")
+        elif not os.path.dirname(save_path):
+            base_dir = Path(_auto_save_path("dlt")).parent
+            save_path = str(base_dir / save_path)
+
+        saved_path = ""
+        try:
+            os.makedirs(os.path.dirname(save_path) or ".", exist_ok=True)
+            with open(save_path, "w", encoding="utf-8") as f:
+                f.write("\n".join(logs_snapshot))
+                if logs_snapshot:
+                    f.write("\n")
+            saved_path = save_path
+            logger.info("[DLTLogging] Saved %d lines to %s", len(logs_snapshot), save_path)
+        except Exception as e:
+            logger.error("[DLTLogging] Save failed: %s", e)
+            self._disconnect()
+            DLT_HUB.emit_lifecycle({
+                "type": "session_stopped",
+                "session_id": sid,
+                "save_path": "",
+                "stopped_at": time.time(),
+            })
+            return f"ERROR: 저장 실패 — {e}"
+
+        self._disconnect()
+        DLT_HUB.emit_lifecycle({
+            "type": "session_stopped",
+            "session_id": sid,
+            "save_path": saved_path,
+            "stopped_at": time.time(),
+        })
+        return f"Logging stopped. Saved {len(logs_snapshot)} lines to: {saved_path}"
+
+    def SearchSection(self, keyword: str, from_step: int, to_step: int, count: int = 5) -> str:
+        """뷰어 연동용: MarkStep 구간 검색. SearchRange의 alias."""
+        return self.SearchRange(keyword, from_step, to_step, count)
+
+    def WatchAndStop(self, keyword: str, save_path: str = "",
+                     interval_ms: int = 500,
+                     max_checks: int = 0,
+                     timeout_sec: int = 0) -> str:
+        """StartLogging 중에 키워드를 주기적으로 감시하다 발견 시:
+        - 해당 키워드가 나타난 라인까지의 로그를 save_path에 저장
+        - DLT 연결 종료 + 뷰어에 session_stopped emit
+        블로킹 함수. 시나리오 스텝에서 호출하면 발견 또는 한도 도달까지 대기.
+
+        Args:
+            keyword: 감시할 키워드 (공백=AND)
+            save_path: 저장 파일 경로. 빈 값이면 매칭 시에도 저장 없이 종료만.
+            interval_ms: 체크 주기 (ms). 기본 500ms.
+            max_checks: 최대 체크 횟수. 0이면 제한 없음.
+            timeout_sec: 총 대기 시간 (초). 0이면 제한 없음.
+                (둘 다 0이면 기본 300초 타임아웃 적용 — 무한 블록 방지)
+
+        Returns:
+            "PASS: ..." 발견 시
+            "FAIL: ..." 한도 도달 시 (현재까지의 로그는 저장)
+        """
+        if not self._capturing:
+            return "ERROR: StartLogging이 실행 중이 아닙니다."
+
+        keywords = keyword.split() if keyword else []
+        if not keywords:
+            return "ERROR: keyword가 비어있습니다."
+
+        if max_checks <= 0 and timeout_sec <= 0:
+            timeout_sec = 300  # 안전장치: 최대 5분
+
+        interval = max(0.05, float(interval_ms) / 1000.0)
+        start_time = time.time()
+        check_count = 0
+        scan_pos = 0  # 다음 검사 시 시작할 인덱스 (이전 검사까지 본 위치)
+
+        while True:
+            check_count += 1
+
+            # 새로 추가된 라인만 복사 — O(delta). 전체 버퍼 복사 비용 제거.
+            with self._lock:
+                total_len = len(self._logs)
+                new_slice = self._logs[scan_pos:total_len] if total_len > scan_pos else []
+
+            matched_idx = -1
+            base = scan_pos
+            for i, line in enumerate(new_slice):
+                if all(k in line for k in keywords):
+                    matched_idx = base + i
+                    break
+
+            # 이 회차에서 본 범위 업데이트
+            scan_pos = total_len
+
+            if matched_idx >= 0:
+                # 매칭 — 전체 버퍼에서 해당 라인까지 한 번만 스냅샷
+                with self._lock:
+                    to_save = list(self._logs[:matched_idx + 1])
+                logger.info("[DLTLogging] WatchAndStop MATCH '%s' at idx=%d (check %d)",
+                            keyword, matched_idx, check_count)
+                return self._watch_save_and_stop(
+                    to_save, save_path, keyword, check_count, matched=True,
+                )
+
+            elapsed = time.time() - start_time
+            if timeout_sec > 0 and elapsed >= timeout_sec:
+                with self._lock:
+                    to_save = list(self._logs)
+                logger.info("[DLTLogging] WatchAndStop TIMEOUT '%s' after %.1fs (check %d)",
+                            keyword, elapsed, check_count)
+                return self._watch_save_and_stop(
+                    to_save, save_path, keyword, check_count,
+                    matched=False, reason="timeout",
+                )
+            if max_checks > 0 and check_count >= max_checks:
+                with self._lock:
+                    to_save = list(self._logs)
+                logger.info("[DLTLogging] WatchAndStop EXHAUSTED '%s' after %d checks",
+                            keyword, check_count)
+                return self._watch_save_and_stop(
+                    to_save, save_path, keyword, check_count,
+                    matched=False, reason="max_checks",
+                )
+
+            time.sleep(interval)
+
+    def _watch_save_and_stop(self, logs_slice: list, save_path: str, keyword: str,
+                             check_count: int, matched: bool, reason: str = "") -> str:
+        """WatchAndStop 종료 처리 — 저장 + 연결 해제 + lifecycle emit.
+
+        save_path 해석:
+          - 빈 값:           컨텍스트별 자동 경로 + 자동 파일명
+            (재생: {run_dir}/logs/dlt_watch_{ts}.log, 스텝 테스트: backend/results/Temp_logs/...)
+          - 파일명만 지정:   자동 디렉토리 하위에 해당 파일명으로 저장
+          - 절대/상대 경로:  지정 경로 그대로 사용
+        """
+        sid = self._session_id()
+        if not save_path:
+            save_path = _auto_save_path("dlt_watch")
+        elif not os.path.dirname(save_path):
+            # 파일명만 주어진 경우 → 컨텍스트별 자동 디렉토리 하위로 라우팅
+            base_dir = Path(_auto_save_path("dlt_watch")).parent
+            save_path = str(base_dir / save_path)
+        saved = ""
+        try:
+            os.makedirs(os.path.dirname(save_path) or ".", exist_ok=True)
+            with open(save_path, "w", encoding="utf-8") as f:
+                f.write("\n".join(logs_slice))
+                if logs_slice:
+                    f.write("\n")
+            saved = save_path
+        except Exception as e:
+            logger.error("[DLTLogging] WatchAndStop save failed: %s", e)
+
+        self._disconnect()
+        DLT_HUB.emit_lifecycle({
+            "type": "session_stopped",
+            "session_id": sid,
+            "save_path": saved,
+            "stopped_at": time.time(),
+        })
+
+        lines = len(logs_slice)
+        tail = f"saved {lines} lines to {saved}" if saved else f"{lines} lines in memory (not saved)"
+        if matched:
+            return f"PASS: '{keyword}' found after {check_count} checks — {tail}"
+        if reason == "timeout":
+            return f"FAIL: '{keyword}' not found within timeout ({check_count} checks) — {tail}"
+        return f"FAIL: '{keyword}' not found after {check_count} checks — {tail}"
+
+    def GetRecentLogs(self, limit: int = 1000) -> list[str]:
+        """뷰어 backfill용 — 현재까지 캡처된 로그의 마지막 N줄."""
+        with self._lock:
+            if limit <= 0:
+                return list(self._logs)
+            return list(self._logs[-int(limit):])
+
+    def GetStepMarks(self) -> dict[int, int]:
+        """뷰어 UI용 — 현재 스텝 마킹 위치 dict."""
+        return dict(self._step_marks)
+
+    def SearchAllDetailed(self, keyword: str, max_results: int = 500) -> list[str]:
+        """뷰어 검색바용 — 매칭된 로그 라인 목록을 반환."""
+        keywords = keyword.split() if keyword else []
+        if not keywords:
+            return []
+        with self._lock:
+            logs = list(self._logs)
+        out: list[str] = []
+        for line in logs:
+            if all(k in line for k in keywords):
+                out.append(line)
+                if len(out) >= int(max_results):
+                    break
+        return out
+
+    def SearchSectionDetailed(self, keyword: str, from_step: int,
+                              to_step: int, max_results: int = 500) -> list[str]:
+        """뷰어 검색바용 — 스텝 구간 내 매칭 로그 라인 목록 반환."""
+        keywords = keyword.split() if keyword else []
+        if not keywords:
+            return []
+        from_step = int(from_step)
+        to_step = int(to_step)
+        if from_step not in self._step_marks:
+            return []
+        start_idx = self._step_marks[from_step]
+        if to_step in self._step_marks:
+            end_idx = self._step_marks[to_step]
+        else:
+            with self._lock:
+                end_idx = len(self._logs)
+        with self._lock:
+            logs = list(self._logs[start_idx:end_idx])
+        out: list[str] = []
+        for line in logs:
+            if all(k in line for k in keywords):
+                out.append(line)
+                if len(out) >= int(max_results):
+                    break
+        return out
 
     def _close_save_file(self):
         if self._save_file:
@@ -510,6 +895,9 @@ class DLTLogging:
                         self._save_file.flush()
                     except Exception:
                         pass
+
+                # 뷰어 구독자에게 스트리밍 (Hub에 세션 등록된 경우만 비용 발생)
+                DLT_HUB.emit_log(self._session_id(), line)
 
     # ------------------------------------------------------------------
     # DLT 메시지 파싱 (DLTViewer와 동일 로직)

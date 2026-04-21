@@ -39,6 +39,7 @@ _DEFAULT_SCAN_SETTINGS = {
         "vision_camera":  {"enabled": False, "module": "VisionCamera"},
         "webcam":         {"enabled": True,  "module": "WebcamDevice"},
         "ssh":            {"enabled": True,  "module": "SSHManager", "port": 22},
+        "smartbench":     {"enabled": True,  "module": "SmartBench", "host": "192.167.0.5", "port": 8000},
     },
     # type: "tcp" | "udp"
     # [{"label": "MLP", "type": "tcp", "port": 5001, "module": "MLP", "enabled": true}, ...]
@@ -57,6 +58,55 @@ def _load_scan_settings() -> dict:
 
 def _save_scan_settings(settings: dict) -> None:
     _SCAN_SETTINGS_FILE.write_text(_json.dumps(settings, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+# ── 디바이스 카탈로그 (프로젝트/모델 콤보 + 모듈 표시여부) ──
+_DEVICE_CATALOG_FILE = Path(__file__).resolve().parent.parent.parent / "device_catalog.json"
+
+_DEFAULT_DEVICE_CATALOG: dict = {
+    "projects": [
+        {
+            "name": "HKMC",
+            "enabled": True,
+            "models": [
+                {"label": "Connected Wide", "value": "Connected_Wide", "enabled": True},
+                {"label": "CCIC",           "value": "HKMC",            "enabled": True},
+                {"label": "CCRC",           "value": "CCRC",            "enabled": True},
+            ],
+        },
+        {
+            "name": "GM",
+            "enabled": True,
+            "models": [
+                {"label": "GVM", "value": "GVM", "enabled": True},
+            ],
+        },
+        {
+            "name": "General",
+            "enabled": True,
+            "models": [
+                {"label": "Android", "value": "Android", "enabled": True},
+                {"label": "Phone",   "value": "Phone",   "enabled": True},
+                {"label": "SSH",     "value": "SSH",     "enabled": True},
+            ],
+        },
+    ],
+    # 모듈 표시 여부 (false = 아직 미구현/숨김). 리스트에 없으면 기본 표시.
+    "module_visibility": {},
+}
+
+
+def _load_device_catalog() -> dict:
+    if _DEVICE_CATALOG_FILE.exists():
+        try:
+            return _json.loads(_DEVICE_CATALOG_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return _json.loads(_json.dumps(_DEFAULT_DEVICE_CATALOG))  # deep copy
+
+
+def _save_device_catalog(cat: dict) -> None:
+    _DEVICE_CATALOG_FILE.write_text(_json.dumps(cat, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def _parse_adb_display_id(screen_type: str | None) -> int | None:
@@ -152,6 +202,22 @@ async def save_scan_settings(request: Request):
     return {"status": "ok"}
 
 
+@router.get("/catalog")
+async def get_device_catalog():
+    """프로젝트/모델 콤보 + 모듈 표시여부 카탈로그 조회."""
+    return _load_device_catalog()
+
+
+@router.post("/catalog")
+async def save_device_catalog(request: Request):
+    """관리용 — 프로젝트/모델/모듈 표시여부 카탈로그 저장."""
+    body = await request.json()
+    if not isinstance(body, dict):
+        raise HTTPException(status_code=400, detail="body must be an object")
+    _save_device_catalog(body)
+    return {"status": "ok"}
+
+
 @router.get("/scan")
 async def scan_ports():
     """Scan available connection targets — 스캔 설정에 따라 활성화된 항목만 실행."""
@@ -223,7 +289,14 @@ async def scan_ports():
     if _enabled("dlt"):
         tasks["dlt_devices"] = asyncio.ensure_future(dm.scan_dlt(ports=_ports_of("dlt")))
     if _enabled("smartbench"):
-        tasks["smartbench_devices"] = asyncio.ensure_future(dm.scan_smartbench())
+        sb_entry = builtin.get("smartbench", {}) if isinstance(builtin.get("smartbench"), dict) else {}
+        sb_host = str(sb_entry.get("host") or "").strip() or None
+        sb_port = sb_entry.get("port")
+        try:
+            sb_port = int(sb_port) if sb_port is not None else None
+        except (TypeError, ValueError):
+            sb_port = None
+        tasks["smartbench_devices"] = asyncio.ensure_future(dm.scan_smartbench(host=sb_host, port=sb_port))
     if _enabled("ssh"):
         ssh_entry = builtin.get("ssh", {}) if isinstance(builtin.get("ssh"), dict) else {}
         ssh_port = int(ssh_entry.get("port", 22))
@@ -617,7 +690,8 @@ async def device_input(req: InputRequest):
                 key_name = p.get("key_name")
                 if key_name:
                     await hkmc.async_send_key_by_name(
-                        key_name, p.get("sub_cmd", 0x43), p.get("monitor", 0x00), p.get("direction")
+                        key_name, p.get("sub_cmd", 0x43), p.get("monitor", 0x00),
+                        p.get("direction"), screen_type,
                     )
                     logger.info("[HKMC INPUT] key sent: %s", key_name)
                 else:

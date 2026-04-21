@@ -144,6 +144,43 @@ async def recording_status():
     return {"recording": recording_svc.is_recording}
 
 
+class SyncStepsRequest(BaseModel):
+    scenario_name: str
+    steps: list[dict]  # 프론트엔드의 현재 steps 배열 (재정렬·복사·이동 결과)
+
+
+@router.post("/record/sync-steps")
+async def sync_steps(req: SyncStepsRequest):
+    """프론트엔드의 현재 steps 상태를 in-memory 시나리오로 즉시 반영.
+
+    녹화 중 사용자가 프론트에서 이동/복사/재정렬한 결과가 백엔드 _current_scenario.steps
+    와 어긋나 step_index 기반 API(capture-expected-image 등)가 오류를 내는 문제를
+    해결하기 위한 동기화 경로.
+    id는 프론트엔드가 1-based 로 재할당해 보낸 값을 그대로 사용한다.
+    """
+    if not recording_svc.is_recording or not recording_svc._current_scenario:
+        raise HTTPException(status_code=400, detail="Not recording")
+    cur = recording_svc._current_scenario
+    if cur.name != req.scenario_name:
+        raise HTTPException(status_code=400, detail=f"Scenario mismatch: recording='{cur.name}', requested='{req.scenario_name}'")
+
+    from ..models.scenario import Step
+    new_steps: list[Step] = []
+    for i, raw in enumerate(req.steps):
+        try:
+            # 프론트 임의 필드(_imageVer 등) 무시하도록 pydantic이 기본 처리
+            s = Step(**{k: v for k, v in raw.items() if not str(k).startswith("_")})
+            s.id = i + 1  # 안전 차원에서 backend도 1-based 재할당
+            new_steps.append(s)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Step {i} invalid: {e}")
+
+    cur.steps = new_steps
+    # step_counter도 맞춰 다음 addStep이 올바른 id를 가지도록 보정
+    recording_svc._step_counter = len(new_steps)
+    return {"status": "ok", "count": len(new_steps)}
+
+
 class SaveExpectedImageRequest(BaseModel):
     scenario_name: str
     step_index: int  # 0-based
@@ -155,9 +192,14 @@ class SaveExpectedImageRequest(BaseModel):
 
 
 async def _resolve_scenario(scenario_name: str):
-    """Get scenario from in-memory recording or disk."""
-    if recording_svc.is_recording and recording_svc._current_scenario:
-        return recording_svc._current_scenario
+    """Get scenario from in-memory recording or disk.
+
+    녹화 중이고 이름이 일치하면 메모리 버전을 반환한다 — 미저장 스텝 포함.
+    이름이 다르면 (다른 시나리오 참조) 디스크에서 로드.
+    """
+    cur = recording_svc._current_scenario
+    if cur and cur.name == scenario_name:
+        return cur
     try:
         return await recording_svc.load_scenario(scenario_name)
     except FileNotFoundError:
@@ -417,7 +459,8 @@ async def import_steps(req: ImportStepsRequest):
     동일 시나리오(source == target)에서 move는 허용되지 않음 (드래그앤드롭 사용).
     """
     import shutil, time as _time
-    source = await recording_svc.load_scenario(req.source_name)
+    # 녹화 중 미저장 상태에서도 메모리 스텝을 참조하도록 _resolve_scenario 사용
+    source = await _resolve_scenario(req.source_name)
     tgt_ss_dir = SCREENSHOTS_DIR / req.target_name
     tgt_ss_dir.mkdir(parents=True, exist_ok=True)
     src_ss_dir = SCREENSHOTS_DIR / req.source_name
@@ -711,6 +754,10 @@ class GroupScenarioRequest(BaseModel):
     scenario_name: str
 
 
+class GroupIndexRequest(BaseModel):
+    index: int
+
+
 @router.post("/groups/{group_name}/add")
 async def add_to_group(group_name: str, req: GroupScenarioRequest):
     groups = recording_svc.add_to_group(group_name, req.scenario_name)
@@ -718,18 +765,18 @@ async def add_to_group(group_name: str, req: GroupScenarioRequest):
 
 
 @router.post("/groups/{group_name}/remove")
-async def remove_from_group(group_name: str, req: GroupScenarioRequest):
-    groups = recording_svc.remove_from_group(group_name, req.scenario_name)
+async def remove_from_group(group_name: str, req: GroupIndexRequest):
+    groups = recording_svc.remove_from_group_by_index(group_name, req.index)
     return {"groups": groups}
 
 
 class ReorderGroupRequest(BaseModel):
-    ordered: list[str]
+    ordered_indices: list[int]
 
 
 @router.post("/groups/{group_name}/reorder")
 async def reorder_group(group_name: str, req: ReorderGroupRequest):
-    groups = recording_svc.reorder_group(group_name, req.ordered)
+    groups = recording_svc.reorder_group(group_name, req.ordered_indices)
     return {"groups": groups}
 
 
@@ -785,21 +832,6 @@ async def copy_scenario(name: str, req: CopyScenarioRequest):
         return {"status": "ok", "scenario": scenario.model_dump()}
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail=f"Scenario '{name}' not found")
-
-
-class MergeRequest(BaseModel):
-    names: list[str]
-    target_name: str
-
-
-@router.post("/merge")
-async def merge_scenarios(req: MergeRequest):
-    """Merge multiple scenarios into one."""
-    try:
-        scenario = await recording_svc.merge_scenarios(req.names, req.target_name)
-        return {"status": "ok", "scenario": scenario.model_dump()}
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e))
 
 
 # ------------------------------------------------------------------
