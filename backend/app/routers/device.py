@@ -30,19 +30,19 @@ _SCAN_SETTINGS_FILE = Path(__file__).resolve().parent.parent.parent / "scan_sett
 
 _DEFAULT_SCAN_SETTINGS = {
     "builtin": {
-        "adb":            {"enabled": True,  "module": ""},
-        "serial":         {"enabled": True,  "module": "SerialLogging"},
-        "hkmc":           {"enabled": True,  "module": "", "ports": [6655, 5000]},
-        "isap":           {"enabled": False, "module": "", "ports": [20000]},
-        "dlt":            {"enabled": True,  "module": "DLTLogging", "ports": [3490]},
-        "bench":          {"enabled": True,  "module": "CCIC_BENCH", "ports": [25000]},
-        "vision_camera":  {"enabled": False, "module": "VisionCamera"},
-        "webcam":         {"enabled": True,  "module": "WebcamDevice"},
-        "ssh":            {"enabled": True,  "module": "SSHManager", "port": 22},
-        "smartbench":     {"enabled": True,  "module": "SmartBench", "host": "192.167.0.5", "port": 8000},
+        "adb":            {"enabled": True,  "module": "",             "category": "primary"},
+        "serial":         {"enabled": True,  "module": "SerialLogging","category": "auxiliary"},
+        "hkmc":           {"enabled": True,  "module": "",             "category": "primary",   "ports": [6655, 5000]},
+        "isap":           {"enabled": False, "module": "",             "category": "primary",   "ports": [20000]},
+        "dlt":            {"enabled": True,  "module": "DLTLogging",   "category": "auxiliary", "ports": [3490]},
+        "bench":          {"enabled": True,  "module": "CCIC_BENCH",   "category": "auxiliary", "ports": [25000]},
+        "vision_camera":  {"enabled": False, "module": "VisionCamera", "category": "primary"},
+        "webcam":         {"enabled": True,  "module": "WebcamDevice", "category": "primary"},
+        "ssh":            {"enabled": True,  "module": "SSHManager",   "category": "auxiliary", "port": 22},
+        "smartbench":     {"enabled": True,  "module": "SmartBench",   "category": "auxiliary", "host": "192.167.0.5", "port": 8000},
     },
-    # type: "tcp" | "udp"
-    # [{"label": "MLP", "type": "tcp", "port": 5001, "module": "MLP", "enabled": true}, ...]
+    # type: "tcp" | "udp", category: "primary" | "auxiliary"
+    # [{"label": "MLP", "type": "tcp", "port": 5001, "module": "MLP", "enabled": true, "category": "auxiliary"}, ...]
     "custom": [],
 }
 
@@ -69,9 +69,15 @@ _DEFAULT_DEVICE_CATALOG: dict = {
             "name": "HKMC",
             "enabled": True,
             "models": [
-                {"value": "Connected_Wide", "enabled": True},
-                {"value": "HKMC",           "enabled": True},
-                {"value": "CCRC",           "enabled": True},
+                {"value": "ccRC",                  "enabled": True},
+                {"value": "ccIC",                  "enabled": True},
+                {"value": "ccIC27",                "enabled": True},
+                {"value": "Connect Wide",          "enabled": True},
+                {"value": "CCU2",                  "enabled": True},
+                {"value": "Gen6 Premium",          "enabled": True},
+                {"value": "Gen5 Standard (Wide)",  "enabled": True},
+                {"value": "Gen5 Standard",         "enabled": True},
+                {"value": "Gen5 Premium",          "enabled": True},
             ],
         },
         {
@@ -93,6 +99,15 @@ _DEFAULT_DEVICE_CATALOG: dict = {
     ],
     # 모듈 표시 여부 (false = 아직 미구현/숨김). 리스트에 없으면 기본 표시.
     "module_visibility": {},
+    # 주 디바이스 조작 에이전트 정의. type은 내부 device type과 매핑 (변경 불가).
+    # name은 UI 표시용 + 모델에서 참조하는 식별자.
+    "agents": [
+        {"name": "ADB",          "type": "adb",           "enabled": True},
+        {"name": "HKMC Agent",   "type": "hkmc6th",       "enabled": True},
+        {"name": "iSAP Agent",   "type": "isap_agent",    "enabled": True},
+        {"name": "VisionCamera", "type": "vision_camera", "enabled": True},
+        {"name": "Webcam",       "type": "webcam",        "enabled": True},
+    ],
 }
 
 
