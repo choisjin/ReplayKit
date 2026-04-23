@@ -34,8 +34,9 @@ _DEFAULT_SCAN_SETTINGS = {
         "serial":         {"enabled": True,  "module": "SerialLogging","category": "auxiliary"},
         "hkmc":           {"enabled": True,  "module": "",             "category": "primary",   "ports": [6655, 5000]},
         "isap":           {"enabled": False, "module": "",             "category": "primary",   "ports": [20000]},
+        "icas":           {"enabled": True,  "module": "",             "category": "primary",   "port": 22},
         "dlt":            {"enabled": True,  "module": "DLTLogging",   "category": "auxiliary", "ports": [3490]},
-        "bench":          {"enabled": True,  "module": "CCIC_BENCH",   "category": "auxiliary", "ports": [25000]},
+        "bench":          {"enabled": True,  "module": "WoohyunBench", "category": "auxiliary", "ports": [25000]},
         "vision_camera":  {"enabled": False, "module": "VisionCamera", "category": "primary"},
         "webcam":         {"enabled": True,  "module": "WebcamDevice", "category": "primary"},
         "ssh":            {"enabled": True,  "module": "SSHManager",   "category": "auxiliary", "port": 22},
@@ -50,10 +51,23 @@ _DEFAULT_SCAN_SETTINGS = {
 def _load_scan_settings() -> dict:
     if _SCAN_SETTINGS_FILE.exists():
         try:
-            return _json.loads(_SCAN_SETTINGS_FILE.read_text(encoding="utf-8"))
+            data = _json.loads(_SCAN_SETTINGS_FILE.read_text(encoding="utf-8"))
+            # 레거시 모듈 이름 마이그레이션: CCIC_BENCH → WoohyunBench
+            builtin = data.setdefault("builtin", {})
+            for key, entry in builtin.items():
+                if isinstance(entry, dict) and entry.get("module") == "CCIC_BENCH":
+                    entry["module"] = "WoohyunBench"
+            for entry in data.get("custom", []) or []:
+                if isinstance(entry, dict) and entry.get("module") == "CCIC_BENCH":
+                    entry["module"] = "WoohyunBench"
+            # 새로 추가된 기본 스캔 항목 자동 주입 (누락 키만 보충 — 사용자 수정값 유지)
+            for key, default_entry in _DEFAULT_SCAN_SETTINGS["builtin"].items():
+                if key not in builtin:
+                    builtin[key] = dict(default_entry)
+            return data
         except Exception:
             pass
-    return dict(_DEFAULT_SCAN_SETTINGS)
+    return _json.loads(_json.dumps(_DEFAULT_SCAN_SETTINGS))  # deep copy
 
 
 def _save_scan_settings(settings: dict) -> None:
@@ -103,8 +117,9 @@ _DEFAULT_DEVICE_CATALOG: dict = {
     # name은 UI 표시용 + 모델에서 참조하는 식별자.
     "agents": [
         {"name": "ADB",          "type": "adb",           "enabled": True},
-        {"name": "HKMC Agent",   "type": "hkmc_agent",       "enabled": True},
+        {"name": "HKMC Agent",   "type": "hkmc_agent",    "enabled": True},
         {"name": "iSAP Agent",   "type": "isap_agent",    "enabled": True},
+        {"name": "ICAS Agent",   "type": "icas_agent",    "enabled": True},
         {"name": "VisionCamera", "type": "vision_camera", "enabled": True},
         {"name": "Webcam",       "type": "webcam",        "enabled": True},
     ],
@@ -176,7 +191,7 @@ def _build_constructor_kwargs(dev) -> dict | None:
 
 
 class ConnectRequest(BaseModel):
-    type: str  # "adb" | "serial" | "module" | "hkmc_agent" | "isap_agent" | "vision_camera" | "webcam" | "ssh"
+    type: str  # "adb" | "serial" | "module" | "hkmc_agent" | "isap_agent" | "icas_agent" | "vision_camera" | "webcam" | "ssh"
     category: str = ""  # "primary" | "auxiliary" — auto-detected if empty
     address: str = ""  # COM port for serial, IP for socket/HKMC/SSH, etc.
     baudrate: Optional[int] = 115200
@@ -327,6 +342,13 @@ async def scan_ports():
         ssh_entry = builtin.get("ssh", {}) if isinstance(builtin.get("ssh"), dict) else {}
         ssh_port = int(ssh_entry.get("port", 22))
         tasks["ssh_hosts"] = asyncio.ensure_future(dm.scan_ssh(ssh_port))
+    if _enabled("icas"):
+        icas_entry = builtin.get("icas", {}) if isinstance(builtin.get("icas"), dict) else {}
+        try:
+            icas_port = int(icas_entry.get("port", 22))
+        except (TypeError, ValueError):
+            icas_port = 22
+        tasks["icas_hosts"] = asyncio.ensure_future(dm.scan_icas(icas_port))
 
     # 커스텀 TCP/UDP 포트 스캔
     custom_tasks: list[tuple[str, asyncio.Task]] = []
@@ -357,6 +379,7 @@ async def scan_ports():
         "vision_cameras": [],
         "webcams": [],
         "isap_hosts": [],
+        "icas_hosts": [],
         "dlt_devices": [],
         "smartbench_devices": [],
         "ssh_hosts": [],
@@ -470,6 +493,39 @@ async def connect_device(req: ConnectRequest):
             }
         except RuntimeError as e:
             raise HTTPException(status_code=400, detail=str(e))
+    elif req.type == "icas_agent":
+        if not req.address:
+            raise HTTPException(status_code=400, detail="ICAS Agent requires address (host)")
+        ef = req.extra_fields or {}
+        try:
+            dev = await dm.add_icas_agent_device(
+                host=req.address,
+                port=int(req.port or 22),
+                device_id=custom_id,
+                name=req.name or "",
+                device_model=req.device_model or "",
+                username=ef.get("username", "root") or "root",
+                password=ef.get("password", "") or "",
+                resolution=ef.get("resolution", "1560x700") or "1560x700",
+                # private_server_ip는 빈 문자열이면 market 기본값 사용
+                private_server_ip=ef.get("private_server_ip", "") or "",
+                private_server_password=ef.get("private_server_password", "") or "",
+                iid_display=str(ef.get("iid_display", "10") or "10"),
+                hud_display=str(ef.get("hud_display", "11") or "11"),
+                market=str(ef.get("market", "") or ""),
+            )
+            # 등록 직후 실제 SSH 연결 시도
+            try:
+                connect_msg = await dm.connect_device_by_id(dev.id)
+            except Exception as e:
+                connect_msg = f"registered but connect failed: {e}"
+            return {
+                "result": f"ICAS registered: {dev.name} (ID: {dev.id}) — {connect_msg}",
+                "primary": _with_protected_flag(dm.list_primary()),
+                "auxiliary": _with_protected_flag(dm.list_auxiliary()),
+            }
+        except RuntimeError as e:
+            raise HTTPException(status_code=400, detail=str(e))
     elif req.type == "module":
         category = req.category or "auxiliary"
         dev = await dm.add_module_device(
@@ -480,8 +536,16 @@ async def connect_device(req: ConnectRequest):
             extra_fields=req.extra_fields,
             device_id=custom_id,
         )
+        # 등록 직후 실제 연결 수행 — Connect() 호출 및 인스턴스 생성.
+        # 기존에는 등록만 하고 status="disconnected" 로 남아, UI에서 연결됨으로 보이지
+        # 않거나 이후 호출이 실패하는 문제가 있었음.
+        try:
+            connect_msg = await dm.connect_device_by_id(dev.id)
+        except Exception as e:
+            logger.warning("Module auto-connect after register failed: %s", e)
+            connect_msg = f"registered but connect failed: {e}"
         return {
-            "result": f"Module device {req.module} added (ID: {dev.id})",
+            "result": f"Module device {req.module} added (ID: {dev.id}) — {connect_msg}",
             "primary": _with_protected_flag(dm.list_primary()),
             "auxiliary": _with_protected_flag(dm.list_auxiliary()),
         }
@@ -637,7 +701,7 @@ async def get_device_info(device_id: str):
 
 class InputRequest(BaseModel):
     device_id: str
-    action: str  # "tap" | "swipe" | "input_text" | "key_event" | "adb_command" | "serial_command" | "module_command" | "hkmc_touch" | "hkmc_swipe" | "hkmc_key"
+    action: str  # "tap" | "swipe" | "input_text" | "key_event" | "adb_command" | "serial_command" | "module_command" | "hkmc_touch" | "hkmc_swipe" | "hkmc_key" | "icas_touch" | "icas_swipe" | "icas_key"
     params: dict
 
 
@@ -691,6 +755,34 @@ async def device_input(req: InputRequest):
                     )
                 else:
                     await isap.async_send_key(
+                        p["cmd"], p["sub_cmd"], p["key_data"], screen_type, p.get("direction")
+                    )
+            return {"result": "ok"}
+
+        if req.action in ("icas_touch", "icas_swipe", "icas_key", "repeat_tap") and dev and dev.type == "icas_agent":
+            icas = dm.get_icas_service(req.device_id)
+            if not icas:
+                raise HTTPException(status_code=400, detail=f"ICAS device {req.device_id} not connected")
+            logger.info("[ICAS INPUT] device=%s action=%s params=%s connected=%s",
+                        req.device_id, req.action, req.params, icas.is_connected)
+            p = req.params
+            screen_type = p.get("screen_type", "HU")
+            if req.action == "repeat_tap":
+                await icas.async_repeat_tap(p["x"], p["y"], int(p.get("count", 5)),
+                                            int(p.get("interval_ms", 100)), screen_type)
+            elif req.action == "icas_touch":
+                await icas.async_tap(p["x"], p["y"], screen_type)
+            elif req.action == "icas_swipe":
+                await icas.async_swipe(p["x1"], p["y1"], p["x2"], p["y2"], screen_type,
+                                       int(p.get("duration_ms", 0)))
+            elif req.action == "icas_key":
+                key_name = p.get("key_name")
+                if key_name:
+                    await icas.async_send_key_by_name(
+                        key_name, p.get("sub_cmd", 0x43), screen_type, p.get("direction")
+                    )
+                else:
+                    await icas.async_send_key(
                         p["cmd"], p["sub_cmd"], p["key_data"], screen_type, p.get("direction")
                     )
             return {"result": "ok"}
@@ -1108,6 +1200,88 @@ async def list_hkmc_keys(device_id: Optional[str] = None):
     }
 
 
+@router.get("/icas-keys")
+async def list_icas_keys(device_id: Optional[str] = None):
+    """List ICAS hardware keys (merged with per-device override).
+
+    device_id가 지정되면 해당 디바이스의 info["icas_keys"] 오버라이드를
+    spec default에 병합하여 반환한다. class(short|long)/key/visible 필드 병합.
+    """
+    from ..services.icas_agent_service import ICAS_KEYS, SHORT_KEY, LONG_KEY, PRESS_KEY, RELEASE_KEY
+    overrides: dict[str, dict] = {}
+    if device_id:
+        dev = dm.get_device(device_id)
+        if dev:
+            overrides = dev.info.get("icas_keys") or {}
+    keys = []
+    for name, info in ICAS_KEYS.items():
+        ov = overrides.get(name, {})
+        group = "ICAS"  # ICAS는 단일 그룹 — 프리셋 확장 시 세분화
+        klass = ov.get("class", info.get("class", "short"))
+        key_code = ov.get("key", info["key"])
+        visible = ov.get("visible", True)
+        # hkmc/isap 구조와 호환: cmd=0(더미), is_dial=False
+        keys.append({
+            "name": name,
+            "group": group,
+            "cmd": 0,
+            "key": key_code,
+            "class": klass,
+            "is_dial": False,
+            "visible": visible,
+        })
+    return {
+        "keys": keys,
+        "sub_commands": {
+            "SHORT_KEY": SHORT_KEY,
+            "LONG_KEY": LONG_KEY,
+            "PRESS_KEY": PRESS_KEY,
+            "RELEASE_KEY": RELEASE_KEY,
+        },
+    }
+
+
+class UpdateIcasKeysRequest(BaseModel):
+    device_id: str
+    keys: dict[str, dict]  # name → {class?, key?, visible?}
+
+
+@router.post("/icas-keys")
+async def update_icas_keys(req: UpdateIcasKeysRequest):
+    """Save per-device ICAS key overrides."""
+    from ..services.icas_agent_service import ICAS_KEYS
+    dev = dm.get_device(req.device_id)
+    if not dev:
+        raise HTTPException(status_code=404, detail=f"Device {req.device_id} not found")
+    if dev.type != "icas_agent":
+        raise HTTPException(status_code=400, detail=f"Device {req.device_id} is not an ICAS agent")
+    clean: dict[str, dict] = {}
+    for name, ov in (req.keys or {}).items():
+        if name not in ICAS_KEYS:
+            continue
+        entry: dict = {}
+        if "class" in ov and ov["class"] in ("short", "long"):
+            entry["class"] = ov["class"]
+        if "key" in ov and ov["key"] is not None:
+            try:
+                entry["key"] = int(ov["key"])
+            except (TypeError, ValueError):
+                pass
+        if "visible" in ov and ov["visible"] is not None:
+            entry["visible"] = bool(ov["visible"])
+        if entry:
+            clean[name] = entry
+    if clean:
+        dev.info["icas_keys"] = clean
+    else:
+        dev.info.pop("icas_keys", None)
+    svc = dm.get_icas_service(req.device_id)
+    if svc:
+        svc.set_key_overrides(dev.info.get("icas_keys"))
+    dm._save_auxiliary_devices()
+    return {"status": "ok", "device_id": req.device_id, "count": len(clean)}
+
+
 class UpdateHkmcKeysRequest(BaseModel):
     device_id: str
     keys: dict[str, dict]  # name → {cmd?, key?, dial?, visible?}
@@ -1214,6 +1388,15 @@ async def get_screenshot(device_id: str, fmt: str = "jpeg", screen_type: str = "
             img_bytes = await isap.async_screencap_bytes(screen_type=screen_type, fmt=fmt)
             b64 = base64.b64encode(img_bytes).decode("ascii")
             return {"image": b64, "format": fmt}
+        elif dev and dev.type == "icas_agent":
+            icas = dm.get_icas_service(device_id)
+            if not icas:
+                raise HTTPException(status_code=400, detail=f"ICAS device {device_id} not connected")
+            # ICAS 기본 화면은 HU. HKMC 호환으로 기본이 front_center로 들어올 수 있어 변환.
+            st = screen_type if screen_type in ("HU", "IID", "HUD") else "HU"
+            img_bytes = await icas.async_screencap_bytes(screen_type=st, fmt=fmt)
+            b64 = base64.b64encode(img_bytes).decode("ascii")
+            return {"image": b64, "format": fmt}
         elif dev and dev.type == "vision_camera":
             cam = dm.get_vision_camera(device_id)
             if not cam:
@@ -1233,7 +1416,7 @@ async def get_screenshot(device_id: str, fmt: str = "jpeg", screen_type: str = "
             b64 = base64.b64encode(img_bytes).decode("ascii")
             return {"image": b64, "format": fmt}
         elif dev and dev.type not in ("adb",):
-            raise HTTPException(status_code=400, detail="Screenshot only available for ADB, HKMC, iSAP, VisionCamera, or Webcam devices")
+            raise HTTPException(status_code=400, detail="Screenshot only available for ADB, HKMC, iSAP, ICAS, VisionCamera, or Webcam devices")
         else:
             # ADB device
             adb_serial = dev.address if dev else device_id

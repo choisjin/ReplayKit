@@ -33,21 +33,6 @@
           "value": "Gen6 Premium",
           "enabled": true,
           "agent": "HKMC Agent"
-        },
-        {
-          "value": "Gen5 Standard (Wide)",
-          "enabled": true,
-          "agent": "HKMC Agent"
-        },
-        {
-          "value": "Gen5 Standard",
-          "enabled": true,
-          "agent": "HKMC Agent"
-        },
-        {
-          "value": "Gen5 Premium",
-          "enabled": true,
-          "agent": "HKMC Agent"
         }
       ]
     },
@@ -57,7 +42,12 @@
       "models": [
         {
           "value": "GVM",
-          "enabled": true
+          "enabled": true,
+          "agent": "ADB"
+        },
+        {
+          "value": "Info4.0 VCU",
+          "enabled": false
         }
       ]
     },
@@ -80,22 +70,49 @@
     {
       "name": "Nissan",
       "enabled": true,
-      "models": []
+      "models": [
+        {
+          "value": "CDC_High",
+          "enabled": true,
+          "agent": "ADB"
+        },
+        {
+          "value": "CDC_STD",
+          "enabled": true,
+          "agent": "ADB"
+        }
+      ]
     },
     {
       "name": "Renault",
-      "enabled": true,
-      "models": []
+      "enabled": false,
+      "models": [
+        {
+          "value": "Latam",
+          "enabled": false,
+          "agent": "ADB"
+        },
+        {
+          "value": "EGG",
+          "enabled": false,
+          "agent": "ADB"
+        },
+        {
+          "value": "AUB",
+          "enabled": false,
+          "agent": "ADB"
+        },
+        {
+          "value": "CDC",
+          "enabled": false,
+          "agent": "ADB"
+        }
+      ]
     },
     {
       "name": "VW",
-      "enabled": true,
-      "models": [
-        {
-          "value": "ICAS",
-          "enabled": true
-        }
-      ]
+      "enabled": false,
+      "models": []
     },
     {
       "name": "Camera",
@@ -110,6 +127,17 @@
           "value": "VisionCamera",
           "enabled": true,
           "agent": "VisionCamera"
+        }
+      ]
+    },
+    {
+      "name": "ICAS",
+      "enabled": true,
+      "models": [
+        {
+          "value": "ICAS EU",
+          "enabled": true,
+          "agent": "ICAS Agent"
         }
       ]
     }
@@ -132,7 +160,8 @@
     "VisionCameraClient": false,
     "SP25Bench": false,
     "PCANClient": false,
-    "MLP": false
+    "MLP": false,
+    "CANOE": true
   },
   "agents": [
     {
@@ -148,6 +177,11 @@
     {
       "name": "iSAP Agent",
       "type": "isap_agent",
+      "enabled": true
+    },
+    {
+      "name": "ICAS Agent",
+      "type": "icas_agent",
       "enabled": true
     },
     {
