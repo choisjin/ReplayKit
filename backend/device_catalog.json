@@ -80,31 +80,39 @@
           "value": "CDC_STD",
           "enabled": true,
           "agent": "ADB"
+        },
+        {
+          "value": "CCS2_DA2",
+          "enabled": true
+        },
+        {
+          "value": "Europe_New",
+          "enabled": true
         }
       ]
     },
     {
       "name": "Renault",
-      "enabled": false,
+      "enabled": true,
       "models": [
         {
           "value": "Latam",
-          "enabled": false,
+          "enabled": true,
           "agent": "ADB"
         },
         {
           "value": "EGG",
-          "enabled": false,
+          "enabled": true,
           "agent": "ADB"
         },
         {
           "value": "AUB",
-          "enabled": false,
+          "enabled": true,
           "agent": "ADB"
         },
         {
           "value": "CDC",
-          "enabled": false,
+          "enabled": true,
           "agent": "ADB"
         }
       ]

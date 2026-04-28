@@ -1428,6 +1428,55 @@
   "DLTLogging": {
     "_description": "DLT 로깅 — DLT 데몬에 TCP 직접 연결하여 로그를 캡처·저장하고 키워드 PASS/FAIL 판정하는 모듈 (GUI 불필요)",
     "functions": {
+      "StartLogging": {
+        "description": "DLT 연결 + 캡처 시작 (메모리만, 파일 저장 없음). 뷰어 모달이 자동 오픈됩니다. 종료 시 StopLogging으로 일괄 저장.",
+        "params": {}
+      },
+      "StopLogging": {
+        "description": "DLT 캡처 종료 + 메모리 버퍼를 파일로 일괄 저장. 자동 경로 또는 지정 경로.",
+        "params": {
+          "save_path": "저장 파일 경로. 빈 값이면 자동 (재생 중: run_dir/logs/dlt_*.log, 스텝 테스트: backend/results/Temp_logs/dlt_*.log)"
+        }
+      },
+      "count_keyword": {
+        "description": "로그에서 keyword가 등장할 때마다 실시간 카운트하고 발생 시간을 누적. 같은 name으로 첫 호출=시작, 재호출=결과 반환. 통계 용도 (시나리오 fail에 영향 없음).",
+        "params": {
+          "keyword": "찾을 부분 문자열. 예: 'Pass', 'BootComplete'",
+          "name": "카운터 식별자. 빈 값이면 keyword 자체. 같은 name 재호출 시 결과 조회"
+        }
+      },
+      "reset_count_keyword": {
+        "description": "count_keyword 카운터를 리셋합니다. name 빈 값이면 모든 카운터 제거.",
+        "params": {
+          "name": "리셋할 카운터 이름. 빈 값이면 전체"
+        }
+      },
+      "assert_keyword": {
+        "description": "캡처되는 모든 라인이 keyword를 **포함해야** 정상. **미포함 라인이 들어오면 fail step row 자동 누적**. 정상 키워드(예: 'OK', 'Pass', 'BootComplete')를 단언할 때 사용. 비정상 키워드 검출은 fail_on_keyword 사용.",
+        "params": {
+          "keyword": "라인에 반드시 포함되어야 하는 부분 문자열. 예: 'Pass', 'OK'",
+          "name": "단언 식별자. 빈 값이면 'assert_<keyword>'. 같은 name 재호출 시 miss 통계 반환"
+        }
+      },
+      "reset_assert_keyword": {
+        "description": "assert_keyword 단언을 리셋합니다. name 빈 값이면 모든 단언 제거.",
+        "params": {
+          "name": "리셋할 단언 이름. 빈 값이면 전체"
+        }
+      },
+      "fail_on_keyword": {
+        "description": "캡처되는 라인에 keyword가 **포함되면 fail step row 자동 누적**. assert_keyword의 반대. 비정상 키워드(예: 'ERROR', 'Fail', 'crash') 검출에 사용.",
+        "params": {
+          "keyword": "검출할 부분 문자열. 이 단어가 라인에 들어오면 fail로 보고. 예: 'Fail', 'ERROR'",
+          "name": "검출기 식별자. 빈 값이면 'fail_<keyword>'. 같은 name 재호출 시 hit 통계 반환"
+        }
+      },
+      "reset_fail_on_keyword": {
+        "description": "fail_on_keyword 검출기를 리셋합니다. name 빈 값이면 모든 검출기 제거.",
+        "params": {
+          "name": "리셋할 검출기 이름. 빈 값이면 전체"
+        }
+      },
       "StartSave": {
         "description": "DLT 데몬에 연결하고 로그 캡처 + 파일 저장을 시작합니다. (연결 → 캡처 → 저장 한번에 수행)",
         "params": {
@@ -1497,6 +1546,55 @@
   "SerialLogging": {
     "_description": "시리얼 로깅 — 시리얼 포트에 연결하여 로그를 캡처·저장하고 키워드 PASS/FAIL 판정하는 모듈",
     "functions": {
+      "StartLogging": {
+        "description": "시리얼 연결 + 캡처 시작 (메모리만, 파일 저장 없음). 뷰어 모달이 자동 오픈됩니다. 종료 시 StopLogging으로 일괄 저장.",
+        "params": {}
+      },
+      "StopLogging": {
+        "description": "시리얼 캡처 종료 + 메모리 버퍼를 파일로 일괄 저장. 자동 경로 또는 지정 경로.",
+        "params": {
+          "save_path": "저장 파일 경로. 빈 값이면 자동 (재생 중: run_dir/logs/serial_*.log, 스텝 테스트: backend/results/Temp_logs/serial_*.log)"
+        }
+      },
+      "count_keyword": {
+        "description": "로그에서 keyword가 등장할 때마다 실시간 카운트하고 발생 시간을 누적. 같은 name으로 첫 호출=시작, 재호출=결과 반환. 통계 용도 (시나리오 fail에 영향 없음).",
+        "params": {
+          "keyword": "찾을 부분 문자열. 예: 'Pass', 'OK'",
+          "name": "카운터 식별자. 빈 값이면 keyword 자체. 같은 name 재호출 시 결과 조회"
+        }
+      },
+      "reset_count_keyword": {
+        "description": "count_keyword 카운터를 리셋합니다. name 빈 값이면 모든 카운터 제거.",
+        "params": {
+          "name": "리셋할 카운터 이름. 빈 값이면 전체"
+        }
+      },
+      "assert_keyword": {
+        "description": "캡처되는 모든 라인이 keyword를 포함해야 함을 단언. **미포함 라인이 들어오면 시나리오 결과에 fail step row가 자동 누적**되며 결과 페이지에서 영상 점프로 시점 확인 가능. 시나리오 재생 중일 때만 fail 보고됨.",
+        "params": {
+          "keyword": "라인에 반드시 포함되어야 하는 부분 문자열. 예: 'Pass'",
+          "name": "단언 식별자. 빈 값이면 'assert_<keyword>'. 같은 name 재호출 시 miss 통계 반환"
+        }
+      },
+      "reset_assert_keyword": {
+        "description": "assert_keyword 단언을 리셋합니다. name 빈 값이면 모든 단언 제거.",
+        "params": {
+          "name": "리셋할 단언 이름. 빈 값이면 전체"
+        }
+      },
+      "fail_on_keyword": {
+        "description": "캡처되는 라인에 keyword가 **포함되면 fail step row 자동 누적**. assert_keyword의 반대. 비정상 키워드(예: 'ERROR', 'Fail', 'crash') 검출에 사용.",
+        "params": {
+          "keyword": "검출할 부분 문자열. 이 단어가 라인에 들어오면 fail로 보고. 예: 'Fail', 'ERROR'",
+          "name": "검출기 식별자. 빈 값이면 'fail_<keyword>'. 같은 name 재호출 시 hit 통계 반환"
+        }
+      },
+      "reset_fail_on_keyword": {
+        "description": "fail_on_keyword 검출기를 리셋합니다. name 빈 값이면 모든 검출기 제거.",
+        "params": {
+          "name": "리셋할 검출기 이름. 빈 값이면 전체"
+        }
+      },
       "StartSave": {
         "description": "시리얼 포트에 연결하고 로그 캡처 + 파일 저장을 시작합니다. (연결 → 캡처 → 저장 한번에 수행)",
         "params": {
@@ -1548,6 +1646,12 @@
         "description": "시리얼 포트로 HEX 바이트를 전송합니다.",
         "params": {
           "hex_string": "전송할 HEX 문자열. 예: 'FF 01 A0'"
+        }
+      },
+      "SendPacket": {
+        "description": "공백 구분 hex 토큰을 패킷으로 전송합니다 (write+flush). '0x' 접두사 허용. 예: '01 0A FF' 또는 '0x01 0x0A 0xFF'",
+        "params": {
+          "data": "공백으로 구분된 hex 토큰 문자열. 예: '01 0A FF'"
         }
       },
       "SendAndWait": {
@@ -1941,7 +2045,7 @@
   },
 
   "WoohyunBench": {
-    "_description": "우현벤치 — UDP 통신으로 차량 전원(IGN/ACC/배터리)을 제어하는 테스트 벤치 장비",
+    "_description": "우현벤치 — UDP 통신으로 차량 전원(IGN/ACC/배터리) 제어 + CAN FD 신호 송신을 지원하는 통합 테스트 벤치",
     "functions": {
       "Connect": {
         "description": "벤치 장비에 UDP 네트워크 연결을 수행합니다. 장비 추가 시 자동으로 호출되므로 보통 수동 호출이 필요 없습니다.",
@@ -2018,8 +2122,47 @@
         }
       },
       "GetInfo": {
-        "description": "벤치의 현재 연결 정보(IP, 포트, 연결 상태)를 반환합니다.",
+        "description": "벤치의 현재 연결 정보(IP, 포트, signal_file, 로드된 신호 수, 연결 상태)를 반환합니다.",
         "params": {}
+      },
+      "LoadSignals": {
+        "description": "CAN FD 신호 정의를 Excel(.xls/.xlsx) 또는 XML(.CAN)에서 런타임에 로드합니다.",
+        "params": {
+          "file_path": "신호 정의 파일 절대 경로"
+        }
+      },
+      "SendSignal": {
+        "description": "이름으로 지정한 CAN FD 신호를 physical value로 송신합니다. 200ms 간격으로 5회 반복. 신호 정의 파일이 로드되어 있어야 합니다.",
+        "params": {
+          "signal_name": "신호 이름 (예: 'Warn_DrvDrSwSta')",
+          "physical_value": "물리값 (정수/실수/hex 문자열 '0xAB')"
+        }
+      },
+      "DoorTest": {
+        "description": "운전석 도어 스위치 신호(Warn_DrvDrSwSta)를 ON/OFF 반복 송신하여 도어 동작을 테스트합니다.",
+        "params": {}
+      },
+      "TestAllSignals": {
+        "description": "로드된 모든 CAN FD 신호를 중간값으로 순차 송신합니다. 부하/연결 확인용.",
+        "params": {}
+      },
+      "CheckSignals": {
+        "description": "로드된 CAN FD 신호 정의 목록을 로그로 덤프합니다.",
+        "params": {}
+      },
+      "SendCanFd": {
+        "description": "Raw CAN FD 프레임을 직접 송신합니다 (신호 정의 불필요, 저수준 디버깅용).",
+        "params": {
+          "can_id": "CAN ID (정수, 예: 0x411 → 1041)",
+          "payload_hex": "페이로드 (공백/쉼표 허용 hex 문자열, 예: '01 02 03')"
+        }
+      },
+      "ReinitCanFd": {
+        "description": "CAN FD 버스 재초기화 (baudrate/data bit time 변경 시). 기본 500k/2M.",
+        "params": {
+          "baudrate": "arbitration phase baudrate (2바이트 정수, 기본 0x1F4)",
+          "databit_time": "data phase bit time (2바이트 정수, 기본 0x7D0)"
+        }
       }
     }
   },

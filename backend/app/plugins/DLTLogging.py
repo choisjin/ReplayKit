@@ -182,8 +182,9 @@ class DLTLogging:
         self._lock = threading.Lock()
         self._recv_buffer = bytearray()
 
-        # 로그 버퍼 (전체 캡처된 로그)
+        # 로그 버퍼 (전체 캡처된 로그) + 라인별 capture timestamp (epoch float)
         self._logs: list[str] = []
+        self._log_capture_ts: list[float] = []
         self._msg_counter = 0
 
         # 파일 저장
@@ -192,6 +193,17 @@ class DLTLogging:
 
         # 스텝 마킹: {step_index: log_buffer_index}
         self._step_marks: dict[int, int] = {}
+
+        # 키워드 실시간 카운터 — SerialLogging과 동일 패턴
+        # {name: {"keyword", "count", "timestamps", "started_at"}}
+        self._counters: dict[str, dict] = {}
+        self._counter_lock = threading.Lock()
+
+        # 키워드 단언(assert): 미일치 라인 fail 누적 보고용
+        self._asserts: dict[str, dict] = {}
+
+        # fail_on_keyword: keyword가 라인에 포함되면 fail 보고 (assert의 반대)
+        self._fail_keywords: dict[str, dict] = {}
 
     # ------------------------------------------------------------------
     # 연결 관리 (내부)
@@ -212,8 +224,13 @@ class DLTLogging:
             self._socket = sock
             self._recv_buffer.clear()
             self._logs.clear()
+            self._log_capture_ts.clear()
             self._msg_counter = 0
             self._step_marks.clear()
+            with self._counter_lock:
+                self._counters.clear()  # 새 세션마다 키워드 카운터 자동 리셋
+                self._asserts.clear()
+                self._fail_keywords.clear()
             self._start_capture()
             logger.info("[DLTLogging] Connected to %s:%d", self._host, self._port)
             return ""
@@ -588,6 +605,191 @@ class DLTLogging:
         return f"Step {step_index} marked at log index {pos}"
 
     # ------------------------------------------------------------------
+    # 실시간 키워드 카운터 — 호출 시점부터 활성, 매 라인 검사
+    # ------------------------------------------------------------------
+
+    def count_keyword(self, keyword: str, name: str = "") -> str:
+        """캡처 로그에서 keyword가 등장할 때마다 카운트하고 발생 시간을 누적합니다.
+
+        - 같은 name(또는 keyword)으로 첫 호출: 카운터 시작 (count=0)
+        - 같은 name 재호출: 현재까지의 결과 반환
+        SerialLogging.count_keyword와 동일 인터페이스.
+        """
+        key = name.strip() if name else keyword
+        with self._counter_lock:
+            existing = self._counters.get(key)
+            if existing is None:
+                self._counters[key] = {
+                    "keyword": keyword,
+                    "count": 0,
+                    "timestamps": [],
+                    "started_at": time.time(),
+                }
+                logger.info("[DLTLogging] count_keyword started: name='%s' keyword='%s'", key, keyword)
+                return f"Started counting '{keyword}' (name='{key}')"
+            cnt = existing["count"]
+            ts_list = list(existing["timestamps"])
+            started_at = existing["started_at"]
+            kw = existing["keyword"]
+
+        def _fmt(t: float) -> str:
+            return time.strftime("%H:%M:%S", time.localtime(t))
+
+        if cnt == 0:
+            return f"COUNT '{kw}' (name='{key}'): 0 occurrences (since {_fmt(started_at)})"
+        first_s = _fmt(ts_list[0])
+        last_s = _fmt(ts_list[-1])
+        logger.info("[DLTLogging] count_keyword query: name='%s' count=%d", key, cnt)
+        return f"COUNT '{kw}' (name='{key}'): {cnt} occurrences | first: {first_s} | last: {last_s}"
+
+    def reset_count_keyword(self, name: str = "") -> str:
+        """키워드 카운터를 리셋합니다. name 빈 값이면 모든 카운터 제거."""
+        with self._counter_lock:
+            if not name:
+                n = len(self._counters)
+                self._counters.clear()
+                return f"Reset all counters ({n})"
+            existing = self._counters.get(name)
+            if existing is None:
+                return f"Counter '{name}' not found"
+            existing["count"] = 0
+            existing["timestamps"].clear()
+            existing["started_at"] = time.time()
+            return f"Reset counter '{name}'"
+
+    def get_count_details(self, name: str = "") -> dict:
+        """raw 카운터 dict 반환. timestamps는 epoch float."""
+        with self._counter_lock:
+            if not name:
+                return {k: {**v, "timestamps": list(v["timestamps"])} for k, v in self._counters.items()}
+            v = self._counters.get(name)
+            if v is None:
+                return {}
+            return {**v, "timestamps": list(v["timestamps"])}
+
+    # ------------------------------------------------------------------
+    # 키워드 단언(assert) — 일치하지 않는 라인을 시나리오 fail로 누적 보고
+    # ------------------------------------------------------------------
+
+    def assert_keyword(self, keyword: str, name: str = "") -> str:
+        """캡처되는 모든 라인이 keyword를 포함해야 함을 단언.
+        keyword 미포함 라인이 들어오면 시나리오 재생 중일 때 한해 fail step row 자동 추가.
+        SerialLogging.assert_keyword와 동일 인터페이스.
+        """
+        key = name.strip() if name else f"assert_{keyword}"
+        with self._counter_lock:
+            existing = self._asserts.get(key)
+            if existing is None:
+                self._asserts[key] = {
+                    "keyword": keyword,
+                    "miss_count": 0,
+                    "miss_timestamps": [],
+                    "started_at": time.time(),
+                }
+                logger.info("[DLTLogging] assert_keyword started: name='%s' keyword='%s'", key, keyword)
+                return f"Asserting all lines contain '{keyword}' (name='{key}')"
+            cnt = existing["miss_count"]
+            ts_list = list(existing["miss_timestamps"])
+            started_at = existing["started_at"]
+            kw = existing["keyword"]
+
+        def _fmt(t: float) -> str:
+            return time.strftime("%H:%M:%S", time.localtime(t))
+
+        if cnt == 0:
+            return f"ASSERT '{kw}' (name='{key}'): 0 misses (since {_fmt(started_at)})"
+        return f"ASSERT '{kw}' (name='{key}'): {cnt} miss lines | first: {_fmt(ts_list[0])} | last: {_fmt(ts_list[-1])}"
+
+    def reset_assert_keyword(self, name: str = "") -> str:
+        """assert 카운터 리셋. name 빈 값이면 모든 단언 제거."""
+        with self._counter_lock:
+            if not name:
+                n = len(self._asserts)
+                self._asserts.clear()
+                return f"Reset all assertions ({n})"
+            existing = self._asserts.get(name)
+            if existing is None:
+                return f"Assertion '{name}' not found"
+            existing["miss_count"] = 0
+            existing["miss_timestamps"].clear()
+            existing["started_at"] = time.time()
+            return f"Reset assertion '{name}'"
+
+    # ------------------------------------------------------------------
+    # 키워드 검출 모드 — 키워드가 들어오면 fail로 보고
+    # ------------------------------------------------------------------
+
+    def fail_on_keyword(self, keyword: str, name: str = "") -> str:
+        """캡처되는 라인에 keyword가 **포함되면** 시나리오 결과에 fail row 자동 누적.
+        SerialLogging.fail_on_keyword와 동일 인터페이스. 'ERROR'/'crash' 등 검출용.
+        첫 호출 시 backfill 스캔 — 이미 누적된 로그 라인의 매칭도 정확한 timestamp로 보고.
+        """
+        key = name.strip() if name else f"fail_{keyword}"
+        backfill_reports: list[tuple[float, str]] = []
+        is_new = False
+        with self._counter_lock:
+            existing = self._fail_keywords.get(key)
+            if existing is None:
+                is_new = True
+                new_entry = {
+                    "keyword": keyword,
+                    "hit_count": 0,
+                    "hit_timestamps": [],
+                    "started_at": time.time(),
+                }
+                self._fail_keywords[key] = new_entry
+                with self._lock:
+                    logs_snapshot = list(self._logs)
+                    ts_snapshot = list(self._log_capture_ts)
+                for i, ln in enumerate(logs_snapshot):
+                    if keyword in ln:
+                        ts_b = ts_snapshot[i] if i < len(ts_snapshot) else time.time()
+                        new_entry["hit_count"] += 1
+                        new_entry["hit_timestamps"].append(ts_b)
+                        backfill_reports.append((ts_b, ln))
+                logger.info("[DLTLogging] fail_on_keyword started: name='%s' keyword='%s' backfill=%d",
+                            key, keyword, len(backfill_reports))
+            else:
+                cnt = existing["hit_count"]
+                ts_list = list(existing["hit_timestamps"])
+                started_at = existing["started_at"]
+                kw = existing["keyword"]
+
+        if is_new and backfill_reports:
+            try:
+                from backend.app.services.playback_service import report_runtime_fail
+                for ts_b, ln in backfill_reports:
+                    report_runtime_fail("DLTLogging", keyword, ts_b, ln, reason="matched")
+            except Exception:
+                pass
+
+        if is_new:
+            return (f"Failing on keyword '{keyword}' (name='{key}')"
+                    + (f" — backfill matched {len(backfill_reports)} lines" if backfill_reports else ""))
+
+        def _fmt(t: float) -> str:
+            return time.strftime("%H:%M:%S", time.localtime(t))
+
+        if cnt == 0:
+            return f"FAIL_ON '{kw}' (name='{key}'): 0 hits (since {_fmt(started_at)})"
+        return f"FAIL_ON '{kw}' (name='{key}'): {cnt} hit lines | first: {_fmt(ts_list[0])} | last: {_fmt(ts_list[-1])}"
+
+    def reset_fail_on_keyword(self, name: str = "") -> str:
+        """fail_on_keyword 검출 리셋."""
+        with self._counter_lock:
+            if not name:
+                n = len(self._fail_keywords)
+                self._fail_keywords.clear()
+                return f"Reset all fail-on detectors ({n})"
+            existing = self._fail_keywords.get(name)
+            if existing is None:
+                return f"Detector '{name}' not found"
+            existing["hit_count"] = 0
+            existing["hit_timestamps"].clear()
+            existing["started_at"] = time.time()
+            return f"Reset detector '{name}'"
+
+    # ------------------------------------------------------------------
     # 키워드 검색 — PASS/FAIL 판정
     # ------------------------------------------------------------------
 
@@ -884,8 +1086,10 @@ class DLTLogging:
 
             line = self._parse_message(msg_data)
             if line:
+                cap_ts = time.time()
                 with self._lock:
                     self._logs.append(line)
+                    self._log_capture_ts.append(cap_ts)
                     self._msg_counter += 1
 
                 # 파일 저장 중이면 기록
@@ -895,6 +1099,33 @@ class DLTLogging:
                         self._save_file.flush()
                     except Exception:
                         pass
+
+                # 키워드 카운터/단언/검출 검사
+                if self._counters or self._asserts or self._fail_keywords:
+                    now_ts = time.time()
+                    fail_reports: list[tuple[str, str, str]] = []
+                    with self._counter_lock:
+                        for c in self._counters.values():
+                            if c["keyword"] in line:
+                                c["count"] += 1
+                                c["timestamps"].append(now_ts)
+                        for a in self._asserts.values():
+                            if a["keyword"] not in line:
+                                a["miss_count"] += 1
+                                a["miss_timestamps"].append(now_ts)
+                                fail_reports.append((a["keyword"], line, "missing"))
+                        for f in self._fail_keywords.values():
+                            if f["keyword"] in line:
+                                f["hit_count"] += 1
+                                f["hit_timestamps"].append(now_ts)
+                                fail_reports.append((f["keyword"], line, "matched"))
+                    if fail_reports:
+                        try:
+                            from backend.app.services.playback_service import report_runtime_fail
+                            for kw, ln, reason in fail_reports:
+                                report_runtime_fail("DLTLogging", kw, now_ts, ln, reason=reason)
+                        except Exception:
+                            pass
 
                 # 뷰어 구독자에게 스트리밍 (Hub에 세션 등록된 경우만 비용 발생)
                 DLT_HUB.emit_log(self._session_id(), line)

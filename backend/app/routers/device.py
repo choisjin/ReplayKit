@@ -35,6 +35,7 @@ _DEFAULT_SCAN_SETTINGS = {
         "hkmc":           {"enabled": True,  "module": "",             "category": "primary",   "ports": [6655, 5000]},
         "isap":           {"enabled": False, "module": "",             "category": "primary",   "ports": [20000]},
         "icas":           {"enabled": True,  "module": "",             "category": "primary",   "port": 22},
+        "mib":            {"enabled": True,  "module": "",             "category": "primary",   "port": 22},
         "dlt":            {"enabled": True,  "module": "DLTLogging",   "category": "auxiliary", "ports": [3490]},
         "bench":          {"enabled": True,  "module": "WoohyunBench", "category": "auxiliary", "ports": [25000]},
         "vision_camera":  {"enabled": False, "module": "VisionCamera", "category": "primary"},
@@ -102,6 +103,13 @@ _DEFAULT_DEVICE_CATALOG: dict = {
             ],
         },
         {
+            "name": "VW",
+            "enabled": True,
+            "models": [
+                {"value": "MIB", "enabled": True, "agent": "MIB Agent"},
+            ],
+        },
+        {
             "name": "General",
             "enabled": True,
             "models": [
@@ -120,6 +128,7 @@ _DEFAULT_DEVICE_CATALOG: dict = {
         {"name": "HKMC Agent",   "type": "hkmc_agent",    "enabled": True},
         {"name": "iSAP Agent",   "type": "isap_agent",    "enabled": True},
         {"name": "ICAS Agent",   "type": "icas_agent",    "enabled": True},
+        {"name": "MIB Agent",    "type": "mib_agent",     "enabled": True},
         {"name": "VisionCamera", "type": "vision_camera", "enabled": True},
         {"name": "Webcam",       "type": "webcam",        "enabled": True},
     ],
@@ -127,7 +136,7 @@ _DEFAULT_DEVICE_CATALOG: dict = {
 
 
 def _load_device_catalog() -> dict:
-    """카탈로그 로드. 레거시 필드 자동 마이그레이션 포함."""
+    """카탈로그 로드. 레거시 필드 자동 마이그레이션 + 새 기본값 누락 보충."""
     if _DEVICE_CATALOG_FILE.exists():
         try:
             data = _json.loads(_DEVICE_CATALOG_FILE.read_text(encoding="utf-8"))
@@ -140,6 +149,16 @@ def _load_device_catalog() -> dict:
             for a in data.get("agents", []) or []:
                 if a.get("type") == "hkmc6th":
                     a["type"] = "hkmc_agent"
+            # 새 기본값 누락 보충 — 기본 카탈로그의 project/agent가 사용자 카탈로그에 없으면 추가.
+            # 사용자가 enabled 토글한 기존 항목은 그대로 유지 (이름 매칭으로 식별).
+            existing_proj_names = {p.get("name") for p in (data.get("projects") or []) if p.get("name")}
+            for default_proj in _DEFAULT_DEVICE_CATALOG["projects"]:
+                if default_proj["name"] not in existing_proj_names:
+                    data.setdefault("projects", []).append(_json.loads(_json.dumps(default_proj)))
+            existing_agent_types = {a.get("type") for a in (data.get("agents") or []) if a.get("type")}
+            for default_agent in _DEFAULT_DEVICE_CATALOG.get("agents", []):
+                if default_agent["type"] not in existing_agent_types:
+                    data.setdefault("agents", []).append(dict(default_agent))
             return data
         except Exception:
             pass
@@ -349,6 +368,15 @@ async def scan_ports():
         except (TypeError, ValueError):
             icas_port = 22
         tasks["icas_hosts"] = asyncio.ensure_future(dm.scan_icas(icas_port))
+    if _enabled("mib"):
+        # MIB도 SSH 22 기반이라 ICAS와 동일한 scan 함수 재사용. 결과 호스트는
+        # 등록 시 사용자가 ICAS/MIB Agent 중 선택.
+        mib_entry = builtin.get("mib", {}) if isinstance(builtin.get("mib"), dict) else {}
+        try:
+            mib_port = int(mib_entry.get("port", 22))
+        except (TypeError, ValueError):
+            mib_port = 22
+        tasks["mib_hosts"] = asyncio.ensure_future(dm.scan_icas(mib_port))
 
     # 커스텀 TCP/UDP 포트 스캔
     custom_tasks: list[tuple[str, asyncio.Task]] = []
@@ -380,6 +408,7 @@ async def scan_ports():
         "webcams": [],
         "isap_hosts": [],
         "icas_hosts": [],
+        "mib_hosts": [],
         "dlt_devices": [],
         "smartbench_devices": [],
         "ssh_hosts": [],
@@ -521,6 +550,37 @@ async def connect_device(req: ConnectRequest):
                 connect_msg = f"registered but connect failed: {e}"
             return {
                 "result": f"ICAS registered: {dev.name} (ID: {dev.id}) — {connect_msg}",
+                "primary": _with_protected_flag(dm.list_primary()),
+                "auxiliary": _with_protected_flag(dm.list_auxiliary()),
+            }
+        except RuntimeError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+    elif req.type == "mib_agent":
+        if not req.address:
+            raise HTTPException(status_code=400, detail="MIB Agent requires address (host)")
+        ef = req.extra_fields or {}
+        try:
+            dev = await dm.add_mib_agent_device(
+                host=req.address,
+                port=int(req.port or 22),
+                device_id=custom_id,
+                name=req.name or "",
+                device_model=req.device_model or "",
+                username=ef.get("username", "root") or "root",
+                password=ef.get("password", "") or "",
+                resolution=ef.get("resolution", "1560x700") or "1560x700",
+                private_server_ip=ef.get("private_server_ip", "") or "",
+                private_server_password=ef.get("private_server_password", "") or "",
+                iid_display=str(ef.get("iid_display", "10") or "10"),
+                hud_display=str(ef.get("hud_display", "11") or "11"),
+                market=str(ef.get("market", "") or ""),
+            )
+            try:
+                connect_msg = await dm.connect_device_by_id(dev.id)
+            except Exception as e:
+                connect_msg = f"registered but connect failed: {e}"
+            return {
+                "result": f"MIB registered: {dev.name} (ID: {dev.id}) — {connect_msg}",
                 "primary": _with_protected_flag(dm.list_primary()),
                 "auxiliary": _with_protected_flag(dm.list_auxiliary()),
             }
@@ -751,7 +811,8 @@ async def device_input(req: InputRequest):
                 key_name = p.get("key_name")
                 if key_name:
                     await isap.async_send_key_by_name(
-                        key_name, p.get("sub_cmd", 0x43), screen_type, p.get("direction")
+                        key_name, p.get("sub_cmd", 0x43), screen_type, p.get("direction"),
+                        key_source=p.get("key_source"),
                     )
                 else:
                     await isap.async_send_key(
@@ -787,6 +848,38 @@ async def device_input(req: InputRequest):
                     )
             return {"result": "ok"}
 
+        # MIB Agent — ICAS Agent와 동일한 action set을 mib_touch/mib_swipe/mib_key로 노출.
+        # 호환 위해 icas_* action도 디바이스 타입이 mib_agent일 때 같이 처리.
+        if (req.action in ("mib_touch", "mib_swipe", "mib_key", "repeat_tap",
+                           "icas_touch", "icas_swipe", "icas_key")
+                and dev and dev.type == "mib_agent"):
+            mib = dm.get_mib_service(req.device_id)
+            if not mib:
+                raise HTTPException(status_code=400, detail=f"MIB device {req.device_id} not connected")
+            logger.info("[MIB INPUT] device=%s action=%s params=%s connected=%s",
+                        req.device_id, req.action, req.params, mib.is_connected)
+            p = req.params
+            screen_type = p.get("screen_type", "HU")
+            if req.action == "repeat_tap":
+                await mib.async_repeat_tap(p["x"], p["y"], int(p.get("count", 5)),
+                                           int(p.get("interval_ms", 100)), screen_type)
+            elif req.action in ("mib_touch", "icas_touch"):
+                await mib.async_tap(p["x"], p["y"], screen_type)
+            elif req.action in ("mib_swipe", "icas_swipe"):
+                await mib.async_swipe(p["x1"], p["y1"], p["x2"], p["y2"], screen_type,
+                                      int(p.get("duration_ms", 0)))
+            elif req.action in ("mib_key", "icas_key"):
+                key_name = p.get("key_name")
+                if key_name:
+                    await mib.async_send_key_by_name(
+                        key_name, p.get("sub_cmd", 0x43), screen_type, p.get("direction")
+                    )
+                else:
+                    await mib.async_send_key(
+                        p["cmd"], p["sub_cmd"], p["key_data"], screen_type, p.get("direction")
+                    )
+            return {"result": "ok"}
+
         if req.action in ("hkmc_touch", "hkmc_swipe", "hkmc_key", "repeat_tap") and dev and dev.type == "hkmc_agent":
             hkmc = dm.get_hkmc_service(req.device_id)
             if not hkmc:
@@ -810,8 +903,9 @@ async def device_input(req: InputRequest):
                     await hkmc.async_send_key_by_name(
                         key_name, p.get("sub_cmd", 0x43), p.get("monitor", 0x00),
                         p.get("direction"), screen_type,
+                        key_source=p.get("key_source"),
                     )
-                    logger.info("[HKMC INPUT] key sent: %s", key_name)
+                    logger.info("[HKMC INPUT] key sent: %s (source=%s)", key_name, p.get("key_source"))
                 else:
                     await hkmc.async_send_key(
                         p["cmd"], p["sub_cmd"], p["key_data"], p.get("monitor", 0x00), p.get("direction")
@@ -974,17 +1068,41 @@ async def update_device(req: UpdateDeviceRequest):
         reset_instance(req.module)
     if req.connect_type is not None:
         dev.info["connect_type"] = req.connect_type
+    mib_resolution_changed = False
     if req.extra_fields is not None:
         for k, v in req.extra_fields.items():
-            dev.info[k] = v
+            # MIB의 resolution은 dict 스키마({width,height})를 보존해야 하므로
+            # 문자열 "WxH"로 들어온 경우 파싱하여 두 형태 모두 갱신.
+            if dev.type == "mib_agent" and k == "resolution" and isinstance(v, str):
+                try:
+                    rw_s, rh_s = v.upper().split("X")
+                    rw, rh = int(rw_s), int(rh_s)
+                    dev.info["resolution"] = {"width": rw, "height": rh}
+                    dev.info["resolution_str"] = f"{rw}x{rh}"
+                    mib_resolution_changed = True
+                except Exception:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Invalid MIB resolution format: {v} (expected WxH, e.g. 2240x1260)",
+                    )
+            else:
+                dev.info[k] = v
+        # 활성 MIBAgentService에 즉시 반영 — _x_mult/_y_mult가 새 해상도로 재계산.
+        if mib_resolution_changed:
+            svc = dm.get_mib_service(dev.id)
+            if svc is not None:
+                try:
+                    svc.resolution = dev.info["resolution_str"]
+                except Exception as e:
+                    logger.warning("Failed to update live MIB resolution: %s", e)
         # Reset cached module instance when connection params change
         module_name = dev.info.get("module")
         if module_name:
             from ..services.module_service import reset_instance
             reset_instance(module_name)
 
-    # Persist changes if auxiliary device
-    if dev.category == "auxiliary":
+    # Persist changes — auxiliary는 항상, primary 중 mib_agent는 해상도 변경 시 저장.
+    if dev.category == "auxiliary" or (dev.type == "mib_agent" and mib_resolution_changed):
         dm._save_auxiliary_devices()
 
     # Reopen serial connection if address or baudrate changed
@@ -1166,12 +1284,17 @@ async def list_hkmc_keys(device_id: Optional[str] = None):
     device_id가 지정되면 해당 디바이스의 info["hkmc_keys"] 오버라이드를
     spec default에 병합하여 반환한다.
     """
-    from ..services.hkmc6th_service import HKMC_KEYS, SHORT_KEY, LONG_KEY, PRESS_KEY, RELEASE_KEY, DIAL_ACTION
+    from ..services.hkmc6th_service import (
+        HKMC_KEYS, SHORT_KEY, LONG_KEY, PRESS_KEY, RELEASE_KEY, DIAL_ACTION,
+        resolve_device_variant,
+    )
     overrides: dict[str, dict] = {}
+    device_variant = "navi"  # 미지정/미상 모델 기본
     if device_id:
         dev = dm.get_device(device_id)
         if dev:
             overrides = dev.info.get("hkmc_keys") or {}
+            device_variant = resolve_device_variant(dev.info.get("device_model", ""))
     keys = []
     for name, info in HKMC_KEYS.items():
         ov = overrides.get(name, {})
@@ -1179,7 +1302,15 @@ async def list_hkmc_keys(device_id: Optional[str] = None):
         cmd = ov.get("cmd", info["cmd"])
         key = ov.get("key", info["key"])
         is_dial = ov.get("dial", info.get("dial", False))
-        visible = ov.get("visible", True)
+        key_variant = info.get("variant")  # "navi" | "non_navi" | None(공용)
+        # variant 필터: 디바이스가 Navi 면 non_navi 전용 키 숨김, 그 반대도 동일.
+        # 명시적 override 가 있으면 그 값을 우선 (사용자가 강제로 노출 가능).
+        if "visible" in ov:
+            visible = ov["visible"]
+        elif key_variant and key_variant != device_variant:
+            visible = False
+        else:
+            visible = True
         keys.append({
             "name": name,
             "group": group,
@@ -1187,6 +1318,7 @@ async def list_hkmc_keys(device_id: Optional[str] = None):
             "key": key,
             "is_dial": is_dial,
             "visible": visible,
+            "variant": key_variant,
         })
     return {
         "keys": keys,
@@ -1280,6 +1412,116 @@ async def update_icas_keys(req: UpdateIcasKeysRequest):
         svc.set_key_overrides(dev.info.get("icas_keys"))
     dm._save_auxiliary_devices()
     return {"status": "ok", "device_id": req.device_id, "count": len(clean)}
+
+
+@router.get("/mib-keys")
+async def list_mib_keys(device_id: Optional[str] = None):
+    """List MIB hardware keys (merged with per-device override)."""
+    from ..services.mib_agent_service import MIB_KEYS, SHORT_KEY, LONG_KEY, PRESS_KEY, RELEASE_KEY
+    overrides: dict[str, dict] = {}
+    if device_id:
+        dev = dm.get_device(device_id)
+        if dev:
+            overrides = dev.info.get("mib_keys") or {}
+    keys = []
+    for name, info in MIB_KEYS.items():
+        ov = overrides.get(name, {})
+        klass = ov.get("class", info.get("class", "short"))
+        key_code = ov.get("key", info["key"])
+        visible = ov.get("visible", True)
+        keys.append({
+            "name": name,
+            "group": "MIB",
+            "cmd": 0,
+            "key": key_code,
+            "class": klass,
+            "is_dial": False,
+            "visible": visible,
+        })
+    return {
+        "keys": keys,
+        "sub_commands": {
+            "SHORT_KEY": SHORT_KEY,
+            "LONG_KEY": LONG_KEY,
+            "PRESS_KEY": PRESS_KEY,
+            "RELEASE_KEY": RELEASE_KEY,
+        },
+    }
+
+
+class UpdateMibKeysRequest(BaseModel):
+    device_id: str
+    keys: dict[str, dict]
+
+
+@router.post("/mib-keys")
+async def update_mib_keys(req: UpdateMibKeysRequest):
+    """Save per-device MIB key overrides."""
+    from ..services.mib_agent_service import MIB_KEYS
+    dev = dm.get_device(req.device_id)
+    if not dev:
+        raise HTTPException(status_code=404, detail=f"Device {req.device_id} not found")
+    if dev.type != "mib_agent":
+        raise HTTPException(status_code=400, detail=f"Device {req.device_id} is not a MIB agent")
+    clean: dict[str, dict] = {}
+    for name, ov in (req.keys or {}).items():
+        if name not in MIB_KEYS:
+            continue
+        entry: dict = {}
+        if "class" in ov and ov["class"] in ("short", "long"):
+            entry["class"] = ov["class"]
+        if "key" in ov and ov["key"] is not None:
+            try:
+                entry["key"] = int(ov["key"])
+            except (TypeError, ValueError):
+                pass
+        if "visible" in ov and ov["visible"] is not None:
+            entry["visible"] = bool(ov["visible"])
+        if entry:
+            clean[name] = entry
+    if clean:
+        dev.info["mib_keys"] = clean
+    else:
+        dev.info.pop("mib_keys", None)
+    svc = dm.get_mib_service(req.device_id)
+    if svc:
+        svc.set_key_overrides(dev.info.get("mib_keys"))
+    dm._save_auxiliary_devices()
+    return {"status": "ok", "device_id": req.device_id, "count": len(clean)}
+
+
+class MibDetectResolutionRequest(BaseModel):
+    device_id: str
+
+
+@router.post("/mib/detect_resolution")
+async def mib_detect_resolution(req: MibDetectResolutionRequest):
+    """MIB 디바이스 실제 해상도를 1회 캡처로 감지하고 영구 저장."""
+    dev = dm.get_device(req.device_id)
+    if not dev:
+        raise HTTPException(status_code=404, detail=f"Device {req.device_id} not found")
+    if dev.type != "mib_agent":
+        raise HTTPException(status_code=400, detail=f"Device {req.device_id} is not a MIB agent")
+    svc = dm.get_mib_service(req.device_id)
+    if svc is None or not getattr(svc, "is_connected", False):
+        raise HTTPException(
+            status_code=409,
+            detail=f"Device {req.device_id} is not connected. Connect first then retry.",
+        )
+    import asyncio
+    loop = asyncio.get_event_loop()
+    try:
+        width, height = await loop.run_in_executor(None, svc.detect_resolution)
+    except Exception as e:
+        logger.warning("MIB detect_resolution failed for %s: %s", req.device_id, e)
+        raise HTTPException(status_code=500, detail=f"Detect failed: {e}")
+    return {
+        "device_id": req.device_id,
+        "width": int(width),
+        "height": int(height),
+        "resolution_str": f"{int(width)}x{int(height)}",
+        "device": dev.to_dict(),
+    }
 
 
 class UpdateHkmcKeysRequest(BaseModel):
@@ -1395,6 +1637,14 @@ async def get_screenshot(device_id: str, fmt: str = "jpeg", screen_type: str = "
             # ICAS 기본 화면은 HU. HKMC 호환으로 기본이 front_center로 들어올 수 있어 변환.
             st = screen_type if screen_type in ("HU", "IID", "HUD") else "HU"
             img_bytes = await icas.async_screencap_bytes(screen_type=st, fmt=fmt)
+            b64 = base64.b64encode(img_bytes).decode("ascii")
+            return {"image": b64, "format": fmt}
+        elif dev and dev.type == "mib_agent":
+            mib = dm.get_mib_service(device_id)
+            if not mib:
+                raise HTTPException(status_code=400, detail=f"MIB device {device_id} not connected")
+            st = screen_type if screen_type in ("HU", "IID", "HUD") else "HU"
+            img_bytes = await mib.async_screencap_bytes(screen_type=st, fmt=fmt)
             b64 = base64.b64encode(img_bytes).decode("ascii")
             return {"image": b64, "format": fmt}
         elif dev and dev.type == "vision_camera":
