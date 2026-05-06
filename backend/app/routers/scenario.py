@@ -363,6 +363,34 @@ async def capture_expected_image(req: CaptureExpectedImageRequest):
             import asyncio
             loop = asyncio.get_event_loop()
             png_bytes = await loop.run_in_executor(None, cam.CaptureBytes, "png")
+        elif dev and dev.type == "wincontrol":
+            wc = dm.get_wincontrol_service()
+            if not wc.is_attached():
+                # 저장된 프로세스 정보로 자동 attach 시도 (step.params 또는 그대로 실패)
+                step_params = step.params or {}
+                if step_params.get("process_name") or step_params.get("exe_path") or step_params.get("process_aumid"):
+                    import asyncio, functools
+                    loop = asyncio.get_event_loop()
+                    try:
+                        await loop.run_in_executor(
+                            None,
+                            functools.partial(
+                                wc.ensure_attached,
+                                process_name=str(step_params.get("process_name", "") or ""),
+                                exe_path=str(step_params.get("exe_path", "") or ""),
+                                title_pattern=str(step_params.get("window_title", "") or ""),
+                                class_name=str(step_params.get("window_class", "") or ""),
+                                aumid=str(step_params.get("process_aumid", "") or ""),
+                                launch_if_missing=True,
+                            ),
+                        )
+                    except Exception as e:
+                        raise HTTPException(status_code=400, detail=f"WinControl attach failed: {e}")
+                else:
+                    raise HTTPException(status_code=400, detail="WinControl: no window attached")
+            import asyncio
+            loop = asyncio.get_event_loop()
+            png_bytes = await loop.run_in_executor(None, wc.capture_window, "png")
         else:
             adb_serial = dev.address if dev else req.device_id
             # screen_type → SF display ID 변환
@@ -1167,7 +1195,20 @@ async def rename_scenario(name: str, req: RenameScenarioRequest):
         raise HTTPException(status_code=409, detail=str(e))
     if not ok:
         raise HTTPException(status_code=404, detail=f"Scenario '{name}' not found")
-    return {"status": "renamed", "old_name": name, "new_name": req.new_name}
+    # 새 이름으로 저장된 시나리오를 응답에 포함 — 프론트엔드가 갱신된
+    # expected_image / expected_images 파일명을 로컬 state에 동기화할 수 있도록.
+    # (이전: 프론트가 stale 파일명으로 update 호출해 JSON이 존재하지 않는
+    #  파일을 가리키게 되어 기대이미지가 초기화되는 버그)
+    try:
+        scenario = await recording_svc.load_scenario(req.new_name)
+        return {
+            "status": "renamed",
+            "old_name": name,
+            "new_name": req.new_name,
+            "scenario": scenario.model_dump(),
+        }
+    except FileNotFoundError:
+        return {"status": "renamed", "old_name": name, "new_name": req.new_name}
 
 
 @router.put("/{name}")

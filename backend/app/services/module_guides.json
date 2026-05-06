@@ -1465,9 +1465,10 @@
         }
       },
       "fail_on_keyword": {
-        "description": "캡처되는 라인에 keyword가 **포함되면 fail step row 자동 누적**. assert_keyword의 반대. 비정상 키워드(예: 'ERROR', 'Fail', 'crash') 검출에 사용.",
+        "description": "캡처되는 라인에 keyword가 **포함되면 fail row 누적**. assert_keyword의 반대. 'ERROR'/'Fail'/'crash' 등 비정상 키워드 검출용. **time>0이면 동기 모드** (해당 시간 동안만 모니터링 후 자동 종료, 검출 fail은 이 스텝 바로 아래 Fail_Count_N으로 인라인 표시). time=0이면 백그라운드 모드.",
         "params": {
           "keyword": "검출할 부분 문자열. 이 단어가 라인에 들어오면 fail로 보고. 예: 'Fail', 'ERROR'",
+          "time": "동기 모니터링 시간(초). >0이면 해당 시간 동안만 감시 후 자동 unregister + 다음 스텝으로. 0(기본)이면 백그라운드.",
           "name": "검출기 식별자. 빈 값이면 'fail_<keyword>'. 같은 name 재호출 시 hit 통계 반환"
         }
       },
@@ -1547,8 +1548,10 @@
     "_description": "시리얼 로깅 — 시리얼 포트에 연결하여 로그를 캡처·저장하고 키워드 PASS/FAIL 판정하는 모듈",
     "functions": {
       "StartLogging": {
-        "description": "시리얼 연결 + 캡처 시작 (메모리만, 파일 저장 없음). 뷰어 모달이 자동 오픈됩니다. 종료 시 StopLogging으로 일괄 저장.",
-        "params": {}
+        "description": "시리얼 연결 + 캡처 시작 (메모리만, 파일 저장 없음). 뷰어 모달이 자동 오픈됩니다. **리턴 시점에 포트가 안정화되고 capture 스레드가 ready 상태**라 다음 스텝의 SendCommand가 씹히지 않음. 종료 시 StopLogging으로 일괄 저장.",
+        "params": {
+          "settle_ms": "포트 open 후 안정화 대기(ms). 기본 500. USB-Serial 어댑터 reset/buffer settle 동안 다음 스텝이 씹히지 않게 확보. Arduino처럼 DTR-reset되는 보드는 1500~2000으로 늘리고, 빠른 산업용 시리얼은 100~200까지 낮출 수 있음."
+        }
       },
       "StopLogging": {
         "description": "시리얼 캡처 종료 + 메모리 버퍼를 파일로 일괄 저장. 자동 경로 또는 지정 경로.",
@@ -1583,9 +1586,10 @@
         }
       },
       "fail_on_keyword": {
-        "description": "캡처되는 라인에 keyword가 **포함되면 fail step row 자동 누적**. assert_keyword의 반대. 비정상 키워드(예: 'ERROR', 'Fail', 'crash') 검출에 사용.",
+        "description": "캡처되는 라인에 keyword가 **포함되면 fail row 누적**. assert_keyword의 반대. 'ERROR'/'Fail'/'crash' 등 비정상 키워드 검출용. **time>0이면 동기 모드** (해당 시간 동안만 모니터링 후 자동 종료, 검출 fail은 이 스텝 바로 아래 Fail_Count_N으로 인라인 표시). time=0이면 백그라운드 모드.",
         "params": {
           "keyword": "검출할 부분 문자열. 이 단어가 라인에 들어오면 fail로 보고. 예: 'Fail', 'ERROR'",
+          "time": "동기 모니터링 시간(초). >0이면 해당 시간 동안만 감시 후 자동 unregister + 다음 스텝으로. 0(기본)이면 백그라운드.",
           "name": "검출기 식별자. 빈 값이면 'fail_<keyword>'. 같은 name 재호출 시 hit 통계 반환"
         }
       },
@@ -1596,9 +1600,10 @@
         }
       },
       "StartSave": {
-        "description": "시리얼 포트에 연결하고 로그 캡처 + 파일 저장을 시작합니다. (연결 → 캡처 → 저장 한번에 수행)",
+        "description": "시리얼 포트에 연결하고 로그 캡처 + 파일 저장을 시작합니다. (연결 → 캡처 → 저장 한번에 수행). 리턴 시점에 포트가 안정화되어 다음 스텝의 SendCommand가 씹히지 않음.",
         "params": {
-          "save_path": "저장 파일 경로. 빈 값이면 backend/logs/에 자동 생성"
+          "save_path": "저장 파일 경로. 빈 값이면 backend/logs/에 자동 생성",
+          "settle_ms": "포트 open 후 안정화 대기(ms). 기본 500. StartLogging의 settle_ms와 동일."
         }
       },
       "StopSave": {
@@ -1968,9 +1973,10 @@
         }
       },
       "Send_adb_command": {
-        "description": "ReplayKit 자체 ADBService를 통해 임의의 adb 명령을 실행합니다 (선택된 ADB 디바이스 자동 적용). 출력 반환. 예: 'shell pm list packages', 'install foo.apk', 'push file /sdcard/'",
+        "description": "ReplayKit 자체 ADBService를 통해 임의의 adb 명령을 실행합니다. serial 미지정 시 화면에서 선택된 ADB 디바이스 자동 사용. 예: 'shell pm list packages', 'install foo.apk', 'push file /sdcard/'",
         "params": {
-          "command": "실행할 adb 명령 (adb -s {serial} 부분은 자동 추가). 예: 'shell input keyevent KEYCODE_HOME'"
+          "command": "실행할 adb 명령 (adb -s {serial} 부분은 자동 추가). 예: 'shell input keyevent KEYCODE_HOME'",
+          "serial": "대상 ADB 시리얼 (선택). 비우면 현재 화면 디바이스의 시리얼 사용"
         }
       },
       "adb_screencap": {

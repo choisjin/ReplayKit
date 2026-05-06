@@ -139,6 +139,16 @@ def _get_run_output_dir() -> Optional[Path]:
         return None
 
 
+def _is_scenario_playback() -> bool:
+    """시나리오 재생 active 여부. lifecycle 이벤트에 컨텍스트 플래그로 부착되어
+    프론트엔드(RecordPage) 모달 자동 오픈을 막는다 — ScenarioPage가 이미 좌측 카드로 표시함."""
+    try:
+        from backend.app.services.playback_service import is_playback_active
+        return is_playback_active()
+    except Exception:
+        return False
+
+
 def _auto_save_path(prefix: str = "dlt") -> str:
     """컨텍스트별 자동 저장 경로 생성.
 
@@ -240,13 +250,16 @@ class DLTLogging:
             return f"ERROR: 연결 실패 — {e}"
 
     def _disconnect(self):
-        """DLT 데몬 연결 해제."""
-        self._stop_capture()
-        if self._socket:
+        """DLT 데몬 연결 해제. cleanup 경로에서 호출되므로 어떤 단계도 raise 하지 않는다."""
+        try:
+            self._stop_capture()
+        except Exception as e:
+            logger.warning("[DLTLogging] stop_capture raised: %s", e)
+        if self._socket is not None:
             try:
                 self._socket.close()
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning("[DLTLogging] socket.close raised: %s", e)
             self._socket = None
         logger.info("[DLTLogging] Disconnected")
 
@@ -266,6 +279,8 @@ class DLTLogging:
 
         Returns:
             결과 메시지
+
+        StartLogging과 동일하게 DLT_HUB에 session_started를 emit하여 뷰어가 자동 오픈된다.
         """
         if self._save_file:
             return f"ERROR: 이미 저장 중입니다 ({self._save_path}). StopSave() 먼저 호출하세요."
@@ -285,9 +300,24 @@ class DLTLogging:
             self._save_file = open(save_path, "w", encoding="utf-8")
             self._save_path = save_path
             logger.info("[DLTLogging] Save started: %s", save_path)
-            return f"Save started: {save_path}"
         except Exception as e:
             return f"ERROR: 파일 열기 실패 — {e}"
+
+        # 뷰어 동기화: StartLogging과 동일한 lifecycle emit
+        try:
+            DLT_HUB.emit_lifecycle({
+                "type": "session_started",
+                "session_id": self._session_id(),
+                "host": self._host,
+                "port": self._port,
+                "save_path": save_path,
+                "started_at": time.time(),
+                "scenario_playback": _is_scenario_playback(),
+            })
+        except Exception as e:
+            logger.warning("[DLTLogging] StartSave lifecycle emit failed: %s", e)
+
+        return f"Save started: {save_path}"
 
     def StopSave(self) -> str:
         """로그 파일 저장을 중단하고 DLT 연결을 해제합니다.
@@ -299,9 +329,22 @@ class DLTLogging:
             return "저장 중이 아닙니다."
 
         path = self._save_path
+        sid = self._session_id()
         self._close_save_file()
         self._disconnect()
         logger.info("[DLTLogging] Save stopped + disconnected: %s", path)
+
+        # 뷰어 동기화: StopLogging과 동일한 lifecycle emit
+        try:
+            DLT_HUB.emit_lifecycle({
+                "type": "session_stopped",
+                "session_id": sid,
+                "save_path": path or "",
+                "stopped_at": time.time(),
+            })
+        except Exception as e:
+            logger.warning("[DLTLogging] StopSave lifecycle emit failed: %s", e)
+
         return f"Save stopped: {path}"
 
     # ------------------------------------------------------------------
@@ -332,6 +375,7 @@ class DLTLogging:
             "port": self._port,
             "save_path": "",
             "started_at": time.time(),
+            "scenario_playback": _is_scenario_playback(),
         })
         return f"Logging started: {self._host}:{self._port}"
 
@@ -343,6 +387,10 @@ class DLTLogging:
                 - 시나리오 재생 중: {run_dir}/logs/dlt_{timestamp}.log
                 - 스텝 테스트:     backend/results/Temp_logs/dlt_{timestamp}.log
 
+        파일 저장 단계의 어떤 예외(경로 해석/mkdir/open)가 발생해도 finally에서
+        _close_save_file + _disconnect를 무조건 실행하여 소켓 leak을 방지한다.
+        cleanup_active_instances가 재생 중단 시 자동 호출하는 진입점이기도 하다.
+
         Returns:
             결과 메시지 (저장 경로 포함)
         """
@@ -352,40 +400,46 @@ class DLTLogging:
         with self._lock:
             logs_snapshot = list(self._logs)
 
-        # save_path 해석: 빈 값 → 자동 경로+파일명, 파일명만 → 자동 디렉토리 하위
-        if not save_path:
-            save_path = _auto_save_path("dlt")
-        elif not os.path.dirname(save_path):
-            base_dir = Path(_auto_save_path("dlt")).parent
-            save_path = str(base_dir / save_path)
-
         saved_path = ""
+        save_error = ""
         try:
-            os.makedirs(os.path.dirname(save_path) or ".", exist_ok=True)
-            with open(save_path, "w", encoding="utf-8") as f:
-                f.write("\n".join(logs_snapshot))
-                if logs_snapshot:
-                    f.write("\n")
-            saved_path = save_path
-            logger.info("[DLTLogging] Saved %d lines to %s", len(logs_snapshot), save_path)
+            # save_path 해석: 빈 값 → 자동 경로+파일명, 파일명만 → 자동 디렉토리 하위
+            if not save_path:
+                save_path = _auto_save_path("dlt")
+            elif not os.path.dirname(save_path):
+                base_dir = Path(_auto_save_path("dlt")).parent
+                save_path = str(base_dir / save_path)
+            try:
+                os.makedirs(os.path.dirname(save_path) or ".", exist_ok=True)
+                with open(save_path, "w", encoding="utf-8") as f:
+                    f.write("\n".join(logs_snapshot))
+                    if logs_snapshot:
+                        f.write("\n")
+                saved_path = save_path
+                logger.info("[DLTLogging] Saved %d lines to %s", len(logs_snapshot), save_path)
+            except Exception as e:
+                logger.error("[DLTLogging] Save failed: %s", e)
+                save_error = str(e)
         except Exception as e:
-            logger.error("[DLTLogging] Save failed: %s", e)
+            # _auto_save_path 등 경로 해석 자체가 실패해도 finally의 _disconnect를 보장
+            logger.error("[DLTLogging] StopLogging path resolution failed: %s", e)
+            save_error = save_error or str(e)
+        finally:
+            # StartSave로 시작했더라도 _save_file 누수 방지 + 캡처/소켓 무조건 정리
+            self._close_save_file()
             self._disconnect()
-            DLT_HUB.emit_lifecycle({
-                "type": "session_stopped",
-                "session_id": sid,
-                "save_path": "",
-                "stopped_at": time.time(),
-            })
-            return f"ERROR: 저장 실패 — {e}"
+            try:
+                DLT_HUB.emit_lifecycle({
+                    "type": "session_stopped",
+                    "session_id": sid,
+                    "save_path": saved_path,
+                    "stopped_at": time.time(),
+                })
+            except Exception:
+                pass
 
-        self._disconnect()
-        DLT_HUB.emit_lifecycle({
-            "type": "session_stopped",
-            "session_id": sid,
-            "save_path": saved_path,
-            "stopped_at": time.time(),
-        })
+        if save_error:
+            return f"ERROR: 저장 실패 — {save_error}"
         return f"Logging stopped. Saved {len(logs_snapshot)} lines to: {saved_path}"
 
     def SearchSection(self, keyword: str, from_step: int, to_step: int, count: int = 5) -> str:
@@ -719,11 +773,27 @@ class DLTLogging:
     # 키워드 검출 모드 — 키워드가 들어오면 fail로 보고
     # ------------------------------------------------------------------
 
-    def fail_on_keyword(self, keyword: str, name: str = "") -> str:
+    def fail_on_keyword(self, keyword: str, time: float = 0, name: str = "") -> str:
         """캡처되는 라인에 keyword가 **포함되면** 시나리오 결과에 fail row 자동 누적.
         SerialLogging.fail_on_keyword와 동일 인터페이스. 'ERROR'/'crash' 등 검출용.
         첫 호출 시 backfill 스캔 — 이미 누적된 로그 라인의 매칭도 정확한 timestamp로 보고.
+
+        모드:
+          - **time > 0 (sync)**: 등록 + backfill → 해당 시간 동안 모니터링 → 자동 unregister.
+            검출 fail은 이 스텝의 인라인 결과로 표시 (Fail_Count_N).
+          - **time == 0 (legacy)**: 백그라운드 누적, 시나리오 종료까지 동작.
         """
+        import time as _time_mod
+        sync_duration = float(time) if time else 0.0
+        parent_step_id: Optional[int] = None
+        parent_repeat_index = 1
+        if sync_duration > 0:
+            try:
+                from backend.app.services.playback_service import get_current_step_context
+                parent_step_id, parent_repeat_index = get_current_step_context()
+            except Exception:
+                pass
+
         key = name.strip() if name else f"fail_{keyword}"
         backfill_reports: list[tuple[float, str]] = []
         is_new = False
@@ -735,7 +805,9 @@ class DLTLogging:
                     "keyword": keyword,
                     "hit_count": 0,
                     "hit_timestamps": [],
-                    "started_at": time.time(),
+                    "started_at": _time_mod.time(),
+                    "parent_step_id": parent_step_id,
+                    "parent_repeat_index": parent_repeat_index,
                 }
                 self._fail_keywords[key] = new_entry
                 with self._lock:
@@ -743,32 +815,51 @@ class DLTLogging:
                     ts_snapshot = list(self._log_capture_ts)
                 for i, ln in enumerate(logs_snapshot):
                     if keyword in ln:
-                        ts_b = ts_snapshot[i] if i < len(ts_snapshot) else time.time()
+                        ts_b = ts_snapshot[i] if i < len(ts_snapshot) else _time_mod.time()
                         new_entry["hit_count"] += 1
                         new_entry["hit_timestamps"].append(ts_b)
                         backfill_reports.append((ts_b, ln))
-                logger.info("[DLTLogging] fail_on_keyword started: name='%s' keyword='%s' backfill=%d",
-                            key, keyword, len(backfill_reports))
+                logger.info("[DLTLogging] fail_on_keyword started: name='%s' keyword='%s' backfill=%d sync=%.1fs parent=%s",
+                            key, keyword, len(backfill_reports), sync_duration, parent_step_id)
             else:
                 cnt = existing["hit_count"]
                 ts_list = list(existing["hit_timestamps"])
                 started_at = existing["started_at"]
                 kw = existing["keyword"]
+                if sync_duration > 0:
+                    existing["parent_step_id"] = parent_step_id
+                    existing["parent_repeat_index"] = parent_repeat_index
 
         if is_new and backfill_reports:
             try:
                 from backend.app.services.playback_service import report_runtime_fail
                 for ts_b, ln in backfill_reports:
-                    report_runtime_fail("DLTLogging", keyword, ts_b, ln, reason="matched")
+                    report_runtime_fail(
+                        "DLTLogging", keyword, ts_b, ln, reason="matched",
+                        repeat_index=parent_repeat_index,
+                        parent_step_id=parent_step_id,
+                    )
             except Exception:
                 pass
+
+        if sync_duration > 0:
+            _time_mod.sleep(sync_duration)
+            with self._counter_lock:
+                final_entry = self._fail_keywords.pop(key, None)
+            final_cnt = final_entry["hit_count"] if final_entry else 0
+            backfill_n = len(backfill_reports) if is_new else 0
+            window_n = max(0, final_cnt - backfill_n)
+            return (
+                f"FAIL_ON '{keyword}' (name='{key}', time={sync_duration:g}s): "
+                f"{final_cnt} hits (backfill={backfill_n}, window={window_n})"
+            )
 
         if is_new:
             return (f"Failing on keyword '{keyword}' (name='{key}')"
                     + (f" — backfill matched {len(backfill_reports)} lines" if backfill_reports else ""))
 
         def _fmt(t: float) -> str:
-            return time.strftime("%H:%M:%S", time.localtime(t))
+            return _time_mod.strftime("%H:%M:%S", _time_mod.localtime(t))
 
         if cnt == 0:
             return f"FAIL_ON '{kw}' (name='{key}'): 0 hits (since {_fmt(started_at)})"
@@ -1103,7 +1194,7 @@ class DLTLogging:
                 # 키워드 카운터/단언/검출 검사
                 if self._counters or self._asserts or self._fail_keywords:
                     now_ts = time.time()
-                    fail_reports: list[tuple[str, str, str]] = []
+                    fail_reports: list[tuple[str, str, str, Optional[int], int]] = []
                     with self._counter_lock:
                         for c in self._counters.values():
                             if c["keyword"] in line:
@@ -1113,17 +1204,25 @@ class DLTLogging:
                             if a["keyword"] not in line:
                                 a["miss_count"] += 1
                                 a["miss_timestamps"].append(now_ts)
-                                fail_reports.append((a["keyword"], line, "missing"))
+                                fail_reports.append((a["keyword"], line, "missing", None, 1))
                         for f in self._fail_keywords.values():
                             if f["keyword"] in line:
                                 f["hit_count"] += 1
                                 f["hit_timestamps"].append(now_ts)
-                                fail_reports.append((f["keyword"], line, "matched"))
+                                fail_reports.append((
+                                    f["keyword"], line, "matched",
+                                    f.get("parent_step_id"),
+                                    f.get("parent_repeat_index", 1),
+                                ))
                     if fail_reports:
                         try:
                             from backend.app.services.playback_service import report_runtime_fail
-                            for kw, ln, reason in fail_reports:
-                                report_runtime_fail("DLTLogging", kw, now_ts, ln, reason=reason)
+                            for kw, ln, reason, p_sid, p_rep in fail_reports:
+                                report_runtime_fail(
+                                    "DLTLogging", kw, now_ts, ln, reason=reason,
+                                    repeat_index=p_rep,
+                                    parent_step_id=p_sid,
+                                )
                         except Exception:
                             pass
 

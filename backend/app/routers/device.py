@@ -12,7 +12,7 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 from ..dependencies import adb_service as adb, device_manager as dm
-from ..services.adb_service import resolve_sf_display_id
+from ..services.adb_service import resolve_sf_display_id, resolve_input_display_id
 from ..services.module_service import list_available_modules, get_module_functions, execute_module_function
 
 
@@ -501,8 +501,19 @@ async def connect_device(req: ConnectRequest):
     elif req.type == "hkmc_agent":
         if not req.address or not req.port:
             raise HTTPException(status_code=400, detail="HKMC6th requires address (IP) and port (TCP port)")
+        ef = req.extra_fields or {}
         try:
-            dev = await dm.add_hkmc6th_device(req.address, req.port, device_id=custom_id, name=req.name or "", device_model=req.device_model or "")
+            dev = await dm.add_hkmc6th_device(
+                req.address, req.port, device_id=custom_id,
+                name=req.name or "",
+                device_model=req.device_model or "",
+                # 클러스터 SSH 캡처용 자격증명. 미입력 시 ICAS QNX 패턴(root/빈 패스워드) fallback.
+                ssh_username=(ef.get("ssh_username") or "root"),
+                ssh_password=(ef.get("ssh_password") or ""),
+                ssh_port=int(ef.get("ssh_port") or 22),
+                cluster_resolution=str(ef.get("cluster_resolution") or "2720x720"),
+                cluster_display=str(ef.get("cluster_display") or "1"),
+            )
             return {
                 "result": f"HKMC connected: {dev.name} (ID: {dev.id})",
                 "primary": _with_protected_flag(dm.list_primary()),
@@ -665,6 +676,14 @@ async def connect_device(req: ConnectRequest):
             logger.error("[VisionCamera] connect failed: %s", e, exc_info=True)
             raise HTTPException(status_code=400, detail=str(e))
 
+    elif req.type == "wincontrol":
+        # WinControl: 시스템 기본 디바이스(WinControl_1 등 추가 등록 불가).
+        # 기본 'WinControl' 디바이스가 항상 존재하므로 이 경로로 신규 등록을 막는다.
+        raise HTTPException(
+            status_code=400,
+            detail="WinControl is a system default device — use /connect-registered instead",
+        )
+
     elif req.type == "webcam":
         ef = req.extra_fields or {}
         # address 또는 extra_fields.device_index 중 하나로 카메라 인덱스 전달
@@ -791,7 +810,7 @@ async def device_input(req: InputRequest):
             )
             return {"result": "ok", "response": response}
 
-        if req.action in ("hkmc_touch", "hkmc_swipe", "hkmc_key", "repeat_tap") and dev and dev.type == "isap_agent":
+        if req.action in ("hkmc_touch", "hkmc_swipe", "hkmc_key", "hkmc_long_press", "repeat_tap") and dev and dev.type == "isap_agent":
             isap = dm.get_isap_service(req.device_id)
             if not isap:
                 raise HTTPException(status_code=400, detail=f"iSAP device {req.device_id} not connected")
@@ -804,6 +823,9 @@ async def device_input(req: InputRequest):
                                             int(p.get("interval_ms", 100)), screen_type)
             elif req.action == "hkmc_touch":
                 await isap.async_tap(p["x"], p["y"], screen_type)
+            elif req.action == "hkmc_long_press":
+                await isap.async_long_press(p["x"], p["y"],
+                                            int(p.get("duration_ms", 3000)), screen_type)
             elif req.action == "hkmc_swipe":
                 await isap.async_swipe(p["x1"], p["y1"], p["x2"], p["y2"], screen_type,
                                        int(p.get("duration_ms", 0)))
@@ -820,7 +842,7 @@ async def device_input(req: InputRequest):
                     )
             return {"result": "ok"}
 
-        if req.action in ("icas_touch", "icas_swipe", "icas_key", "repeat_tap") and dev and dev.type == "icas_agent":
+        if req.action in ("icas_touch", "icas_swipe", "icas_key", "icas_long_press", "repeat_tap") and dev and dev.type == "icas_agent":
             icas = dm.get_icas_service(req.device_id)
             if not icas:
                 raise HTTPException(status_code=400, detail=f"ICAS device {req.device_id} not connected")
@@ -833,6 +855,9 @@ async def device_input(req: InputRequest):
                                             int(p.get("interval_ms", 100)), screen_type)
             elif req.action == "icas_touch":
                 await icas.async_tap(p["x"], p["y"], screen_type)
+            elif req.action == "icas_long_press":
+                await icas.async_long_press(p["x"], p["y"],
+                                            int(p.get("duration_ms", 3000)), screen_type)
             elif req.action == "icas_swipe":
                 await icas.async_swipe(p["x1"], p["y1"], p["x2"], p["y2"], screen_type,
                                        int(p.get("duration_ms", 0)))
@@ -850,8 +875,8 @@ async def device_input(req: InputRequest):
 
         # MIB Agent — ICAS Agent와 동일한 action set을 mib_touch/mib_swipe/mib_key로 노출.
         # 호환 위해 icas_* action도 디바이스 타입이 mib_agent일 때 같이 처리.
-        if (req.action in ("mib_touch", "mib_swipe", "mib_key", "repeat_tap",
-                           "icas_touch", "icas_swipe", "icas_key")
+        if (req.action in ("mib_touch", "mib_swipe", "mib_key", "mib_long_press", "repeat_tap",
+                           "icas_touch", "icas_swipe", "icas_key", "icas_long_press")
                 and dev and dev.type == "mib_agent"):
             mib = dm.get_mib_service(req.device_id)
             if not mib:
@@ -865,6 +890,9 @@ async def device_input(req: InputRequest):
                                            int(p.get("interval_ms", 100)), screen_type)
             elif req.action in ("mib_touch", "icas_touch"):
                 await mib.async_tap(p["x"], p["y"], screen_type)
+            elif req.action in ("mib_long_press", "icas_long_press"):
+                await mib.async_long_press(p["x"], p["y"],
+                                           int(p.get("duration_ms", 3000)), screen_type)
             elif req.action in ("mib_swipe", "icas_swipe"):
                 await mib.async_swipe(p["x1"], p["y1"], p["x2"], p["y2"], screen_type,
                                       int(p.get("duration_ms", 0)))
@@ -880,7 +908,7 @@ async def device_input(req: InputRequest):
                     )
             return {"result": "ok"}
 
-        if req.action in ("hkmc_touch", "hkmc_swipe", "hkmc_key", "repeat_tap") and dev and dev.type == "hkmc_agent":
+        if req.action in ("hkmc_touch", "hkmc_swipe", "hkmc_key", "hkmc_long_press", "repeat_tap") and dev and dev.type == "hkmc_agent":
             hkmc = dm.get_hkmc_service(req.device_id)
             if not hkmc:
                 raise HTTPException(status_code=400, detail=f"HKMC device {req.device_id} not connected")
@@ -894,6 +922,11 @@ async def device_input(req: InputRequest):
             elif req.action == "hkmc_touch":
                 await hkmc.async_tap(p["x"], p["y"], screen_type)
                 logger.info("[HKMC INPUT] tap sent: x=%s y=%s screen=%s", p["x"], p["y"], screen_type)
+            elif req.action == "hkmc_long_press":
+                await hkmc.async_long_press(p["x"], p["y"],
+                                            int(p.get("duration_ms", 3000)), screen_type)
+                logger.info("[HKMC INPUT] long_press sent: x=%s y=%s ms=%s screen=%s",
+                            p["x"], p["y"], p.get("duration_ms", 3000), screen_type)
             elif req.action == "hkmc_swipe":
                 await hkmc.async_swipe(p["x1"], p["y1"], p["x2"], p["y2"], screen_type)
                 logger.info("[HKMC INPUT] swipe sent")
@@ -912,13 +945,77 @@ async def device_input(req: InputRequest):
                     )
             return {"result": "ok"}
 
+        if req.action in ("win_tap", "win_double_click", "win_long_press", "win_swipe",
+                          "win_input_text", "win_key") and dev and dev.type == "wincontrol":
+            wc = dm.get_wincontrol_service()
+            if not wc.is_available():
+                raise HTTPException(
+                    status_code=503,
+                    detail=f"WinControl unavailable: {wc.import_error() or 'pywin32 not installed'}",
+                )
+            import asyncio
+            loop = asyncio.get_event_loop()
+            p = req.params
+            # params 에 프로세스 정보가 있으면 자동 attach/launch
+            proc_name = str(p.get("process_name", "") or "")
+            exe_path = str(p.get("exe_path", "") or "")
+            title_pattern = str(p.get("window_title", "") or "")
+            class_name = str(p.get("window_class", "") or "")
+            aumid = str(p.get("process_aumid", "") or "")
+            if proc_name or exe_path or title_pattern or aumid:
+                import functools as _ft
+                try:
+                    await loop.run_in_executor(
+                        None,
+                        _ft.partial(
+                            wc.ensure_attached,
+                            process_name=proc_name, exe_path=exe_path,
+                            title_pattern=title_pattern, class_name=class_name,
+                            aumid=aumid,
+                            launch_if_missing=True,
+                            wait_seconds=float(p.get("launch_wait_seconds", 8.0) or 8.0),
+                        ),
+                    )
+                except Exception as e:
+                    raise HTTPException(status_code=500, detail=f"WinControl attach failed: {e}")
+            elif not wc.is_attached():
+                raise HTTPException(status_code=400, detail="WinControl: no window attached")
+            import functools as _ft2
+            if req.action == "win_tap":
+                await loop.run_in_executor(None,
+                    _ft2.partial(wc.send_tap, int(p["x"]), int(p["y"]),
+                                 p.get("button", "left")))
+            elif req.action == "win_double_click":
+                await loop.run_in_executor(None,
+                    _ft2.partial(wc.send_double_click, int(p["x"]), int(p["y"])))
+            elif req.action == "win_long_press":
+                await loop.run_in_executor(None,
+                    _ft2.partial(wc.send_long_press, int(p["x"]), int(p["y"]),
+                                 int(p.get("duration_ms", 500))))
+            elif req.action == "win_swipe":
+                await loop.run_in_executor(None,
+                    _ft2.partial(wc.send_swipe, int(p["x1"]), int(p["y1"]),
+                                 int(p["x2"]), int(p["y2"]),
+                                 int(p.get("duration_ms", 300))))
+            elif req.action == "win_input_text":
+                await loop.run_in_executor(None,
+                    _ft2.partial(wc.send_text, str(p.get("text", ""))))
+            elif req.action == "win_key":
+                await loop.run_in_executor(None,
+                    _ft2.partial(wc.send_key, str(p.get("key", ""))))
+            return {"result": "ok"}
+
         # ADB actions — allow even if device is not in managed list (race with refresh)
         if dev and dev.type not in ("adb", None):
             raise HTTPException(status_code=400, detail=f"Action '{req.action}' requires an ADB device")
 
         # Resolve alias to real ADB serial address
         adb_serial = dev.address if dev else req.device_id
-        display_id = _parse_adb_display_id(req.params.get("screen_type"))
+        # screen_type은 우리 displays 배열 인덱스(0,1,...)
+        # → input -d 에는 Android DisplayManager logical ID로 변환해서 넘겨야 함
+        # (폴더블에서 우리 인덱스와 Android logical ID가 어긋날 수 있음)
+        our_index = _parse_adb_display_id(req.params.get("screen_type"))
+        display_id = resolve_input_display_id(dev.info if dev else None, our_index)
 
         p = req.params
         if req.action == "tap":
@@ -1665,8 +1762,23 @@ async def get_screenshot(device_id: str, fmt: str = "jpeg", screen_type: str = "
             img_bytes = await loop.run_in_executor(None, cam.CaptureBytes, fmt)
             b64 = base64.b64encode(img_bytes).decode("ascii")
             return {"image": b64, "format": fmt}
+        elif dev and dev.type == "wincontrol":
+            wc = dm.get_wincontrol_service()
+            if not wc.is_attached():
+                # 임베드 전 또는 윈도우 핸들 무효 → 빈 이미지 + attached=false
+                # 프론트엔드 폴링 루프가 이 플래그를 보고 자동 재attach 트리거.
+                return {"image": "", "format": fmt, "attached": False}
+            import asyncio
+            loop = asyncio.get_event_loop()
+            try:
+                img_bytes = await loop.run_in_executor(None, wc.capture_window, fmt)
+                b64 = base64.b64encode(img_bytes).decode("ascii")
+                return {"image": b64, "format": fmt, "attached": True}
+            except Exception:
+                # 캡처 일시 실패: attach 상태는 유지, 빈 응답만 반환
+                return {"image": "", "format": fmt, "attached": wc.is_attached()}
         elif dev and dev.type not in ("adb",):
-            raise HTTPException(status_code=400, detail="Screenshot only available for ADB, HKMC, iSAP, ICAS, VisionCamera, or Webcam devices")
+            raise HTTPException(status_code=400, detail="Screenshot only available for ADB, HKMC, iSAP, ICAS, VisionCamera, Webcam, or WinControl devices")
         else:
             # ADB device
             adb_serial = dev.address if dev else device_id
@@ -1681,3 +1793,51 @@ async def get_screenshot(device_id: str, fmt: str = "jpeg", screen_type: str = "
         # Transient ADB/HKMC capture failure — return empty image so the
         # browser doesn't log a 500 error on every polling cycle.
         return {"image": "", "format": fmt}
+
+
+# ── WinControl 전용 엔드포인트 ────────────────────────────────────
+
+
+class WinControlAttachRequest(BaseModel):
+    hwnd: int
+
+
+@router.get("/wincontrol/processes")
+async def wincontrol_list_processes():
+    """현재 시스템의 가시 윈도우/프로세스 목록 (콤보용)."""
+    wc = dm.get_wincontrol_service()
+    if not wc.is_available():
+        raise HTTPException(status_code=503, detail=f"WinControl unavailable: {wc.import_error()}")
+    import asyncio
+    loop = asyncio.get_event_loop()
+    procs = await loop.run_in_executor(None, wc.list_processes)
+    return {"processes": procs}
+
+
+@router.get("/wincontrol/status")
+async def wincontrol_status():
+    """현재 임베드된 윈도우 정보."""
+    return dm.get_wincontrol_service().status()
+
+
+@router.post("/wincontrol/attach")
+async def wincontrol_attach(req: WinControlAttachRequest):
+    """대상 프로세스 윈도우에 임베드 — 디바이스 connection 과는 별개."""
+    wc = dm.get_wincontrol_service()
+    if not wc.is_available():
+        raise HTTPException(status_code=503, detail=f"WinControl unavailable: {wc.import_error()}")
+    try:
+        info = wc.attach(req.hwnd)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    # 디바이스 status 는 사용자의 명시적 connect/disconnect 로만 변경 — sync 호출 안 함.
+    return {"result": "attached", "status": info}
+
+
+@router.post("/wincontrol/detach")
+async def wincontrol_detach():
+    """임베드만 해제 — WinControl 디바이스 자체의 연결 상태는 유지."""
+    dm.get_wincontrol_service().detach()
+    return {"result": "detached"}

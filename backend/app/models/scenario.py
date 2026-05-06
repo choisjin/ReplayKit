@@ -19,12 +19,21 @@ class StepType(str, Enum):
     HKMC_TOUCH = "hkmc_touch"
     HKMC_SWIPE = "hkmc_swipe"
     HKMC_KEY = "hkmc_key"
+    HKMC_LONG_PRESS = "hkmc_long_press"
     ICAS_TOUCH = "icas_touch"
     ICAS_SWIPE = "icas_swipe"
     ICAS_KEY = "icas_key"
+    ICAS_LONG_PRESS = "icas_long_press"
     MULTI_TOUCH = "multi_touch"  # 멀티핑거 제스처 (핀치, 멀티스와이프)
     REPEAT_TAP = "repeat_tap"    # 같은 위치 연속 터치
     ALL_RANDOM = "all_random"    # 랜덤 스트레스 (HK/SK/DRAG 가중 선택)
+    # WinControl 스텝 (Windows 임베드 프로세스 조작)
+    WIN_TAP = "win_tap"
+    WIN_DOUBLE_CLICK = "win_double_click"
+    WIN_LONG_PRESS = "win_long_press"
+    WIN_SWIPE = "win_swipe"
+    WIN_INPUT_TEXT = "win_input_text"
+    WIN_KEY = "win_key"
 
 
 class TapParams(BaseModel):
@@ -130,6 +139,11 @@ class StepResult(BaseModel):
     command: str = ""  # human-readable action description
     description: str = ""  # user remark for the step
     status: str  # "pass", "fail", "error"
+    # 부모 스텝 id — fail_on_keyword(time>0)이 모니터링 중 검출한 fail row가 부모 스텝 직하에 인라인 표시될 때 사용.
+    # None이면 일반 스텝, 값이 있으면 해당 스텝이 trigger한 runtime fail.
+    parent_step_id: Optional[int] = None
+    # 부모 내 순번 (1-based). 같은 parent_step_id 그룹 내에서 Fail_Count_N 표기용.
+    fail_index: Optional[int] = None
     similarity_score: Optional[float] = None
     expected_image: Optional[str] = None
     expected_annotated_image: Optional[str] = None  # expected with regions drawn
@@ -148,7 +162,7 @@ class StepResult(BaseModel):
 class ScenarioResult(BaseModel):
     scenario_name: str
     device_serial: str
-    status: str  # "pass", "fail", "error"
+    status: str  # "pass", "fail", "error", "stopped"
     total_steps: int  # steps per cycle
     total_repeat: int = 1
     passed_steps: int = 0
@@ -158,3 +172,6 @@ class ScenarioResult(BaseModel):
     step_results: list[StepResult] = Field(default_factory=list)  # ALL cycles combined
     started_at: Optional[str] = None
     finished_at: Optional[str] = None
+    # 중단 시 진행 중이던 회차/스텝 추적 (status="stopped"일 때 의미 있음).
+    stopped_at_iteration: Optional[int] = None  # 1-based; None이면 일반 종료
+    stopped_at_step: Optional[int] = None       # 1-based; iteration 안에서의 step 인덱스

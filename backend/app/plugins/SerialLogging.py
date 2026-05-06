@@ -125,6 +125,16 @@ def _get_run_output_dir() -> Optional[Path]:
         return None
 
 
+def _is_scenario_playback() -> bool:
+    """시나리오 재생 active 여부. lifecycle 이벤트에 컨텍스트 플래그로 부착되어
+    프론트엔드(RecordPage) 모달 자동 오픈을 막는다 — ScenarioPage가 이미 좌측 카드로 표시함."""
+    try:
+        from backend.app.services.playback_service import is_playback_active
+        return is_playback_active()
+    except Exception:
+        return False
+
+
 def _auto_save_path(prefix: str = "serial") -> str:
     """컨텍스트별 자동 저장 경로.
 
@@ -192,8 +202,16 @@ class SerialLogging:
     # 연결 관리 (내부)
     # ------------------------------------------------------------------
 
-    def _connect(self) -> str:
-        """시리얼 포트 연결."""
+    def _connect(self, settle_ms: int = 500) -> str:
+        """시리얼 포트 연결.
+
+        Args:
+            settle_ms: open 직후 드라이버/디바이스 안정화 대기(ms).
+                       USB-Serial 어댑터(FTDI/CP210x/CH340 등)는 open 시 DTR/RTS 펄스가
+                       발생하여 디바이스가 짧게 리셋되는 경우가 있고, OS도 buffer 설정 적용에
+                       수십~수백 ms를 쓴다. 이 시간 안에 SendCommand가 들어오면 씹힘 — settle 후에
+                       reset_input/output_buffer로 가비지를 비우고 capture loop를 시작한다.
+        """
         if not self._port:
             return "ERROR: port가 설정되지 않았습니다"
         if self._serial and self._serial.is_open:
@@ -202,6 +220,15 @@ class SerialLogging:
         try:
             import serial as pyserial
             self._serial = pyserial.Serial(self._port, self._bps, timeout=1)
+            # 1) 드라이버/디바이스 안정화 — capture loop 시작 전에 처리 (가비지 라인 캡처 방지)
+            if settle_ms and settle_ms > 0:
+                time.sleep(settle_ms / 1000.0)
+            # 2) open 동안 들어온 가비지 / 송신 잔여 비우기
+            try:
+                self._serial.reset_input_buffer()
+                self._serial.reset_output_buffer()
+            except Exception as _be:
+                logger.debug("[SerialLogging] buffer reset skipped: %s", _be)
             self._logs.clear()
             self._log_capture_ts.clear()
             self._line_counter = 0
@@ -210,8 +237,11 @@ class SerialLogging:
                 self._counters.clear()  # 새 세션마다 키워드 카운터 자동 리셋
                 self._asserts.clear()    # assert 카운터도 함께 리셋
                 self._fail_keywords.clear()
+            # 3) capture loop 시작 후, 스레드가 실제 readline에 진입할 시간을 짧게 보장
             self._start_capture()
-            logger.info("[SerialLogging] Connected to %s @ %d", self._port, self._bps)
+            time.sleep(0.05)  # capture thread가 첫 read 루프에 진입할 충분한 시간
+            logger.info("[SerialLogging] Connected to %s @ %d (settle=%dms)",
+                        self._port, self._bps, settle_ms)
             return ""
         except Exception as e:
             self._serial = None
@@ -219,13 +249,17 @@ class SerialLogging:
             return f"ERROR: 연결 실패 — {e}"
 
     def _disconnect(self):
-        """시리얼 포트 연결 해제."""
-        self._stop_capture()
-        if self._serial and self._serial.is_open:
+        """시리얼 포트 연결 해제. cleanup 경로에서 호출되므로 어떤 단계도 raise 하지 않는다."""
+        try:
+            self._stop_capture()
+        except Exception as e:
+            logger.warning("[SerialLogging] stop_capture raised: %s", e)
+        if self._serial is not None:
             try:
-                self._serial.close()
-            except Exception:
-                pass
+                if getattr(self._serial, "is_open", False):
+                    self._serial.close()
+            except Exception as e:
+                logger.warning("[SerialLogging] serial.close raised: %s", e)
         self._serial = None
         logger.info("[SerialLogging] Disconnected")
 
@@ -240,12 +274,20 @@ class SerialLogging:
     # 뷰어 연동: StartLogging / StopLogging (DLTLogging과 동일 시그니처)
     # ------------------------------------------------------------------
 
-    def StartLogging(self) -> str:
+    def StartLogging(self, settle_ms: int = 500) -> str:
         """뷰어 연동용: 시리얼 연결 + 로그 캡처 시작 (메모리만, 파일 저장 없음).
 
+        Args:
+            settle_ms: 포트 open 후 안정화 대기 시간(ms). 기본 500ms — USB-Serial
+                       드라이버 reset/buffer settle 동안 다음 스텝의 SendCommand가 씹히지
+                       않도록 보장. 디바이스가 빠르게 준비되면 100~200으로 줄여도 되고,
+                       Arduino처럼 DTR-reset되는 보드는 1500~2000으로 늘릴 수 있다.
+
+        리턴 시점에는 포트가 열리고, 입력/출력 버퍼가 비워졌으며, capture 스레드가 첫
+        readline 루프에 진입한 상태이므로 다음 스텝에서 즉시 SendCommand해도 안전하다.
         SERIAL_HUB에 session_started 이벤트를 emit하여 뷰어가 자동 오픈된다.
         """
-        err = self._connect()
+        err = self._connect(settle_ms=settle_ms)
         if err:
             return err
         SERIAL_HUB.emit_lifecycle({
@@ -255,8 +297,9 @@ class SerialLogging:
             "bps": self._bps,
             "save_path": "",
             "started_at": time.time(),
+            "scenario_playback": _is_scenario_playback(),
         })
-        return f"Logging started: {self._port} @ {self._bps}"
+        return f"Logging started: {self._port} @ {self._bps} (settle={settle_ms}ms)"
 
     def StopLogging(self, save_path: str = "") -> str:
         """뷰어 연동용: 시리얼 연결 종료 + 메모리 버퍼를 파일로 일괄 저장.
@@ -265,44 +308,54 @@ class SerialLogging:
             save_path: 저장할 파일 경로. 빈 값이면 컨텍스트별 자동 저장:
                 - 재생 중: {run_dir}/logs/serial_{timestamp}.log
                 - 스텝 테스트: backend/results/Temp_logs/serial_{timestamp}.log
+
+        파일 저장 단계의 어떤 예외(경로 해석/mkdir/open)가 발생해도 finally에서
+        _close_save_file + _disconnect를 무조건 실행하여 COM 포트 leak을 방지한다.
+        cleanup_active_instances가 재생 중단 시 자동 호출하는 진입점이기도 하다.
         """
         sid = self._session_id()
         with self._lock:
             logs_snapshot = list(self._logs)
 
-        if not save_path:
-            save_path = _auto_save_path("serial")
-        elif not os.path.dirname(save_path):
-            base_dir = Path(_auto_save_path("serial")).parent
-            save_path = str(base_dir / save_path)
-
         saved_path = ""
+        save_error = ""
         try:
-            os.makedirs(os.path.dirname(save_path) or ".", exist_ok=True)
-            with open(save_path, "w", encoding="utf-8") as f:
-                f.write("\n".join(logs_snapshot))
-                if logs_snapshot:
-                    f.write("\n")
-            saved_path = save_path
-            logger.info("[SerialLogging] Saved %d lines to %s", len(logs_snapshot), save_path)
+            if not save_path:
+                save_path = _auto_save_path("serial")
+            elif not os.path.dirname(save_path):
+                base_dir = Path(_auto_save_path("serial")).parent
+                save_path = str(base_dir / save_path)
+            try:
+                os.makedirs(os.path.dirname(save_path) or ".", exist_ok=True)
+                with open(save_path, "w", encoding="utf-8") as f:
+                    f.write("\n".join(logs_snapshot))
+                    if logs_snapshot:
+                        f.write("\n")
+                saved_path = save_path
+                logger.info("[SerialLogging] Saved %d lines to %s", len(logs_snapshot), save_path)
+            except Exception as e:
+                logger.error("[SerialLogging] Save failed: %s", e)
+                save_error = str(e)
         except Exception as e:
-            logger.error("[SerialLogging] Save failed: %s", e)
+            # _auto_save_path 등 경로 해석 자체가 실패해도 finally의 _disconnect를 보장
+            logger.error("[SerialLogging] StopLogging path resolution failed: %s", e)
+            save_error = save_error or str(e)
+        finally:
+            # StartSave로 시작했더라도 _save_file 누수 방지 + 캡처/시리얼 무조건 정리
+            self._close_save_file()
             self._disconnect()
-            SERIAL_HUB.emit_lifecycle({
-                "type": "session_stopped",
-                "session_id": sid,
-                "save_path": "",
-                "stopped_at": time.time(),
-            })
-            return f"ERROR: 저장 실패 — {e}"
+            try:
+                SERIAL_HUB.emit_lifecycle({
+                    "type": "session_stopped",
+                    "session_id": sid,
+                    "save_path": saved_path,
+                    "stopped_at": time.time(),
+                })
+            except Exception:
+                pass
 
-        self._disconnect()
-        SERIAL_HUB.emit_lifecycle({
-            "type": "session_stopped",
-            "session_id": sid,
-            "save_path": saved_path,
-            "stopped_at": time.time(),
-        })
+        if save_error:
+            return f"ERROR: 저장 실패 — {save_error}"
         return f"Logging stopped. Saved {len(logs_snapshot)} lines to: {saved_path}"
 
     # ------------------------------------------------------------------
@@ -355,20 +408,23 @@ class SerialLogging:
     # 로그 저장 시작/중단 (연결 포함)
     # ------------------------------------------------------------------
 
-    def StartSave(self, save_path: str = "") -> str:
+    def StartSave(self, save_path: str = "", settle_ms: int = 500) -> str:
         """시리얼 포트에 연결하고 로그 캡처 + 파일 저장을 시작합니다.
 
         Args:
             save_path: 저장 파일 경로. 빈 값이면 자동 생성 (backend/logs/serial_YYYYMMDD_HHMMSS.log)
+            settle_ms: 포트 open 후 안정화 대기(ms). 기본 500. StartLogging 참고.
 
         Returns:
             결과 메시지
+
+        StartLogging과 동일하게 SERIAL_HUB에 session_started를 emit하여 뷰어가 자동 오픈된다.
         """
         if self._save_file:
             return f"ERROR: 이미 저장 중입니다 ({self._save_path}). StopSave() 먼저 호출하세요."
 
-        # 연결이 안 되어 있으면 자동 연결
-        err = self._connect()
+        # 연결이 안 되어 있으면 자동 연결 — settle 대기 + buffer flush 후 capture 시작
+        err = self._connect(settle_ms=settle_ms)
         if err:
             return err
 
@@ -382,9 +438,24 @@ class SerialLogging:
             self._save_file = open(save_path, "w", encoding="utf-8")
             self._save_path = save_path
             logger.info("[SerialLogging] Save started: %s", save_path)
-            return f"Save started: {save_path}"
         except Exception as e:
             return f"ERROR: 파일 열기 실패 — {e}"
+
+        # 뷰어 동기화: StartLogging과 동일한 lifecycle emit
+        try:
+            SERIAL_HUB.emit_lifecycle({
+                "type": "session_started",
+                "session_id": self._session_id(),
+                "port": self._port,
+                "bps": self._bps,
+                "save_path": save_path,
+                "started_at": time.time(),
+                "scenario_playback": _is_scenario_playback(),
+            })
+        except Exception as e:
+            logger.warning("[SerialLogging] StartSave lifecycle emit failed: %s", e)
+
+        return f"Save started: {save_path}"
 
     def StopSave(self) -> str:
         """로그 파일 저장을 중단하고 시리얼 연결을 해제합니다.
@@ -396,9 +467,22 @@ class SerialLogging:
             return "저장 중이 아닙니다."
 
         path = self._save_path
+        sid = self._session_id()
         self._close_save_file()
         self._disconnect()
         logger.info("[SerialLogging] Save stopped + disconnected: %s", path)
+
+        # 뷰어 동기화: StopLogging과 동일한 lifecycle emit
+        try:
+            SERIAL_HUB.emit_lifecycle({
+                "type": "session_stopped",
+                "session_id": sid,
+                "save_path": path or "",
+                "stopped_at": time.time(),
+            })
+        except Exception as e:
+            logger.warning("[SerialLogging] StopSave lifecycle emit failed: %s", e)
+
         return f"Save stopped: {path}"
 
     def _close_save_file(self):
@@ -573,7 +657,7 @@ class SerialLogging:
     # 키워드 검출 모드 — 키워드가 들어오면 fail로 보고 (assert_keyword의 반대)
     # ------------------------------------------------------------------
 
-    def fail_on_keyword(self, keyword: str, name: str = "") -> str:
+    def fail_on_keyword(self, keyword: str, time: float = 0, name: str = "") -> str:
         """캡처되는 라인에 keyword가 **포함되면** 시나리오 결과에 fail row 자동 누적.
 
         직관적 사용 — 'ERROR'/'Fail'/'crash' 등 비정상 단어 검출용.
@@ -583,10 +667,27 @@ class SerialLogging:
         keyword 매칭 라인의 정확한 capture timestamp로 fail row 추가. 시나리오의
         StartLogging부터 fail_on_keyword 호출 사이에 발생한 매칭이 누락되지 않음.
 
-        호출 흐름:
-          - 첫 호출: 검출 시작 + 기존 로그 backfill 스캔
-          - 같은 name 재호출: 현재까지 hit count + first/last timestamp 반환
+        모드:
+          - **time > 0 (sync, 권장)**: 등록 + backfill → 해당 시간 동안 모니터링 → 자동 unregister.
+            검출된 fail은 이 스텝의 인라인 결과로 분류되어 결과 표에 바로 아래 Fail_Count_N으로 표시.
+            blocking 호출이라 다음 스텝은 time 종료 후 실행됨.
+          - **time == 0 (legacy)**: 등록 후 즉시 리턴, 백그라운드로 시나리오 종료까지 누적.
+            같은 name 재호출 시 현재까지 hit count + first/last timestamp 반환.
         """
+        # NOTE: time 매개변수가 stdlib `time` 모듈 이름과 겹친다.
+        # 함수 시작에서 _time_mod로 alias, 이후 time은 매개변수 의미로 사용.
+        import time as _time_mod
+        sync_duration = float(time) if time else 0.0
+        # sync 모드면 현재 실행 중인 스텝을 parent로 박음
+        parent_step_id: Optional[int] = None
+        parent_repeat_index = 1
+        if sync_duration > 0:
+            try:
+                from backend.app.services.playback_service import get_current_step_context
+                parent_step_id, parent_repeat_index = get_current_step_context()
+            except Exception:
+                pass
+
         key = name.strip() if name else f"fail_{keyword}"
         backfill_reports: list[tuple[float, str]] = []  # 첫 호출 backfill용
         is_new = False
@@ -598,7 +699,9 @@ class SerialLogging:
                     "keyword": keyword,
                     "hit_count": 0,
                     "hit_timestamps": [],
-                    "started_at": time.time(),
+                    "started_at": _time_mod.time(),
+                    "parent_step_id": parent_step_id,
+                    "parent_repeat_index": parent_repeat_index,
                 }
                 self._fail_keywords[key] = new_entry
                 # backfill: 이미 캡처된 라인 중 keyword 매칭한 것 모두 보고
@@ -607,33 +710,55 @@ class SerialLogging:
                     ts_snapshot = list(self._log_capture_ts)
                 for i, ln in enumerate(logs_snapshot):
                     if keyword in ln:
-                        ts_b = ts_snapshot[i] if i < len(ts_snapshot) else time.time()
+                        ts_b = ts_snapshot[i] if i < len(ts_snapshot) else _time_mod.time()
                         new_entry["hit_count"] += 1
                         new_entry["hit_timestamps"].append(ts_b)
                         backfill_reports.append((ts_b, ln))
-                logger.info("[SerialLogging] fail_on_keyword started: name='%s' keyword='%s' backfill=%d",
-                            key, keyword, len(backfill_reports))
+                logger.info("[SerialLogging] fail_on_keyword started: name='%s' keyword='%s' backfill=%d sync=%.1fs parent=%s",
+                            key, keyword, len(backfill_reports), sync_duration, parent_step_id)
             else:
                 cnt = existing["hit_count"]
                 ts_list = list(existing["hit_timestamps"])
                 started_at = existing["started_at"]
                 kw = existing["keyword"]
+                # 동일 name 재호출이면서 sync 요청이면, 등록의 parent도 갱신 (현재 스텝 결과로 흡수)
+                if sync_duration > 0:
+                    existing["parent_step_id"] = parent_step_id
+                    existing["parent_repeat_index"] = parent_repeat_index
 
         # backfill 항목을 playback_service에 보고 (lock 밖에서)
         if is_new and backfill_reports:
             try:
                 from backend.app.services.playback_service import report_runtime_fail
                 for ts_b, ln in backfill_reports:
-                    report_runtime_fail("SerialLogging", keyword, ts_b, ln, reason="matched")
+                    report_runtime_fail(
+                        "SerialLogging", keyword, ts_b, ln, reason="matched",
+                        repeat_index=parent_repeat_index,
+                        parent_step_id=parent_step_id,
+                    )
             except Exception:
                 pass
+
+        # sync 모드: 지정된 시간 동안 capture loop가 보고하도록 대기 후 자동 해제
+        if sync_duration > 0:
+            _time_mod.sleep(sync_duration)
+            with self._counter_lock:
+                final_entry = self._fail_keywords.pop(key, None)
+            final_cnt = final_entry["hit_count"] if final_entry else 0
+            final_ts_list = list(final_entry["hit_timestamps"]) if final_entry else []
+            backfill_n = len(backfill_reports) if is_new else 0
+            window_n = max(0, final_cnt - backfill_n)
+            return (
+                f"FAIL_ON '{keyword}' (name='{key}', time={sync_duration:g}s): "
+                f"{final_cnt} hits (backfill={backfill_n}, window={window_n})"
+            )
 
         if is_new:
             return (f"Failing on keyword '{keyword}' (name='{key}')"
                     + (f" — backfill matched {len(backfill_reports)} lines" if backfill_reports else ""))
 
         def _fmt(t: float) -> str:
-            return time.strftime("%H:%M:%S", time.localtime(t))
+            return _time_mod.strftime("%H:%M:%S", _time_mod.localtime(t))
 
         if cnt == 0:
             return f"FAIL_ON '{kw}' (name='{key}'): 0 hits (since {_fmt(started_at)})"
@@ -954,30 +1079,39 @@ class SerialLogging:
                 # 키워드 카운터/단언/검출 검사
                 if self._counters or self._asserts or self._fail_keywords:
                     now_ts = time.time()
-                    fail_reports: list[tuple[str, str, str]] = []  # (keyword, line, reason) — fail 보고
+                    # (keyword, line, reason, parent_step_id, parent_repeat_index)
+                    fail_reports: list[tuple[str, str, str, Optional[int], int]] = []
                     with self._counter_lock:
                         for c in self._counters.values():
                             if c["keyword"] in stamped:
                                 c["count"] += 1
                                 c["timestamps"].append(now_ts)
-                        # assert_keyword: 미포함 라인 → fail
+                        # assert_keyword: 미포함 라인 → fail (legacy: parent 없음)
                         for a in self._asserts.values():
                             if a["keyword"] not in stamped:
                                 a["miss_count"] += 1
                                 a["miss_timestamps"].append(now_ts)
-                                fail_reports.append((a["keyword"], stamped, "missing"))
-                        # fail_on_keyword: 포함 라인 → fail
+                                fail_reports.append((a["keyword"], stamped, "missing", None, 1))
+                        # fail_on_keyword: 포함 라인 → fail (sync 모드는 parent_step_id 보유)
                         for f in self._fail_keywords.values():
                             if f["keyword"] in stamped:
                                 f["hit_count"] += 1
                                 f["hit_timestamps"].append(now_ts)
-                                fail_reports.append((f["keyword"], stamped, "matched"))
+                                fail_reports.append((
+                                    f["keyword"], stamped, "matched",
+                                    f.get("parent_step_id"),
+                                    f.get("parent_repeat_index", 1),
+                                ))
                     # playback_service에 fail 보고 (재생 active일 때만 효과)
                     if fail_reports:
                         try:
                             from backend.app.services.playback_service import report_runtime_fail
-                            for kw, ln, reason in fail_reports:
-                                report_runtime_fail("SerialLogging", kw, now_ts, ln, reason=reason)
+                            for kw, ln, reason, p_sid, p_rep in fail_reports:
+                                report_runtime_fail(
+                                    "SerialLogging", kw, now_ts, ln, reason=reason,
+                                    repeat_index=p_rep,
+                                    parent_step_id=p_sid,
+                                )
                         except Exception:
                             pass
 
