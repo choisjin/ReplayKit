@@ -1,0 +1,1361 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReplayKit 모듈 가이드</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-alt: #f6f8fa;
+    --bg-code: #f0f2f5;
+    --text: #24292f;
+    --text-muted: #57606a;
+    --border: #d0d7de;
+    --accent: #0969da;
+    --accent-light: #ddf4ff;
+    --success: #1a7f37;
+    --success-bg: #dafbe1;
+    --warning: #9a6700;
+    --warning-bg: #fff8c5;
+    --danger: #cf222e;
+    --danger-bg: #ffebe9;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  [data-theme="dark"] {
+    --bg: #0d1117;
+    --bg-alt: #161b22;
+    --bg-code: #1c2128;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --border: #30363d;
+    --accent: #58a6ff;
+    --accent-light: #1a2332;
+    --success: #3fb950;
+    --success-bg: #0d2818;
+    --warning: #d29922;
+    --warning-bg: #2a1f00;
+    --danger: #f85149;
+    --danger-bg: #3d1014;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Noto Sans KR', sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.7; font-size: 15px;
+  }
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar {
+    position: fixed; top: 0; left: 0; width: 280px; height: 100vh;
+    overflow-y: auto; background: var(--bg-alt); border-right: 1px solid var(--border);
+    padding: 24px 16px; z-index: 100; transition: transform 0.3s;
+  }
+  .sidebar-logo { font-size: 20px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+  .sidebar-version { font-size: 12px; color: var(--text-muted); margin-bottom: 20px; }
+  .sidebar nav a {
+    display: block; padding: 5px 10px; color: var(--text-muted); text-decoration: none;
+    font-size: 13.5px; border-radius: 6px; transition: background 0.15s, color 0.15s;
+  }
+  .sidebar nav a:hover, .sidebar nav a.active { background: var(--accent-light); color: var(--accent); }
+  .sidebar nav .toc-h2 { font-weight: 600; margin-top: 12px; }
+  .sidebar nav .toc-h3 { padding-left: 22px; font-size: 12.5px; }
+  .main { margin-left: 280px; max-width: 1600px; padding: 40px 48px 80px; flex: 1; }
+  .theme-toggle {
+    position: fixed; top: 16px; right: 20px; background: var(--bg-alt);
+    border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px;
+    cursor: pointer; font-size: 18px; z-index: 200; transition: background 0.2s;
+  }
+  .theme-toggle:hover { background: var(--accent-light); }
+  .hamburger {
+    display: none; position: fixed; top: 14px; left: 14px; background: var(--accent);
+    color: #fff; border: none; border-radius: 8px; width: 40px; height: 40px;
+    font-size: 22px; cursor: pointer; z-index: 300;
+  }
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 90; }
+  h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.5px; }
+  h1 small { font-size: 14px; font-weight: 400; color: var(--text-muted); display: block; margin-top: 4px; }
+  h2 {
+    font-size: 24px; font-weight: 700; margin-top: 56px; margin-bottom: 16px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--border); scroll-margin-top: 24px;
+  }
+  h3 {
+    font-size: 18px; font-weight: 600; margin-top: 36px; margin-bottom: 10px; scroll-margin-top: 24px;
+  }
+  h4 { font-size: 15px; font-weight: 600; margin-top: 20px; margin-bottom: 8px; }
+  p { margin-bottom: 12px; }
+  ul, ol { margin: 8px 0 16px 24px; }
+  li { margin-bottom: 4px; }
+  .callout {
+    padding: 14px 18px; border-radius: 8px; margin: 16px 0; font-size: 14px; border-left: 4px solid;
+  }
+  .callout-info { background: var(--accent-light); border-color: var(--accent); }
+  .callout-success { background: var(--success-bg); border-color: var(--success); }
+  .callout-warning { background: var(--warning-bg); border-color: var(--warning); }
+  code {
+    background: var(--bg-code); padding: 2px 6px; border-radius: 4px;
+    font-size: 13px; font-family: 'Cascadia Code', 'Consolas', monospace;
+  }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 14px; }
+  th, td { padding: 10px 14px; text-align: left; border: 1px solid var(--border); }
+  th { background: var(--bg-alt); font-weight: 600; white-space: nowrap; }
+  td { vertical-align: top; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;
+  }
+  .badge-blue { background: var(--accent-light); color: var(--accent); }
+  .badge-green { background: var(--success-bg); color: var(--success); }
+
+  @media (max-width: 900px) {
+    .sidebar { transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; padding: 24px 20px 60px; }
+    .hamburger { display: block; }
+    .overlay.show { display: block; }
+  }
+  @media print {
+    .sidebar, .hamburger, .theme-toggle, .overlay { display: none !important; }
+    .main { margin-left: 0; max-width: 100%; padding: 20px; }
+    h2 { break-before: page; }
+  }
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" onclick="toggleTheme()" title="테마 전환">🌓</button>
+<button class="hamburger" onclick="toggleSidebar()">☰</button>
+<div class="overlay" onclick="toggleSidebar()"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">🔌 ReplayKit</div>
+    <div class="sidebar-version">모듈 가이드</div>
+    <nav id="toc">
+      <a href="#top" class="toc-h2">모듈 가이드</a>
+      <a href="#overview" class="toc-h3">전체 모듈 목록</a>
+      <a href="#cat-bench" class="toc-h2">벤치 장비</a>
+      <a href="#mod-IVIQEBenchIOClient" class="toc-h3">IVIQEBenchIOClient</a>
+      <a href="#mod-SmartBench" class="toc-h3">SmartBench</a>
+      <a href="#mod-WoohyunBench" class="toc-h3">WoohyunBench</a>
+      <a href="#cat-can" class="toc-h2">CAN 통신</a>
+      <a href="#mod-CANOE" class="toc-h3">CANOE</a>
+      <a href="#mod-CANAT" class="toc-h3">CANAT</a>
+      <a href="#cat-comm" class="toc-h2">통신 (시리얼/SSH/UART/DLT)</a>
+      <a href="#mod-SerialLogging" class="toc-h3">SerialLogging</a>
+      <a href="#mod-SSHManager" class="toc-h3">SSHManager</a>
+      <a href="#mod-DLTLogging" class="toc-h3">DLTLogging</a>
+      <a href="#cat-system" class="toc-h2">시스템 & 유틸리티</a>
+      <a href="#mod-CMD" class="toc-h3">CMD</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <h1 id="top">모듈 가이드<small>ReplayKit에서 사용 가능한 모든 모듈의 함수 및 파라미터 가이드</small></h1>
+
+    <p>이 문서는 ReplayKit의 <strong>모듈 명령(module_command)</strong> 스텝에서 사용할 수 있는 모든 모듈과 함수를 설명합니다. 코딩 지식 없이도 각 함수가 어떤 장비를 제어하고, 어떤 값을 넣어야 하는지 확인할 수 있습니다.</p>
+
+    <div class="callout callout-success">
+      <strong>앱 내 가이드</strong>
+      스텝 추가 시 함수를 선택하면 설명이 자동으로 표시됩니다. 이 문서는 전체 목록을 한눈에 보거나 인쇄하여 참고하기 위한 것입니다.
+    </div>
+
+    <h2 id="overview">전체 모듈 목록</h2>
+    <p>총 <strong>9개</strong> 모듈, <strong>205개</strong> 함수가 등록되어 있습니다.</p>
+    <table>
+      <thead><tr><th>모듈</th><th>설명</th><th>함수 수</th></tr></thead>
+      <tbody>
+        <tr><td><a href="#mod-CANOE"><strong>CANOE</strong></a></td><td>Vector CANoe 시뮬레이션 소프트웨어의 시작/중지, 환경변수/시스템변수 설정을 제어하는 모듈</td><td style="text-align:center">6</td></tr>
+<tr><td><a href="#mod-CANAT"><strong>CANAT</strong></a></td><td>CANat 하드웨어를 통해 CAN 버스 메시지를 송수신하는 모듈</td><td style="text-align:center">7</td></tr>
+<tr><td><a href="#mod-IVIQEBenchIOClient"><strong>IVIQEBenchIOClient</strong></a></td><td>시리얼 연결된 QE 테스트 벤치의 릴레이, 전원, 센서, 오디오, LCD, 버튼, USB 등을 종합 제어하는 모듈</td><td style="text-align:center">117</td></tr>
+<tr><td><a href="#mod-SSHManager"><strong>SSHManager</strong></a></td><td>SSH로 원격 장비에 접속하여 명령 실행, 파일 전송을 수행하는 모듈</td><td style="text-align:center">7</td></tr>
+<tr><td><a href="#mod-DLTLogging"><strong>DLTLogging</strong></a></td><td>DLT 데몬에 TCP 직접 연결하여 로그를 캡처·저장하고 키워드 PASS/FAIL 판정하는 모듈 (GUI 불필요)</td><td style="text-align:center">18</td></tr>
+<tr><td><a href="#mod-SerialLogging"><strong>SerialLogging</strong></a></td><td>시리얼 포트에 연결하여 로그를 캡처·저장하고 키워드 검출하는 모듈.
+
+**⚠️ 사용법: StartLogging과 StopLogging은 반드시 한 셋트로 사용해야 합니다.**
+- StartLogging만 호출하고 StopLogging을 누락하면: 로그가 파일로 저장되지 않고, 시리얼 포트 연결이 종료되지 않아 다음 실행에서 포트 점유 오류가 발생할 수 있습니다.
+- 시나리오의 시작 부분에 StartLogging, 끝 부분에 StopLogging을 배치하여 한 쌍으로 운영하세요.
+- 시나리오 중간에 오류가 나도 cleanup이 자동으로 StopLogging을 호출해 포트를 닫지만, 정상 흐름에서는 명시적으로 StopLogging을 두는 것이 권장됩니다.
+
+표준 사용 패턴:
+  1) StartLogging()                              ← 시나리오 첫 스텝
+  2) SendCommand / SendCommand_*_on_keyword ...  ← 중간 스텝들
+  3) StopLogging()                               ← 시나리오 마지막 스텝 (로그 파일 저장 + 포트 해제)</td><td style="text-align:center">5</td></tr>
+<tr><td><a href="#mod-SmartBench"><strong>SmartBench</strong></a></td><td>TCP 소켓으로 Smart Bench 장비의 전원, 버튼, 전류, LED를 제어하는 모듈</td><td style="text-align:center">15</td></tr>
+<tr><td><a href="#mod-WoohyunBench"><strong>WoohyunBench</strong></a></td><td>UDP 통신으로 차량 전원(IGN/ACC/배터리) 제어 + CAN FD 신호 송신을 지원하는 통합 테스트 벤치</td><td style="text-align:center">23</td></tr>
+<tr><td><a href="#mod-CMD"><strong>CMD</strong></a></td><td>Windows 명령 프롬프트(CMD) 명령을 실행하는 모듈. 외부 프로그램 실행이나 시스템 명령에 사용</td><td style="text-align:center">7</td></tr>
+      </tbody>
+    </table>
+
+    
+<h2 id="cat-bench">벤치 장비</h2>
+
+<h3 id="mod-IVIQEBenchIOClient">IVIQEBenchIOClient</h3>
+<div class="callout callout-info">IVI QE 벤치 — 시리얼 연결된 QE 테스트 벤치의 릴레이, 전원, 센서, 오디오, LCD, 버튼, USB 등을 종합 제어하는 모듈</div>
+<table>
+<thead><tr><th style="width:220px">함수</th><th>설명</th><th style="width:40%">파라미터</th></tr></thead>
+<tbody>
+<tr>
+<td><code>Connect</code></td>
+<td>벤치에 시리얼 연결합니다. 장비 추가 시 자동 호출됩니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>Disconnect</code></td>
+<td>벤치 연결을 해제합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>ACCOnOff</code></td>
+<td>ACC(Accessory) 전원을 켜거나 끕니다.</td>
+<td style="font-size:12px"><code>state</code>: 0 = OFF (끄기), 1 = ON (켜기)<br><code>bench_info</code>: 벤치 종류. &#x27;OLD_BENCH&#x27;(기본) 또는 &#x27;NEW_BENCH&#x27;</td>
+</tr>
+<tr>
+<td><code>ACCSinglePulse</code></td>
+<td>ACC 전원에 단일 펄스를 생성합니다. 전압을 순간적으로 변동시키는 테스트에 사용합니다.</td>
+<td style="font-size:12px"><code>nVoltage</code>: 펄스 전압 (V)<br><code>nDelay</code>: 펄스 간 지연 시간 (ms)<br><code>nCnt</code>: 펄스 반복 횟수</td>
+</tr>
+<tr>
+<td><code>AccControl</code></td>
+<td>ACC 릴레이를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON<br><code>bench_info</code>: 벤치 종류</td>
+</tr>
+<tr>
+<td><code>AccVoltage</code></td>
+<td>ACC 전압 상태를 설정합니다.</td>
+<td style="font-size:12px"><code>nState</code>: 전압 상태 값</td>
+</tr>
+<tr>
+<td><code>BatteryOnOff</code></td>
+<td>배터리 전원을 켜거나 끕니다.</td>
+<td style="font-size:12px"><code>nState</code>: 0 = OFF (배터리 차단), 1 = ON (배터리 연결)<br><code>bench_info</code>: 벤치 종류. &#x27;OLD_BENCH&#x27;(기본) 또는 &#x27;NEW_BENCH&#x27;</td>
+</tr>
+<tr>
+<td><code>BatteryControl</code></td>
+<td>배터리 릴레이를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON<br><code>bench_info</code>: 벤치 종류</td>
+</tr>
+<tr>
+<td><code>BatteryMinusControl</code></td>
+<td>배터리 마이너스(-) 단자 릴레이를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF (연결), 1 = ON (차단)</td>
+</tr>
+<tr>
+<td><code>BatteryVoltage</code></td>
+<td>배터리 전압 상태를 설정합니다.</td>
+<td style="font-size:12px"><code>nState</code>: 전압 상태 값</td>
+</tr>
+<tr>
+<td><code>BatterySinglePulse</code></td>
+<td>배터리에 단일 펄스를 생성합니다.</td>
+<td style="font-size:12px"><code>nVoltage</code>: 펄스 전압 (V)<br><code>nDelay</code>: 펄스 간 지연 시간 (ms)<br><code>nCnt</code>: 펄스 반복 횟수</td>
+</tr>
+<tr>
+<td><code>IGNControl</code></td>
+<td>이그니션(IGN) 전원을 제어합니다.</td>
+<td style="font-size:12px"><code>status</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>IGN3Control</code></td>
+<td>이그니션 3(IGN3) 전원을 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>ALTControl</code></td>
+<td>알터네이터(발전기) 신호를 제어합니다.</td>
+<td style="font-size:12px"><code>status</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>ILLControl</code></td>
+<td>일루미네이션(차량 조명 연동 신호)을 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>ILLControlMinus</code></td>
+<td>일루미네이션 마이너스 신호를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>ReverseControl</code></td>
+<td>후진(Reverse) 기어 신호를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF (전진), 1 = ON (후진)</td>
+</tr>
+<tr>
+<td><code>ReverseActiveHigh</code></td>
+<td>후진 신호를 Active High로 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>ReverseActiveLow</code></td>
+<td>후진 신호를 Active Low로 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>ParkingControl</code></td>
+<td>주차(Parking) 신호를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>PPositonControl</code></td>
+<td>P(주차) 기어 포지션 신호를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>NPositionControl</code></td>
+<td>N(중립) 기어 포지션 신호를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>SpeedControl</code></td>
+<td>차량 속도 신호를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF (정지), 1 = ON (주행)</td>
+</tr>
+<tr>
+<td><code>DoorControl</code></td>
+<td>도어 열림/닫힘 신호를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF (닫힘), 1 = ON (열림)</td>
+</tr>
+<tr>
+<td><code>DoorUnLockControl</code></td>
+<td>도어 잠금 해제 신호를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF (잠금), 1 = ON (해제)</td>
+</tr>
+<tr>
+<td><code>TransDetectControl</code></td>
+<td>변속기 감지 신호를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>FUELControl</code></td>
+<td>연료 관련 신호를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>KeylessBootingControl</code></td>
+<td>키리스(스마트키) 부팅 신호를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>AutolightControl</code></td>
+<td>오토라이트(자동 조명) 신호를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>AlarmDetectControl</code></td>
+<td>알람 감지 신호를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>AirbagCrashDetection</code></td>
+<td>에어백 충돌 감지 신호를 제어합니다.</td>
+<td style="font-size:12px"><code>model</code>: 차량 모델명<br><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>ShieldBoxControl</code></td>
+<td>실드 박스(전파 차폐 박스) 개폐를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF (닫기), 1 = ON (열기)</td>
+</tr>
+<tr>
+<td><code>ANTControl</code></td>
+<td>안테나 릴레이를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>AmpControl</code></td>
+<td>앰프(외장 오디오 증폭기) 전원을 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>MICControl</code></td>
+<td>마이크 릴레이를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>AUXControl</code></td>
+<td>AUX 입력 릴레이를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>CDControl</code></td>
+<td>CD 드라이브 릴레이를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>IPODControl</code></td>
+<td>iPod 연결 릴레이를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>RcInControl</code></td>
+<td>RC 입력 릴레이를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>ComEnableControl</code></td>
+<td>통신(COM) 활성화를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF (비활성), 1 = ON (활성)</td>
+</tr>
+<tr>
+<td><code>Detent</code></td>
+<td>디텐트(볼륨 노브 등 회전 감지) 신호를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>AVNSDDetect</code></td>
+<td>AVN SD 카드 감지 신호를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF (미삽입), 1 = ON (삽입)</td>
+</tr>
+<tr>
+<td><code>USB1Control</code></td>
+<td>USB 1 포트 릴레이를 제어합니다.</td>
+<td style="font-size:12px"><code>Status</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>USBFrontSwitchControl</code></td>
+<td>전면 USB 스위치 릴레이를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>USBRearSwitchControl</code></td>
+<td>후면 USB 스위치 릴레이를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>USBSelectorControl</code></td>
+<td>USB 셀렉터의 포트를 선택합니다.</td>
+<td style="font-size:12px"><code>nOnPortNum</code>: 활성화할 USB 포트 번호</td>
+</tr>
+<tr>
+<td><code>USBSelector10CHSwitch5CH</code></td>
+<td>USB 셀렉터의 10채널/5채널 스위치를 제어합니다.</td>
+<td style="font-size:12px"><code>nType</code>: 스위치 타입<br><code>nPortNum</code>: 포트 번호<br><code>nOnOffStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>Telltale</code></td>
+<td>텔테일(계기판 경고등) 릴레이를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>TelltaleLED</code></td>
+<td>텔테일 LED 점멸 주기를 설정합니다.</td>
+<td style="font-size:12px"><code>nPeriod</code>: 점멸 주기 (ms)</td>
+</tr>
+<tr>
+<td><code>CheckTelltale</code></td>
+<td>텔테일(경고등) 상태를 확인합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>LEDPulse</code></td>
+<td>LED 점멸 주기를 설정합니다.</td>
+<td style="font-size:12px"><code>nPeriod</code>: 점멸 주기 (ms)</td>
+</tr>
+<tr>
+<td><code>LedTCU4</code></td>
+<td>TCU4 LED 점멸 주기를 설정합니다.</td>
+<td style="font-size:12px"><code>nPeriod</code>: 점멸 주기 (ms)</td>
+</tr>
+<tr>
+<td><code>CheckLedTCU4</code></td>
+<td>TCU4 LED 상태를 확인합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>GetLEDPulse</code></td>
+<td>현재 LED 펄스 값을 읽어옵니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>CheckLCD</code></td>
+<td>LCD 디스플레이 상태를 확인합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 확인할 상태 값</td>
+</tr>
+<tr>
+<td><code>CheckLCDDimming</code></td>
+<td>LCD 디밍(밝기 조절) 상태를 확인합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 확인할 상태 값</td>
+</tr>
+<tr>
+<td><code>SetLCDValue</code></td>
+<td>LCD 값을 설정합니다.</td>
+<td style="font-size:12px"><code>nLCDValue</code>: 설정할 LCD 값</td>
+</tr>
+<tr>
+<td><code>GetLCDValue</code></td>
+<td>현재 LCD 값을 읽어옵니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>CheckVoltage</code></td>
+<td>전압이 지정 범위 내에 있는지 확인합니다.</td>
+<td style="font-size:12px"><code>nMin</code>: 최소 전압 (V)<br><code>nMax</code>: 최대 전압 (V)</td>
+</tr>
+<tr>
+<td><code>CheckCurrent</code></td>
+<td>전류가 지정 범위 내에 있는지 확인합니다.</td>
+<td style="font-size:12px"><code>nMin</code>: 최소 전류 (A)<br><code>nMax</code>: 최대 전류 (A)</td>
+</tr>
+<tr>
+<td><code>ExtCheckCurrent</code></td>
+<td>외부 전류가 지정 범위 내에 있는지 확인합니다.</td>
+<td style="font-size:12px"><code>fMin</code>: 최소 전류 (A)<br><code>fMax</code>: 최대 전류 (A)</td>
+</tr>
+<tr>
+<td><code>EXT_CURRENT</code></td>
+<td>외부 전류를 지연 후 범위 확인합니다.</td>
+<td style="font-size:12px"><code>min_current</code>: 최소 전류 (A)<br><code>max_current</code>: 최대 전류 (A)<br><code>check_delay</code>: 확인 전 지연 시간 (초)</td>
+</tr>
+<tr>
+<td><code>GetEXTCurrent</code></td>
+<td>현재 외부 전류 값을 읽어옵니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>CheckEXTCurrentList</code></td>
+<td>수집된 외부 전류 목록이 범위 내인지 확인합니다.</td>
+<td style="font-size:12px"><code>nMin</code>: 최소 전류 (A)<br><code>nMax</code>: 최대 전류 (A)</td>
+</tr>
+<tr>
+<td><code>ClearEXTCurrentList</code></td>
+<td>수집된 외부 전류 목록을 초기화합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>CheckKeyOutVoltage</code></td>
+<td>키 출력 전압이 범위 내에 있는지 확인합니다.</td>
+<td style="font-size:12px"><code>nMin</code>: 최소 전압 (V)<br><code>nMax</code>: 최대 전압 (V)</td>
+</tr>
+<tr>
+<td><code>ClearKeyOutVoltageList</code></td>
+<td>키 출력 전압 목록을 초기화합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>CheckSound</code></td>
+<td>오디오 출력 상태를 확인합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 확인할 상태 값</td>
+</tr>
+<tr>
+<td><code>PlaySound</code></td>
+<td>벤치에서 사운드 파일을 재생합니다.</td>
+<td style="font-size:12px"><code>strFileName</code>: 재생할 파일 이름<br><code>nFileNameLen</code>: 파일 이름 길이</td>
+</tr>
+<tr>
+<td><code>InitSoundUpdate</code></td>
+<td>사운드 업데이트를 초기화합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>WaitSoundUpdate</code></td>
+<td>사운드 업데이트가 완료될 때까지 대기합니다.</td>
+<td style="font-size:12px"><code>timeout</code>: 최대 대기 시간 (초)</td>
+</tr>
+<tr>
+<td><code>RequestLightSensorControl</code></td>
+<td>조도 센서를 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON<br><code>pbData</code>: PB 데이터<br><code>twData</code>: TW 데이터</td>
+</tr>
+<tr>
+<td><code>GetLightSensorData</code></td>
+<td>조도 센서 데이터를 읽어옵니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>CheckLightSensorResult</code></td>
+<td>조도 센서 결과를 확인합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>TenButton</code></td>
+<td>10버튼 패널에서 버튼을 누릅니다.</td>
+<td style="font-size:12px"><code>nButton</code>: 버튼 번호 (0~9)<br><code>nDelay</code>: 버튼 누름 지속 시간 (ms)</td>
+</tr>
+<tr>
+<td><code>ThreeButton</code></td>
+<td>3버튼 패널에서 버튼을 누릅니다.</td>
+<td style="font-size:12px"><code>nButton</code>: 버튼 번호 (0~2)<br><code>nDelay</code>: 버튼 누름 지속 시간 (ms)</td>
+</tr>
+<tr>
+<td><code>ThreeButton_Front</code></td>
+<td>전면 3버튼 패널에서 버튼을 누릅니다.</td>
+<td style="font-size:12px"><code>nButton</code>: 버튼 번호 (0~2)<br><code>nDelay</code>: 버튼 누름 지속 시간 (ms)</td>
+</tr>
+<tr>
+<td><code>ThreeButton_Rear</code></td>
+<td>후면 3버튼 패널에서 버튼을 누릅니다.</td>
+<td style="font-size:12px"><code>nButton</code>: 버튼 번호 (0~2)<br><code>nDelay</code>: 버튼 누름 지속 시간 (ms)</td>
+</tr>
+<tr>
+<td><code>TwoButton</code></td>
+<td>2버튼 패널에서 버튼을 누릅니다.</td>
+<td style="font-size:12px"><code>nButton</code>: 버튼 번호 (0~1)<br><code>nDelay</code>: 버튼 누름 지속 시간 (ms)</td>
+</tr>
+<tr>
+<td><code>rf_btn_press</code></td>
+<td>RF 버튼을 누릅니다.</td>
+<td style="font-size:12px"><code>btnNum</code>: 버튼 번호<br><code>delay</code>: 누름 지속 시간 (ms)</td>
+</tr>
+<tr>
+<td><code>FileToSD</code></td>
+<td>파일을 SD 카드로 복사합니다.</td>
+<td style="font-size:12px"><code>userFilePath</code>: PC의 원본 파일 경로<br><code>sdCardFileName</code>: SD 카드에 저장될 파일 이름</td>
+</tr>
+<tr>
+<td><code>Relay_10</code></td>
+<td>릴레이 10번을 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>Relay_11</code></td>
+<td>릴레이 11번을 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>Relay_12</code></td>
+<td>릴레이 12번을 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>Relay_13</code></td>
+<td>릴레이 13번을 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>Relay_14</code></td>
+<td>릴레이 14번을 제어합니다.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>RelayInitialization</code></td>
+<td>모든 릴레이를 초기값으로 설정합니다.</td>
+<td style="font-size:12px"><code>init_value</code>: 초기화 값</td>
+</tr>
+<tr>
+<td><code>SetRelayConfig</code></td>
+<td>릴레이 구성을 설정합니다.</td>
+<td style="font-size:12px"><code>nRelayCfg</code>: 릴레이 구성 값</td>
+</tr>
+<tr>
+<td><code>CallRelayFunc</code></td>
+<td>릴레이 함수를 인덱스로 호출합니다.</td>
+<td style="font-size:12px"><code>func_index</code>: 함수 인덱스 번호<br><code>data</code>: 전달할 데이터</td>
+</tr>
+<tr>
+<td><code>RequestRelayInitialStatus</code></td>
+<td>릴레이 초기 상태를 요청합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>RequestRelaySet</code></td>
+<td>릴레이를 명령 목록으로 설정합니다.</td>
+<td style="font-size:12px"><code>nCmdList</code>: 릴레이 명령 목록</td>
+</tr>
+<tr>
+<td><code>SystemReset</code></td>
+<td>벤치 시스템을 리셋합니다.</td>
+<td style="font-size:12px"><code>nMs</code>: 리셋 후 대기 시간 (ms). 기본값: 1000</td>
+</tr>
+<tr>
+<td><code>SetSystemTime</code></td>
+<td>벤치 시스템 시간을 현재 PC 시간으로 설정합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>RequestSystemVersion</code></td>
+<td>벤치 시스템 버전 정보를 요청합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>CalcCRC16</code></td>
+<td>CRC-16 체크섬을 계산합니다. 통신 데이터 검증용.</td>
+<td style="font-size:12px"><code>listData</code>: 데이터 리스트<br><code>nLen</code>: 데이터 길이</td>
+</tr>
+<tr>
+<td><code>CalibrationStartOrStop</code></td>
+<td>캘리브레이션(보정)을 시작하거나 중지합니다.</td>
+<td style="font-size:12px"><code>sensitivity</code>: 감도 값<br><code>threshold</code>: 임계값</td>
+</tr>
+<tr>
+<td><code>AnnouncesAutoTestStartOrEnd</code></td>
+<td>자동 테스트 시작/종료를 알립니다.</td>
+<td style="font-size:12px"><code>bisStart</code>: True = 테스트 시작, False = 테스트 종료</td>
+</tr>
+<tr>
+<td><code>BATSwitchSETtoPC</code></td>
+<td>배터리 스위치를 SET→PC로 전환합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>BATSwitchUSBtoPC</code></td>
+<td>배터리 스위치를 USB→PC로 전환합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>RequestAudioFrequency</code></td>
+<td>오디오 주파수 측정을 요청합니다.</td>
+<td style="font-size:12px"><code>bStart</code>: True = 시작, False = 중지<br><code>nMs</code>: 측정 간격 (ms)</td>
+</tr>
+<tr>
+<td><code>RequestAudioStatusAndADCValue</code></td>
+<td>오디오 상태와 ADC 값을 요청합니다.</td>
+<td style="font-size:12px"><code>nMs</code>: 응답 대기 시간 (ms)</td>
+</tr>
+<tr>
+<td><code>RequestAudioStatusAndADCValuePeriodicallyNoti</code></td>
+<td>오디오 상태와 ADC 값을 주기적으로 알림 받습니다.</td>
+<td style="font-size:12px"><code>bStart</code>: True = 시작, False = 중지<br><code>nPeriodMs</code>: 알림 주기 (ms)</td>
+</tr>
+<tr>
+<td><code>RequestAudioStatusPeriodicallyNoti</code></td>
+<td>오디오 상태를 주기적으로 알림 받습니다.</td>
+<td style="font-size:12px"><code>bStart</code>: True = 시작, False = 중지<br><code>nPeriodMs</code>: 알림 주기 (ms)</td>
+</tr>
+<tr>
+<td><code>RequestCurrentPeriodicallyNoti</code></td>
+<td>전류 값을 주기적으로 알림 받습니다.</td>
+<td style="font-size:12px"><code>bStart</code>: True = 시작, False = 중지<br><code>nPeriodMs</code>: 알림 주기 (ms)</td>
+</tr>
+<tr>
+<td><code>RequestExtCurrentPeriodicallyNoti</code></td>
+<td>외부 전류 값을 주기적으로 알림 받습니다.</td>
+<td style="font-size:12px"><code>bStart</code>: True = 시작, False = 중지<br><code>nPeriodMs</code>: 알림 주기 (ms)</td>
+</tr>
+<tr>
+<td><code>RequestVoltagePeriodicallyNoti</code></td>
+<td>전압 값을 주기적으로 알림 받습니다.</td>
+<td style="font-size:12px"><code>bStart</code>: True = 시작, False = 중지<br><code>nPeriodMs</code>: 알림 주기 (ms)</td>
+</tr>
+<tr>
+<td><code>RequestKeyOutVoltagePeriodicallyNoti</code></td>
+<td>키 출력 전압을 주기적으로 알림 받습니다.</td>
+<td style="font-size:12px"><code>bStart</code>: True = 시작, False = 중지<br><code>nPeriodMs</code>: 알림 주기 (ms)</td>
+</tr>
+<tr>
+<td><code>RequestLCDStatus</code></td>
+<td>LCD 상태를 요청합니다.</td>
+<td style="font-size:12px"><code>bStart</code>: True = 시작, False = 중지<br><code>nMs</code>: 응답 대기 시간 (ms)</td>
+</tr>
+<tr>
+<td><code>RequestLCDIllumiSensorValue</code></td>
+<td>LCD 조도 센서 값을 요청합니다.</td>
+<td style="font-size:12px"><code>bStart</code>: True = 시작, False = 중지<br><code>nMs</code>: 응답 대기 시간 (ms)</td>
+</tr>
+<tr>
+<td><code>RequestLCDStatusAndIllumiSensorValuePeriodicallyNoti</code></td>
+<td>LCD 상태와 조도 센서 값을 주기적으로 알림 받습니다.</td>
+<td style="font-size:12px"><code>bStart</code>: True = 시작, False = 중지<br><code>nPeriodMs</code>: 알림 주기 (ms)</td>
+</tr>
+<tr>
+<td><code>RequestSoundFileInfo</code></td>
+<td>사운드 파일 정보를 요청합니다.</td>
+<td style="font-size:12px"><code>nSoundType</code>: 사운드 타입</td>
+</tr>
+<tr>
+<td><code>RequestSoundFileList</code></td>
+<td>사운드 파일 목록을 요청합니다.</td>
+<td style="font-size:12px"><code>nSoundType</code>: 사운드 타입</td>
+</tr>
+<tr>
+<td><code>Read</code></td>
+<td>벤치에서 데이터를 읽어옵니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>Send</code></td>
+<td>벤치에 직접 바이트 데이터를 전송합니다.</td>
+<td style="font-size:12px"><code>listData</code>: 전송할 데이터 리스트<br><code>nLen</code>: 데이터 길이</td>
+</tr>
+<tr>
+<td><code>WriteRawString</code></td>
+<td>벤치에 원시 문자열을 전송합니다.</td>
+<td style="font-size:12px"><code>string</code>: 전송할 문자열</td>
+</tr>
+<tr>
+<td><code>ReceiveStart</code></td>
+<td>벤치 데이터 수신을 시작/중지합니다.</td>
+<td style="font-size:12px"><code>bStart</code>: True = 수신 시작, False = 수신 중지<br><code>queue</code>: 수신 데이터를 넣을 큐 (선택)</td>
+</tr>
+<tr>
+<td><code>timer_compare</code></td>
+<td>타이머 값을 비교합니다.</td>
+<td style="font-size:12px"><code>Time_Init</code>: 시작 시간<br><code>Time_Check</code>: 비교할 시간</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="mod-SmartBench">SmartBench</h3>
+<div class="callout callout-info">Smart Bench TCP 제어 — TCP 소켓으로 Smart Bench 장비의 전원, 버튼, 전류, LED를 제어하는 모듈</div>
+<table>
+<thead><tr><th style="width:220px">함수</th><th>설명</th><th style="width:40%">파라미터</th></tr></thead>
+<tbody>
+<tr>
+<td><code>Connect</code></td>
+<td>Smart Bench에 TCP 연결합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>Disconnect</code></td>
+<td>Smart Bench 연결을 해제합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>Battery</code></td>
+<td>Battery(+B) 릴레이를 제어합니다.</td>
+<td style="font-size:12px"><code>status</code>: &#x27;on&#x27; 또는 &#x27;off&#x27;</td>
+</tr>
+<tr>
+<td><code>ACC</code></td>
+<td>ACC 릴레이를 제어합니다.</td>
+<td style="font-size:12px"><code>status</code>: &#x27;on&#x27; 또는 &#x27;off&#x27;</td>
+</tr>
+<tr>
+<td><code>IGN</code></td>
+<td>IGN 릴레이를 제어합니다.</td>
+<td style="font-size:12px"><code>status</code>: &#x27;on&#x27; 또는 &#x27;off&#x27;</td>
+</tr>
+<tr>
+<td><code>IGN3</code></td>
+<td>IGN3 릴레이를 제어합니다.</td>
+<td style="font-size:12px"><code>status</code>: &#x27;on&#x27; 또는 &#x27;off&#x27;</td>
+</tr>
+<tr>
+<td><code>USB</code></td>
+<td>USB 릴레이를 제어합니다.</td>
+<td style="font-size:12px"><code>status</code>: &#x27;on&#x27; 또는 &#x27;off&#x27;</td>
+</tr>
+<tr>
+<td><code>CheckCurrent</code></td>
+<td>전류를 측정하여 범위 내 진입 시 PASS (연속 3회), 타임아웃 시 FAIL.</td>
+<td style="font-size:12px"><code>min_current</code>: 최소 전류 (A). 예: 0.5<br><code>max_current</code>: 최대 전류 (A). 예: 2.0<br><code>check_delay</code>: 타임아웃 (ms). 예: 10000</td>
+</tr>
+<tr>
+<td><code>CheckCurrentMoment</code></td>
+<td>순간 전류를 측정하여 범위 내이면 PASS, 3회 연속 범위 외이면 FAIL.</td>
+<td style="font-size:12px"><code>min_current</code>: 최소 전류 (A)<br><code>max_current</code>: 최대 전류 (A)</td>
+</tr>
+<tr>
+<td><code>CheckCurrentMaintain</code></td>
+<td>전류가 지정 시간 동안 범위 내 유지되는지 검증합니다.</td>
+<td style="font-size:12px"><code>min_current</code>: 최소 전류 (A)<br><code>max_current</code>: 최대 전류 (A)<br><code>check_delay</code>: 유지 시간 (ms)</td>
+</tr>
+<tr>
+<td><code>ButtonPress</code></td>
+<td>버튼을 누릅니다.</td>
+<td style="font-size:12px"><code>button_num</code>: 버튼 번호 (0=ECALL 등)<br><code>press_time</code>: 누르는 시간 (ms). 예: 3000</td>
+</tr>
+<tr>
+<td><code>LEDCheck</code></td>
+<td>LED 상태를 검증합니다.</td>
+<td style="font-size:12px"><code>data</code>: LED 검증 데이터. 예: &#x27;honda;4.0;GREEN;BLINK;RED;ON&#x27;</td>
+</tr>
+<tr>
+<td><code>Relay</code></td>
+<td>릴레이를 직접 제어합니다.</td>
+<td style="font-size:12px"><code>relay_num</code>: 릴레이 번호<br><code>status</code>: &#x27;on&#x27; 또는 &#x27;off&#x27;</td>
+</tr>
+<tr>
+<td><code>SendRaw</code></td>
+<td>원시 텍스트 명령을 직접 전송합니다.</td>
+<td style="font-size:12px"><code>command</code>: 전송할 명령어 문자열</td>
+</tr>
+<tr>
+<td><code>GetStatus</code></td>
+<td>현재 모듈 상태를 조회합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="mod-WoohyunBench">WoohyunBench</h3>
+<div class="callout callout-info">우현벤치 — UDP 통신으로 차량 전원(IGN/ACC/배터리) 제어 + CAN FD 신호 송신을 지원하는 통합 테스트 벤치</div>
+<table>
+<thead><tr><th style="width:220px">함수</th><th>설명</th><th style="width:40%">파라미터</th></tr></thead>
+<tbody>
+<tr>
+<td><code>Connect</code></td>
+<td>벤치 장비에 UDP 네트워크 연결을 수행합니다. 장비 추가 시 자동으로 호출되므로 보통 수동 호출이 필요 없습니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>Disconnect</code></td>
+<td>벤치 장비와의 UDP 네트워크 연결을 해제합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>IsConnected</code></td>
+<td>벤치 장비가 현재 연결되어 있는지 확인합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>IGN1</code></td>
+<td>이그니션 1(IGN1) 전원을 켜거나 끕니다. 차량의 시동 전원에 해당합니다.</td>
+<td style="font-size:12px"><code>on_off</code>: 0 = OFF (전원 끄기), 1 = ON (전원 켜기). 기본값: 1 (ON)</td>
+</tr>
+<tr>
+<td><code>IGN1_Read</code></td>
+<td>이그니션 1(IGN1)의 현재 전원 상태를 읽어옵니다. 반환값: 0=OFF, 1=ON, -1=읽기 실패</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>IGN2</code></td>
+<td>이그니션 2(IGN2) 전원을 켜거나 끕니다. 보조 이그니션 전원에 해당합니다.</td>
+<td style="font-size:12px"><code>on_off</code>: 0 = OFF (전원 끄기), 1 = ON (전원 켜기). 기본값: 1 (ON)</td>
+</tr>
+<tr>
+<td><code>IGN2_Read</code></td>
+<td>이그니션 2(IGN2)의 현재 전원 상태를 읽어옵니다. 반환값: 0=OFF, 1=ON, -1=읽기 실패</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>ACC</code></td>
+<td>ACC(Accessory) 전원을 켜거나 끕니다. 차량의 액세서리 전원(라디오, 내비 등 작동 가능 상태)에 해당합니다.</td>
+<td style="font-size:12px"><code>on_off</code>: 0 = OFF (전원 끄기), 1 = ON (전원 켜기). 기본값: 1 (ON)</td>
+</tr>
+<tr>
+<td><code>ACC_Read</code></td>
+<td>ACC 전원의 현재 상태를 읽어옵니다. 반환값: 0=OFF, 1=ON, -1=읽기 실패</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>BATTERY</code></td>
+<td>배터리 릴레이를 켜거나 끕니다. OFF 시 차량에 배터리 전원이 완전히 차단됩니다.</td>
+<td style="font-size:12px"><code>on_off</code>: 0 = OFF (배터리 차단), 1 = ON (배터리 연결). 기본값: 1 (ON)</td>
+</tr>
+<tr>
+<td><code>BATTERY_Read</code></td>
+<td>배터리 릴레이의 현재 상태를 읽어옵니다. 반환값: 0=OFF, 1=ON, -1=읽기 실패</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>BatterySet</code></td>
+<td>배터리 출력 전압을 설정합니다. 전압 변동 테스트에 사용합니다.</td>
+<td style="font-size:12px"><code>voltage</code>: 설정할 전압 (V 단위, 소수점 가능). 예: 12.0, 14.4, 9.0. 기본값: 14.4V</td>
+</tr>
+<tr>
+<td><code>BatteryCheck</code></td>
+<td>현재 배터리 출력 전압을 측정합니다. 반환값: 전압(V), 실패 시 -1.0</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>AmpereCheck</code></td>
+<td>현재 소비 전류를 측정합니다. 반환값: 전류(A), 실패 시 -1.0</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>SendCommand</code></td>
+<td>벤치에 직접 UDP 명령을 전송합니다. 고급 사용자용이며, 일반적으로 위의 개별 함수 사용을 권장합니다.</td>
+<td style="font-size:12px"><code>cmd1</code>: 명령 코드 1 (정수, 예: 0x24 → 36)<br><code>cmd2</code>: 명령 코드 2 (정수, 예: 0x21 → 33)<br><code>data_hex</code>: 추가 데이터 (공백으로 구분된 16진수 문자열). 예: &#x27;FF 01&#x27;. 기본값: 빈 문자열</td>
+</tr>
+<tr>
+<td><code>GetInfo</code></td>
+<td>벤치의 현재 연결 정보(IP, 포트, signal_file, 로드된 신호 수, 연결 상태)를 반환합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>LoadSignals</code></td>
+<td>CAN FD 신호 정의를 Excel(.xls/.xlsx) 또는 XML(.CAN)에서 런타임에 로드합니다.</td>
+<td style="font-size:12px"><code>file_path</code>: 신호 정의 파일 절대 경로</td>
+</tr>
+<tr>
+<td><code>SendSignal</code></td>
+<td>이름으로 지정한 CAN FD 신호를 physical value로 송신합니다. 200ms 간격으로 5회 반복. 신호 정의 파일이 로드되어 있어야 합니다.</td>
+<td style="font-size:12px"><code>signal_name</code>: 신호 이름 (예: &#x27;Warn_DrvDrSwSta&#x27;)<br><code>physical_value</code>: 물리값 (정수/실수/hex 문자열 &#x27;0xAB&#x27;)</td>
+</tr>
+<tr>
+<td><code>DoorTest</code></td>
+<td>운전석 도어 스위치 신호(Warn_DrvDrSwSta)를 ON/OFF 반복 송신하여 도어 동작을 테스트합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>TestAllSignals</code></td>
+<td>로드된 모든 CAN FD 신호를 중간값으로 순차 송신합니다. 부하/연결 확인용.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>CheckSignals</code></td>
+<td>로드된 CAN FD 신호 정의 목록을 로그로 덤프합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>SendCanFd</code></td>
+<td>Raw CAN FD 프레임을 직접 송신합니다 (신호 정의 불필요, 저수준 디버깅용).</td>
+<td style="font-size:12px"><code>can_id</code>: CAN ID (정수, 예: 0x411 → 1041)<br><code>payload_hex</code>: 페이로드 (공백/쉼표 허용 hex 문자열, 예: &#x27;01 02 03&#x27;)</td>
+</tr>
+<tr>
+<td><code>ReinitCanFd</code></td>
+<td>CAN FD 버스 재초기화 (baudrate/data bit time 변경 시). 기본 500k/2M.</td>
+<td style="font-size:12px"><code>baudrate</code>: arbitration phase baudrate (2바이트 정수, 기본 0x1F4)<br><code>databit_time</code>: data phase bit time (2바이트 정수, 기본 0x7D0)</td>
+</tr>
+</tbody>
+</table>
+
+
+
+<h2 id="cat-can">CAN 통신</h2>
+
+<h3 id="mod-CANOE">CANOE</h3>
+<div class="callout callout-info">CANoe 제어 — Vector CANoe 시뮬레이션 소프트웨어의 시작/중지, 환경변수/시스템변수 설정을 제어하는 모듈</div>
+<table>
+<thead><tr><th style="width:220px">함수</th><th>설명</th><th style="width:40%">파라미터</th></tr></thead>
+<tbody>
+<tr>
+<td><code>open_simulation</code></td>
+<td>CANoe 시뮬레이션을 엽니다 (.cfg 파일 로드).</td>
+<td style="font-size:12px"><code>cfgname</code>: CANoe 설정 파일(.cfg) 경로. 예: &#x27;C:/canoe/project.cfg&#x27;</td>
+</tr>
+<tr>
+<td><code>close_simulation</code></td>
+<td>CANoe 시뮬레이션을 닫고 프로그램을 종료합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>start_Measurement</code></td>
+<td>CANoe 측정(Measurement)을 시작합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>stop_Measurement</code></td>
+<td>CANoe 측정(Measurement)을 중지합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>get_EnvVar</code></td>
+<td>CANoe 환경 변수 값을 읽습니다.</td>
+<td style="font-size:12px"><code>var</code>: 환경 변수 이름</td>
+</tr>
+<tr>
+<td><code>set_EnvVar</code></td>
+<td>CANoe 환경 변수 값을 설정합니다.</td>
+<td style="font-size:12px"><code>var</code>: 환경 변수 이름<br><code>value</code>: 설정할 값 (숫자)</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="mod-CANAT">CANAT</h3>
+<div class="callout callout-info">CANat 디바이스 — CANat 하드웨어를 통해 CAN 버스 메시지를 송수신하는 모듈</div>
+<table>
+<thead><tr><th style="width:220px">함수</th><th>설명</th><th style="width:40%">파라미터</th></tr></thead>
+<tbody>
+<tr>
+<td><code>init</code></td>
+<td>CANat 디바이스를 초기화하고 연결합니다.</td>
+<td style="font-size:12px"><code>comport</code>: COM 포트. 예: &#x27;COM3&#x27;<br><code>log_path</code>: 로그 파일 저장 경로<br><code>ch1_fd</code>: 채널 1 CAN FD 사용 여부. True(기본) = FD, False = Classic<br><code>ch2_fd</code>: 채널 2 CAN FD 사용 여부. True = FD, False(기본) = Classic</td>
+</tr>
+<tr>
+<td><code>disconnect</code></td>
+<td>CANat 디바이스 연결을 해제합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>send_can_message</code></td>
+<td>CAN 메시지를 전송합니다.</td>
+<td style="font-size:12px"><code>message_id</code>: CAN 메시지 ID<br><code>cycle_time</code>: 전송 주기 (ms). 0이면 1회 전송<br><code>can_message</code>: 메시지 데이터 (16진수)<br><code>bus_channel</code>: CAN 채널<br><code>message_type</code>: &#x27;FD&#x27;(기본) 또는 &#x27;Classic&#x27;</td>
+</tr>
+<tr>
+<td><code>stop_can_message</code></td>
+<td>특정 CAN 메시지의 주기적 전송을 중지합니다.</td>
+<td style="font-size:12px"><code>message_id</code>: 중지할 메시지 ID<br><code>cycle_time</code>: 주기<br><code>can_message</code>: 메시지 데이터<br><code>bus_channel</code>: CAN 채널<br><code>message_type</code>: &#x27;FD&#x27; 또는 &#x27;Classic&#x27;</td>
+</tr>
+<tr>
+<td><code>send_cam_message_all_stop</code></td>
+<td>모든 CAN 메시지 전송을 중지합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>can_message_save_start</code></td>
+<td>CAN 메시지를 파일로 저장하기 시작합니다.</td>
+<td style="font-size:12px"><code>save_path</code>: 저장 경로. 비워두면 기본 경로 사용</td>
+</tr>
+<tr>
+<td><code>can_message_save_stop</code></td>
+<td>CAN 메시지 저장을 중지합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+</tbody>
+</table>
+
+
+
+<h2 id="cat-comm">통신 (시리얼/SSH/UART/DLT)</h2>
+
+<h3 id="mod-SerialLogging">SerialLogging</h3>
+<div class="callout callout-info">시리얼 로깅 — 시리얼 포트에 연결하여 로그를 캡처·저장하고 키워드 검출하는 모듈.
+
+**⚠️ 사용법: StartLogging과 StopLogging은 반드시 한 셋트로 사용해야 합니다.**
+- StartLogging만 호출하고 StopLogging을 누락하면: 로그가 파일로 저장되지 않고, 시리얼 포트 연결이 종료되지 않아 다음 실행에서 포트 점유 오류가 발생할 수 있습니다.
+- 시나리오의 시작 부분에 StartLogging, 끝 부분에 StopLogging을 배치하여 한 쌍으로 운영하세요.
+- 시나리오 중간에 오류가 나도 cleanup이 자동으로 StopLogging을 호출해 포트를 닫지만, 정상 흐름에서는 명시적으로 StopLogging을 두는 것이 권장됩니다.
+
+표준 사용 패턴:
+  1) StartLogging()                              ← 시나리오 첫 스텝
+  2) SendCommand / SendCommand_*_on_keyword ...  ← 중간 스텝들
+  3) StopLogging()                               ← 시나리오 마지막 스텝 (로그 파일 저장 + 포트 해제)</div>
+<table>
+<thead><tr><th style="width:220px">함수</th><th>설명</th><th style="width:40%">파라미터</th></tr></thead>
+<tbody>
+<tr>
+<td><code>StartLogging</code></td>
+<td>시리얼 연결 + 캡처 시작 (메모리만, 파일 저장 없음). 뷰어 모달이 자동 오픈됩니다. **리턴 시점에 포트가 안정화되고 capture 스레드가 ready 상태**라 다음 스텝의 SendCommand가 씹히지 않음.
+
+**⚠️ 반드시 StopLogging과 한 셋트로 사용하세요.** StopLogging이 호출되어야 메모리 버퍼가 파일로 저장되고 시리얼 포트가 정상적으로 해제됩니다. StopLogging 누락 시 로그가 디스크에 저장되지 않고 포트가 점유 상태로 남습니다.</td>
+<td style="font-size:12px"><code>settle_ms</code>: 포트 open 후 안정화 대기(ms). 기본 500. USB-Serial 어댑터 reset/buffer settle 동안 다음 스텝이 씹히지 않게 확보. Arduino처럼 DTR-reset되는 보드는 1500~2000으로 늘리고, 빠른 산업용 시리얼은 100~200까지 낮출 수 있음.</td>
+</tr>
+<tr>
+<td><code>StopLogging</code></td>
+<td>시리얼 캡처 종료 + 메모리 버퍼를 파일로 일괄 저장 + 시리얼 포트 해제. 자동 경로 또는 지정 경로로 저장.
+
+**⚠️ StartLogging과 반드시 짝으로 호출하세요.** 이 함수가 호출되어야:
+  • 메모리에 누적된 로그가 .log 파일로 디스크에 저장됨
+  • 시리얼 포트 연결이 정상적으로 닫혀 다음 실행에서 재사용 가능
+  • capture 스레드가 정리되어 리소스 누수 방지
+파일 저장 단계에서 예외가 발생해도 finally에서 포트 해제는 무조건 수행됩니다.</td>
+<td style="font-size:12px"><code>save_path</code>: 저장 파일 경로. 빈 값이면 자동 (재생 중: run_dir/logs/serial_*.log, 스텝 테스트: backend/results/Temp_logs/serial_*.log)</td>
+</tr>
+<tr>
+<td><code>SendCommand</code></td>
+<td>시리얼 포트로 문자열 명령어를 전송합니다.</td>
+<td style="font-size:12px"><code>command</code>: 전송할 명령어. 예: &#x27;reboot&#x27;, &#x27;cat /proc/version&#x27;<br><code>encoding</code>: 인코딩 (기본 utf-8)<br><code>append_newline</code>: 개행 문자 자동 추가. true/false (기본 true)</td>
+</tr>
+<tr>
+<td><code>SendCommand_fail_on_keyword</code></td>
+<td>명령어 전송 후 응답에 keyword가 **포함되면 FAIL 판정**. &#x27;ERROR&#x27;/&#x27;Fail&#x27;/&#x27;crash&#x27; 등 비정상 키워드 검출용. 전송 직후 &#x27;time&#x27; 초간 새 라인만 모니터링 — 매칭된 라인은 모두 fail row로 누적되어 결과 표에 인라인(Fail_Count_N) 표시됨. 매칭 없으면 PASS 반환.</td>
+<td style="font-size:12px"><code>command</code>: 전송할 명령어. 예: &#x27;status&#x27;, &#x27;self_test&#x27;<br><code>keyword</code>: FAIL을 일으킬 검출 키워드. 예: &#x27;ERROR&#x27;, &#x27;Fail&#x27;, &#x27;crash&#x27;<br><code>time</code>: 응답 모니터링 시간(초). 기본 5<br><code>encoding</code>: 인코딩 (기본 utf-8)<br><code>append_newline</code>: 개행 문자 자동 추가. true/false (기본 true)</td>
+</tr>
+<tr>
+<td><code>SendCommand_pass_on_keyword</code></td>
+<td>명령어 전송 후 응답에 keyword가 **포함되면 PASS 판정**. &#x27;OK&#x27;/&#x27;Pass&#x27;/&#x27;BootComplete&#x27; 등 정상 응답 키워드 검출용. 발견 즉시 PASS 반환 (조기 종료). &#x27;time&#x27; 초 안에 발견되지 않으면 fail row 1건 누적 후 FAIL 반환.</td>
+<td style="font-size:12px"><code>command</code>: 전송할 명령어. 예: &#x27;ping&#x27;, &#x27;getversion&#x27;<br><code>keyword</code>: PASS를 만족할 키워드. 예: &#x27;OK&#x27;, &#x27;Pass&#x27;, &#x27;BootComplete&#x27;<br><code>time</code>: 응답 대기 시간(초). 기본 5<br><code>encoding</code>: 인코딩 (기본 utf-8)<br><code>append_newline</code>: 개행 문자 자동 추가. true/false (기본 true)</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="mod-SSHManager">SSHManager</h3>
+<div class="callout callout-info">SSH 접속 — SSH로 원격 장비에 접속하여 명령 실행, 파일 전송을 수행하는 모듈</div>
+<table>
+<thead><tr><th style="width:220px">함수</th><th>설명</th><th style="width:40%">파라미터</th></tr></thead>
+<tbody>
+<tr>
+<td><code>create_ssh_client</code></td>
+<td>SSH 연결을 생성합니다.</td>
+<td style="font-size:12px"><code>hostname</code>: 원격 장비 IP 또는 호스트명. 예: &#x27;192.168.1.100&#x27;<br><code>username</code>: SSH 사용자 이름. 예: &#x27;root&#x27;<br><code>password</code>: SSH 비밀번호<br><code>key_filePath</code>: SSH 키 파일 경로 (비밀번호 대신 사용). 기본값: None</td>
+</tr>
+<tr>
+<td><code>close_ssh_client</code></td>
+<td>SSH 연결을 종료합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>send_command</code></td>
+<td>SSH로 명령어를 실행하고 완료 후 전체 출력을 반환합니다 (블로킹). 한국어 Windows 출력은 cp949/euc-kr 인코딩으로 자동 처리.</td>
+<td style="font-size:12px"><code>command</code>: 실행할 명령어. 예: &#x27;ls -al&#x27;, &#x27;cat /etc/version&#x27;</td>
+</tr>
+<tr>
+<td><code>send_command_stream</code></td>
+<td>SSH로 명령어를 실행하고 즉시 [BG_TASK:bg_x] placeholder를 반환 (논블로킹). 결과는 실시간으로 스트리밍되며 폴링 엔드포인트로 진행 상황을 볼 수 있습니다. 오래 걸리는 명령(netstat, tail -f 등)에 유용.</td>
+<td style="font-size:12px"><code>command</code>: 실행할 명령어. 예: &#x27;netstat -a&#x27;, &#x27;tail -f /var/log/syslog&#x27;</td>
+</tr>
+<tr>
+<td><code>send_file</code></td>
+<td>로컬 파일을 원격 장비로 전송합니다.</td>
+<td style="font-size:12px"><code>local_path</code>: PC의 파일 경로<br><code>remote_path</code>: 원격 장비의 저장 경로</td>
+</tr>
+<tr>
+<td><code>get_file</code></td>
+<td>원격 장비의 파일을 PC로 가져옵니다.</td>
+<td style="font-size:12px"><code>remote_path</code>: 원격 장비의 파일 경로<br><code>local_path</code>: PC의 저장 경로</td>
+</tr>
+<tr>
+<td><code>get_file_list_in_dir</code></td>
+<td>원격 장비의 디렉토리 내 파일 목록을 조회합니다.</td>
+<td style="font-size:12px"><code>path</code>: 조회할 디렉토리 경로<br><code>_filter</code>: 파일 필터 패턴. 기본값: &#x27;*&#x27; (전체). 예: &#x27;*.log&#x27;</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="mod-DLTLogging">DLTLogging</h3>
+<div class="callout callout-info">DLT 로깅 — DLT 데몬에 TCP 직접 연결하여 로그를 캡처·저장하고 키워드 PASS/FAIL 판정하는 모듈 (GUI 불필요)</div>
+<table>
+<thead><tr><th style="width:220px">함수</th><th>설명</th><th style="width:40%">파라미터</th></tr></thead>
+<tbody>
+<tr>
+<td><code>StartLogging</code></td>
+<td>DLT 연결 + 캡처 시작 (메모리만, 파일 저장 없음). 뷰어 모달이 자동 오픈됩니다. 종료 시 StopLogging으로 일괄 저장.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>StopLogging</code></td>
+<td>DLT 캡처 종료 + 메모리 버퍼를 파일로 일괄 저장. 자동 경로 또는 지정 경로.</td>
+<td style="font-size:12px"><code>save_path</code>: 저장 파일 경로. 빈 값이면 자동 (재생 중: run_dir/logs/dlt_*.log, 스텝 테스트: backend/results/Temp_logs/dlt_*.log)</td>
+</tr>
+<tr>
+<td><code>count_keyword</code></td>
+<td>로그에서 keyword가 등장할 때마다 실시간 카운트하고 발생 시간을 누적. 같은 name으로 첫 호출=시작, 재호출=결과 반환. 통계 용도 (시나리오 fail에 영향 없음).</td>
+<td style="font-size:12px"><code>keyword</code>: 찾을 부분 문자열. 예: &#x27;Pass&#x27;, &#x27;BootComplete&#x27;<br><code>name</code>: 카운터 식별자. 빈 값이면 keyword 자체. 같은 name 재호출 시 결과 조회</td>
+</tr>
+<tr>
+<td><code>reset_count_keyword</code></td>
+<td>count_keyword 카운터를 리셋합니다. name 빈 값이면 모든 카운터 제거.</td>
+<td style="font-size:12px"><code>name</code>: 리셋할 카운터 이름. 빈 값이면 전체</td>
+</tr>
+<tr>
+<td><code>assert_keyword</code></td>
+<td>캡처되는 모든 라인이 keyword를 **포함해야** 정상. **미포함 라인이 들어오면 fail step row 자동 누적**. 정상 키워드(예: &#x27;OK&#x27;, &#x27;Pass&#x27;, &#x27;BootComplete&#x27;)를 단언할 때 사용. 비정상 키워드 검출은 fail_on_keyword 사용.</td>
+<td style="font-size:12px"><code>keyword</code>: 라인에 반드시 포함되어야 하는 부분 문자열. 예: &#x27;Pass&#x27;, &#x27;OK&#x27;<br><code>name</code>: 단언 식별자. 빈 값이면 &#x27;assert_&lt;keyword&gt;&#x27;. 같은 name 재호출 시 miss 통계 반환</td>
+</tr>
+<tr>
+<td><code>reset_assert_keyword</code></td>
+<td>assert_keyword 단언을 리셋합니다. name 빈 값이면 모든 단언 제거.</td>
+<td style="font-size:12px"><code>name</code>: 리셋할 단언 이름. 빈 값이면 전체</td>
+</tr>
+<tr>
+<td><code>fail_on_keyword</code></td>
+<td>캡처되는 라인에 keyword가 **포함되면 fail row 누적**. assert_keyword의 반대. &#x27;ERROR&#x27;/&#x27;Fail&#x27;/&#x27;crash&#x27; 등 비정상 키워드 검출용. **time&gt;0이면 동기 모드** (해당 시간 동안만 모니터링 후 자동 종료, 검출 fail은 이 스텝 바로 아래 Fail_Count_N으로 인라인 표시). time=0이면 백그라운드 모드.</td>
+<td style="font-size:12px"><code>keyword</code>: 검출할 부분 문자열. 이 단어가 라인에 들어오면 fail로 보고. 예: &#x27;Fail&#x27;, &#x27;ERROR&#x27;<br><code>time</code>: 동기 모니터링 시간(초). &gt;0이면 해당 시간 동안만 감시 후 자동 unregister + 다음 스텝으로. 0(기본)이면 백그라운드.<br><code>name</code>: 검출기 식별자. 빈 값이면 &#x27;fail_&lt;keyword&gt;&#x27;. 같은 name 재호출 시 hit 통계 반환</td>
+</tr>
+<tr>
+<td><code>reset_fail_on_keyword</code></td>
+<td>fail_on_keyword 검출기를 리셋합니다. name 빈 값이면 모든 검출기 제거.</td>
+<td style="font-size:12px"><code>name</code>: 리셋할 검출기 이름. 빈 값이면 전체</td>
+</tr>
+<tr>
+<td><code>StartSave</code></td>
+<td>DLT 데몬에 연결하고 로그 캡처 + 파일 저장을 시작합니다. (연결 → 캡처 → 저장 한번에 수행)</td>
+<td style="font-size:12px"><code>save_path</code>: 저장 파일 경로. 빈 값이면 backend/logs/에 자동 생성</td>
+</tr>
+<tr>
+<td><code>StopSave</code></td>
+<td>로그 파일 저장을 중단하고 DLT 연결을 해제합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>MarkStep</code></td>
+<td>현재 로그 위치에 스텝 경계를 표시합니다. SearchRange로 구간 검색할 때 사용합니다.</td>
+<td style="font-size:12px"><code>step_index</code>: 스텝 인덱스 번호</td>
+</tr>
+<tr>
+<td><code>SearchAll</code></td>
+<td>처음부터 현재까지 전체 로그에서 키워드를 검색하여 PASS/FAIL 판정합니다.</td>
+<td style="font-size:12px"><code>keyword</code>: 검색 키워드 (공백 구분 시 AND 조건). 예: &#x27;BootComplete&#x27;, &#x27;ERROR crash&#x27;<br><code>count</code>: 최대 매칭 결과 수 (기본 5)</td>
+</tr>
+<tr>
+<td><code>SearchRange</code></td>
+<td>MarkStep으로 표시된 스텝 구간 내에서 키워드를 검색하여 PASS/FAIL 판정합니다.</td>
+<td style="font-size:12px"><code>keyword</code>: 검색 키워드 (공백 구분 시 AND 조건)<br><code>from_step</code>: 시작 스텝 인덱스<br><code>to_step</code>: 종료 스텝 인덱스<br><code>count</code>: 최대 매칭 결과 수 (기본 5)</td>
+</tr>
+<tr>
+<td><code>WaitLog</code></td>
+<td>키워드가 포함된 로그가 나타날 때까지 대기합니다 (블로킹). 타임아웃 시 FAIL 반환.</td>
+<td style="font-size:12px"><code>keyword</code>: 검색 키워드 (공백 구분 시 AND 조건)<br><code>timeout</code>: 최대 대기 시간 (초, 기본 30)</td>
+</tr>
+<tr>
+<td><code>ExpectFound</code></td>
+<td>키워드가 나타날 때까지 전체 로그를 주기적으로 검색합니다. 즉시 검색 후 없으면 간격(timeout/max_retries)마다 재시도. 발견 시 PASS, 끝까지 없으면 FAIL.</td>
+<td style="font-size:12px"><code>keyword</code>: 검색 키워드 (공백 구분 시 AND 조건)<br><code>timeout</code>: 총 대기 시간 (초, 기본 60)<br><code>max_retries</code>: 최대 재시도 횟수 (기본 5). 간격 = timeout ÷ max_retries</td>
+</tr>
+<tr>
+<td><code>ExpectNotFound</code></td>
+<td>키워드가 끝까지 없는지 전체 로그를 주기적으로 확인합니다. 즉시 검색 후 발견 시 즉시 FAIL. 없으면 간격(timeout/max_retries)마다 재확인. 끝까지 없으면 PASS.</td>
+<td style="font-size:12px"><code>keyword</code>: 검색 키워드 (공백 구분 시 AND 조건)<br><code>timeout</code>: 총 확인 시간 (초, 기본 60)<br><code>max_retries</code>: 최대 확인 횟수 (기본 5). 간격 = timeout ÷ max_retries</td>
+</tr>
+<tr>
+<td><code>GetStatus</code></td>
+<td>현재 모듈 상태를 조회합니다 (연결, 캡처, 저장, 스텝마크 등).</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+<tr>
+<td><code>ClearLogs</code></td>
+<td>로그 버퍼와 스텝 마킹을 초기화합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+</tbody>
+</table>
+
+
+
+<h2 id="cat-system">시스템 & 유틸리티</h2>
+
+<h3 id="mod-CMD">CMD</h3>
+<div class="callout callout-info">명령어 실행 — Windows 명령 프롬프트(CMD) 명령을 실행하는 모듈. 외부 프로그램 실행이나 시스템 명령에 사용</div>
+<table>
+<thead><tr><th style="width:220px">함수</th><th>설명</th><th style="width:40%">파라미터</th></tr></thead>
+<tbody>
+<tr>
+<td><code>Run</code></td>
+<td>명령어를 실행하고 완료될 때까지 기다립니다(블로킹). 실행 결과를 반환합니다.</td>
+<td style="font-size:12px"><code>command</code>: 실행할 명령어. 예: &#x27;ping 127.0.0.1 -n 3&#x27;, &#x27;ipconfig&#x27;<br><code>timeout</code>: 최대 대기 시간 (초). 기본값: 300초</td>
+</tr>
+<tr>
+<td><code>Check</code></td>
+<td>명령어를 실행하고 출력 결과를 기대값과 비교합니다(블로킹). 실패 시 &#x27;FAIL:&#x27; 접두사를 반환하여 스텝이 fail로 판정됩니다.</td>
+<td style="font-size:12px"><code>command</code>: 실행할 명령어<br><code>expected</code>: 출력에 포함되거나 완전히 일치해야 할 기대 문자열<br><code>match_mode</code>: 비교 방식: &#x27;contains&#x27;(부분 일치) 또는 &#x27;exact&#x27;(완전 일치). 기본값: contains<br><code>timeout</code>: 최대 대기 시간 (초). 기본값: 300초</td>
+</tr>
+<tr>
+<td><code>RunCapture</code></td>
+<td>명령어를 백그라운드로 실행하고 즉시 &#x27;[BG_TASK:bg_x]&#x27; placeholder를 반환합니다(논블로킹). 폴링 엔드포인트를 통해 나중에 실제 결과를 회수할 수 있습니다.</td>
+<td style="font-size:12px"><code>command</code>: 실행할 명령어</td>
+</tr>
+<tr>
+<td><code>CheckCapture</code></td>
+<td>명령어를 백그라운드로 실행하고 &#x27;[BG_TASK:bg_x]&#x27; placeholder를 반환합니다. 완료 시 서버가 expected/match_mode로 최종 pass/fail을 판정합니다.</td>
+<td style="font-size:12px"><code>command</code>: 실행할 명령어<br><code>expected</code>: 기대 문자열<br><code>match_mode</code>: &#x27;contains&#x27; 또는 &#x27;exact&#x27;. 기본값: contains</td>
+</tr>
+<tr>
+<td><code>RunBackground</code></td>
+<td>명령어를 서브프로세스로 실행합니다(fire-and-forget). PID가 반환되지만 결과는 회수할 수 없습니다.</td>
+<td style="font-size:12px"><code>command</code>: 실행할 명령어. 예: &#x27;notepad&#x27;, &#x27;python script.py&#x27;</td>
+</tr>
+<tr>
+<td><code>Kill</code></td>
+<td>백그라운드 프로세스를 종료합니다.</td>
+<td style="font-size:12px"><code>pid</code>: 종료할 프로세스 PID</td>
+</tr>
+<tr>
+<td><code>ListBackground</code></td>
+<td>실행 중인 백그라운드 프로세스 목록을 반환합니다.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(없음)</span></td>
+</tr>
+</tbody>
+</table>
+
+
+
+  </div>
+</div>
+
+<script>
+function toggleTheme() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme');
+  html.setAttribute('data-theme', current === 'dark' ? '' : 'dark');
+  localStorage.setItem('theme', html.getAttribute('data-theme'));
+}
+(function() {
+  const saved = localStorage.getItem('theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+})();
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.querySelector('.overlay').classList.toggle('show');
+}
+
+document.querySelectorAll('.sidebar nav a').forEach(a => {
+  a.addEventListener('click', () => {
+    if (window.innerWidth <= 900) toggleSidebar();
+  });
+});
+
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.remove('active'));
+      const active = document.querySelector(`.sidebar nav a[href="#${entry.target.id}"]`);
+      if (active) active.classList.add('active');
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+
+document.querySelectorAll('h1[id], h2[id], h3[id]').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>

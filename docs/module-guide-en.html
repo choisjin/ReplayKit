@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReplayKit Module Guide</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --bg-alt: #f6f8fa;
+    --bg-code: #f0f2f5;
+    --text: #24292f;
+    --text-muted: #57606a;
+    --border: #d0d7de;
+    --accent: #0969da;
+    --accent-light: #ddf4ff;
+    --success: #1a7f37;
+    --success-bg: #dafbe1;
+    --warning: #9a6700;
+    --warning-bg: #fff8c5;
+    --danger: #cf222e;
+    --danger-bg: #ffebe9;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+  [data-theme="dark"] {
+    --bg: #0d1117;
+    --bg-alt: #161b22;
+    --bg-code: #1c2128;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --border: #30363d;
+    --accent: #58a6ff;
+    --accent-light: #1a2332;
+    --success: #3fb950;
+    --success-bg: #0d2818;
+    --warning: #d29922;
+    --warning-bg: #2a1f00;
+    --danger: #f85149;
+    --danger-bg: #3d1014;
+    --shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Noto Sans KR', sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.7; font-size: 15px;
+  }
+  .layout { display: flex; min-height: 100vh; }
+  .sidebar {
+    position: fixed; top: 0; left: 0; width: 280px; height: 100vh;
+    overflow-y: auto; background: var(--bg-alt); border-right: 1px solid var(--border);
+    padding: 24px 16px; z-index: 100; transition: transform 0.3s;
+  }
+  .sidebar-logo { font-size: 20px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+  .sidebar-version { font-size: 12px; color: var(--text-muted); margin-bottom: 20px; }
+  .sidebar nav a {
+    display: block; padding: 5px 10px; color: var(--text-muted); text-decoration: none;
+    font-size: 13.5px; border-radius: 6px; transition: background 0.15s, color 0.15s;
+  }
+  .sidebar nav a:hover, .sidebar nav a.active { background: var(--accent-light); color: var(--accent); }
+  .sidebar nav .toc-h2 { font-weight: 600; margin-top: 12px; }
+  .sidebar nav .toc-h3 { padding-left: 22px; font-size: 12.5px; }
+  .main { margin-left: 280px; max-width: 1600px; padding: 40px 48px 80px; flex: 1; }
+  .theme-toggle {
+    position: fixed; top: 16px; right: 20px; background: var(--bg-alt);
+    border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px;
+    cursor: pointer; font-size: 18px; z-index: 200; transition: background 0.2s;
+  }
+  .theme-toggle:hover { background: var(--accent-light); }
+  .hamburger {
+    display: none; position: fixed; top: 14px; left: 14px; background: var(--accent);
+    color: #fff; border: none; border-radius: 8px; width: 40px; height: 40px;
+    font-size: 22px; cursor: pointer; z-index: 300;
+  }
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 90; }
+  h1 { font-size: 32px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.5px; }
+  h1 small { font-size: 14px; font-weight: 400; color: var(--text-muted); display: block; margin-top: 4px; }
+  h2 {
+    font-size: 24px; font-weight: 700; margin-top: 56px; margin-bottom: 16px;
+    padding-bottom: 8px; border-bottom: 2px solid var(--border); scroll-margin-top: 24px;
+  }
+  h3 {
+    font-size: 18px; font-weight: 600; margin-top: 36px; margin-bottom: 10px; scroll-margin-top: 24px;
+  }
+  h4 { font-size: 15px; font-weight: 600; margin-top: 20px; margin-bottom: 8px; }
+  p { margin-bottom: 12px; }
+  ul, ol { margin: 8px 0 16px 24px; }
+  li { margin-bottom: 4px; }
+  .callout {
+    padding: 14px 18px; border-radius: 8px; margin: 16px 0; font-size: 14px; border-left: 4px solid;
+  }
+  .callout-info { background: var(--accent-light); border-color: var(--accent); }
+  .callout-success { background: var(--success-bg); border-color: var(--success); }
+  .callout-warning { background: var(--warning-bg); border-color: var(--warning); }
+  code {
+    background: var(--bg-code); padding: 2px 6px; border-radius: 4px;
+    font-size: 13px; font-family: 'Cascadia Code', 'Consolas', monospace;
+  }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0 20px; font-size: 14px; }
+  th, td { padding: 10px 14px; text-align: left; border: 1px solid var(--border); }
+  th { background: var(--bg-alt); font-weight: 600; white-space: nowrap; }
+  td { vertical-align: top; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;
+  }
+  .badge-blue { background: var(--accent-light); color: var(--accent); }
+  .badge-green { background: var(--success-bg); color: var(--success); }
+
+  @media (max-width: 900px) {
+    .sidebar { transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; padding: 24px 20px 60px; }
+    .hamburger { display: block; }
+    .overlay.show { display: block; }
+  }
+  @media print {
+    .sidebar, .hamburger, .theme-toggle, .overlay { display: none !important; }
+    .main { margin-left: 0; max-width: 100%; padding: 20px; }
+    h2 { break-before: page; }
+  }
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">🌓</button>
+<button class="hamburger" onclick="toggleSidebar()">☰</button>
+<div class="overlay" onclick="toggleSidebar()"></div>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">🔌 ReplayKit</div>
+    <div class="sidebar-version">Module Guide</div>
+    <nav id="toc">
+      <a href="#top" class="toc-h2">Module Guide</a>
+      <a href="#overview" class="toc-h3">All Modules</a>
+      <a href="#cat-bench" class="toc-h2">Test Bench</a>
+      <a href="#mod-IVIQEBenchIOClient" class="toc-h3">IVIQEBenchIOClient</a>
+      <a href="#mod-SmartBench" class="toc-h3">SmartBench</a>
+      <a href="#mod-WoohyunBench" class="toc-h3">WoohyunBench</a>
+      <a href="#cat-can" class="toc-h2">CAN Communication</a>
+      <a href="#mod-CANOE" class="toc-h3">CANOE</a>
+      <a href="#mod-CANAT" class="toc-h3">CANAT</a>
+      <a href="#cat-comm" class="toc-h2">Communication (Serial/SSH/UART/DLT)</a>
+      <a href="#mod-SerialLogging" class="toc-h3">SerialLogging</a>
+      <a href="#mod-SSHManager" class="toc-h3">SSHManager</a>
+      <a href="#mod-DLTLogging" class="toc-h3">DLTLogging</a>
+      <a href="#cat-system" class="toc-h2">System & Utilities</a>
+      <a href="#mod-CMD" class="toc-h3">CMD</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <h1 id="top">Module Guide<small>Complete function and parameter reference for all ReplayKit modules</small></h1>
+
+    <p>This document describes all modules and functions available in ReplayKit's <strong>module_command</strong> step type. You can see what each function controls and what parameters to provide, without any coding knowledge.</p>
+
+    <div class="callout callout-success">
+      <strong>In-App Guide</strong>
+      When adding a step, selecting a function will automatically display its description. This document is for browsing the full list or printing as a reference.
+    </div>
+
+    <h2 id="overview">All Modules</h2>
+    <p>Total <strong>9</strong> modules, <strong>197</strong> functions registered.</p>
+    <table>
+      <thead><tr><th>Module</th><th>Description</th><th>Functions</th></tr></thead>
+      <tbody>
+        <tr><td><a href="#mod-CANOE"><strong>CANOE</strong></a></td><td>Controls Vector CANoe simulation software: start/stop, environment variables, and system variables</td><td style="text-align:center">6</td></tr>
+<tr><td><a href="#mod-CANAT"><strong>CANAT</strong></a></td><td>Sends and receives CAN bus messages via CANat hardware</td><td style="text-align:center">7</td></tr>
+<tr><td><a href="#mod-IVIQEBenchIOClient"><strong>IVIQEBenchIOClient</strong></a></td><td>Comprehensive control of relays, power, sensors, audio, LCD, buttons, and USB on the serial-connected QE test bench</td><td style="text-align:center">117</td></tr>
+<tr><td><a href="#mod-SSHManager"><strong>SSHManager</strong></a></td><td>Connects to remote devices via SSH for command execution and file transfer</td><td style="text-align:center">7</td></tr>
+<tr><td><a href="#mod-DLTLogging"><strong>DLTLogging</strong></a></td><td>Captures and saves logs via direct TCP connection to the DLT daemon, with keyword-based PASS/FAIL evaluation (no GUI required)</td><td style="text-align:center">10</td></tr>
+<tr><td><a href="#mod-SerialLogging"><strong>SerialLogging</strong></a></td><td>Captures and saves logs via serial port connection, with keyword-based fail detection.
+
+**⚠️ Usage: StartLogging and StopLogging MUST be used as a pair.**
+- If you call StartLogging without StopLogging: logs are NOT saved to file, and the serial port stays open, which can cause port-busy errors on the next run.
+- Place StartLogging at the beginning of your scenario and StopLogging at the end.
+- Cleanup will auto-call StopLogging if the scenario aborts, but you should still call it explicitly in the normal flow.
+
+Standard usage pattern:
+  1) StartLogging()                              ← first step
+  2) SendCommand / SendCommand_*_on_keyword ...  ← middle steps
+  3) StopLogging()                               ← last step (writes log file + releases port)</td><td style="text-align:center">5</td></tr>
+<tr><td><a href="#mod-SmartBench"><strong>SmartBench</strong></a></td><td>Controls power, buttons, current, and LEDs on Smart Bench equipment via TCP socket</td><td style="text-align:center">15</td></tr>
+<tr><td><a href="#mod-WoohyunBench"><strong>WoohyunBench</strong></a></td><td>Integrated UDP test bench: vehicle power control (IGN/ACC/Battery) + CAN FD signal transmission</td><td style="text-align:center">23</td></tr>
+<tr><td><a href="#mod-CMD"><strong>CMD</strong></a></td><td>Executes Windows command prompt (CMD) commands. Used for running external programs or system commands</td><td style="text-align:center">7</td></tr>
+      </tbody>
+    </table>
+
+    
+<h2 id="cat-bench">Test Bench</h2>
+
+<h3 id="mod-IVIQEBenchIOClient">IVIQEBenchIOClient</h3>
+<div class="callout callout-info">IVI QE Bench — Comprehensive control of relays, power, sensors, audio, LCD, buttons, and USB on the serial-connected QE test bench</div>
+<table>
+<thead><tr><th style="width:220px">Function</th><th>Description</th><th style="width:40%">Parameters</th></tr></thead>
+<tbody>
+<tr>
+<td><code>Connect</code></td>
+<td>Connects to the bench via serial. Automatically called when adding the device.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>Disconnect</code></td>
+<td>Disconnects from the bench.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>ACCOnOff</code></td>
+<td>Turns ACC (Accessory) power on or off.</td>
+<td style="font-size:12px"><code>state</code>: 0 = OFF, 1 = ON<br><code>bench_info</code>: Bench type. &#x27;OLD_BENCH&#x27; (default) or &#x27;NEW_BENCH&#x27;</td>
+</tr>
+<tr>
+<td><code>ACCSinglePulse</code></td>
+<td>Generates a single pulse on ACC power. Used for momentary voltage fluctuation testing.</td>
+<td style="font-size:12px"><code>nVoltage</code>: Pulse voltage (V)<br><code>nDelay</code>: Delay between pulses (ms)<br><code>nCnt</code>: Number of pulse repetitions</td>
+</tr>
+<tr>
+<td><code>AccControl</code></td>
+<td>Controls the ACC relay.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON<br><code>bench_info</code>: Bench type</td>
+</tr>
+<tr>
+<td><code>AccVoltage</code></td>
+<td>Sets the ACC voltage state.</td>
+<td style="font-size:12px"><code>nState</code>: Voltage state value</td>
+</tr>
+<tr>
+<td><code>BatteryOnOff</code></td>
+<td>Turns battery power on or off.</td>
+<td style="font-size:12px"><code>nState</code>: 0 = OFF (disconnect battery), 1 = ON (connect battery)<br><code>bench_info</code>: Bench type. &#x27;OLD_BENCH&#x27; (default) or &#x27;NEW_BENCH&#x27;</td>
+</tr>
+<tr>
+<td><code>BatteryControl</code></td>
+<td>Controls the battery relay.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON<br><code>bench_info</code>: Bench type</td>
+</tr>
+<tr>
+<td><code>BatteryMinusControl</code></td>
+<td>Controls the battery negative (-) terminal relay.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF (connected), 1 = ON (disconnected)</td>
+</tr>
+<tr>
+<td><code>BatteryVoltage</code></td>
+<td>Sets the battery voltage state.</td>
+<td style="font-size:12px"><code>nState</code>: Voltage state value</td>
+</tr>
+<tr>
+<td><code>BatterySinglePulse</code></td>
+<td>Generates a single pulse on the battery.</td>
+<td style="font-size:12px"><code>nVoltage</code>: Pulse voltage (V)<br><code>nDelay</code>: Delay between pulses (ms)<br><code>nCnt</code>: Number of pulse repetitions</td>
+</tr>
+<tr>
+<td><code>IGNControl</code></td>
+<td>Controls the ignition (IGN) power.</td>
+<td style="font-size:12px"><code>status</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>IGN3Control</code></td>
+<td>Controls the ignition 3 (IGN3) power.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>ALTControl</code></td>
+<td>Controls the alternator signal.</td>
+<td style="font-size:12px"><code>status</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>ILLControl</code></td>
+<td>Controls the illumination signal (vehicle lighting interlock).</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>ILLControlMinus</code></td>
+<td>Controls the illumination negative signal.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>ReverseControl</code></td>
+<td>Controls the reverse gear signal.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF (forward), 1 = ON (reverse)</td>
+</tr>
+<tr>
+<td><code>ReverseActiveHigh</code></td>
+<td>Controls the reverse signal as Active High.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>ReverseActiveLow</code></td>
+<td>Controls the reverse signal as Active Low.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>ParkingControl</code></td>
+<td>Controls the parking signal.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>PPositonControl</code></td>
+<td>Controls the P (Park) gear position signal.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>NPositionControl</code></td>
+<td>Controls the N (Neutral) gear position signal.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>SpeedControl</code></td>
+<td>Controls the vehicle speed signal.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF (stopped), 1 = ON (driving)</td>
+</tr>
+<tr>
+<td><code>DoorControl</code></td>
+<td>Controls the door open/close signal.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF (closed), 1 = ON (open)</td>
+</tr>
+<tr>
+<td><code>DoorUnLockControl</code></td>
+<td>Controls the door unlock signal.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF (locked), 1 = ON (unlocked)</td>
+</tr>
+<tr>
+<td><code>TransDetectControl</code></td>
+<td>Controls the transmission detection signal.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>FUELControl</code></td>
+<td>Controls the fuel-related signal.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>KeylessBootingControl</code></td>
+<td>Controls the keyless (smart key) boot signal.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>AutolightControl</code></td>
+<td>Controls the auto-light signal.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>AlarmDetectControl</code></td>
+<td>Controls the alarm detection signal.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>AirbagCrashDetection</code></td>
+<td>Controls the airbag crash detection signal.</td>
+<td style="font-size:12px"><code>model</code>: Vehicle model name<br><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>ShieldBoxControl</code></td>
+<td>Controls the shield box (RF shielding box) open/close.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF (close), 1 = ON (open)</td>
+</tr>
+<tr>
+<td><code>ANTControl</code></td>
+<td>Controls the antenna relay.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>AmpControl</code></td>
+<td>Controls the external audio amplifier power.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>MICControl</code></td>
+<td>Controls the microphone relay.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>AUXControl</code></td>
+<td>Controls the AUX input relay.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>CDControl</code></td>
+<td>Controls the CD drive relay.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>IPODControl</code></td>
+<td>Controls the iPod connection relay.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>RcInControl</code></td>
+<td>Controls the RC input relay.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>ComEnableControl</code></td>
+<td>Controls the COM (communication) enable.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF (disabled), 1 = ON (enabled)</td>
+</tr>
+<tr>
+<td><code>Detent</code></td>
+<td>Controls the detent (rotary encoder for volume knob, etc.) signal.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>AVNSDDetect</code></td>
+<td>Controls the AVN SD card detection signal.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF (not inserted), 1 = ON (inserted)</td>
+</tr>
+<tr>
+<td><code>USB1Control</code></td>
+<td>Controls the USB 1 port relay.</td>
+<td style="font-size:12px"><code>Status</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>USBFrontSwitchControl</code></td>
+<td>Controls the front USB switch relay.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>USBRearSwitchControl</code></td>
+<td>Controls the rear USB switch relay.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>USBSelectorControl</code></td>
+<td>Selects a USB selector port.</td>
+<td style="font-size:12px"><code>nOnPortNum</code>: USB port number to activate</td>
+</tr>
+<tr>
+<td><code>USBSelector10CHSwitch5CH</code></td>
+<td>Controls the USB selector 10-channel/5-channel switch.</td>
+<td style="font-size:12px"><code>nType</code>: Switch type<br><code>nPortNum</code>: Port number<br><code>nOnOffStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>Telltale</code></td>
+<td>Controls the telltale (dashboard warning indicator) relay.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>TelltaleLED</code></td>
+<td>Sets the telltale LED blink period.</td>
+<td style="font-size:12px"><code>nPeriod</code>: Blink period (ms)</td>
+</tr>
+<tr>
+<td><code>CheckTelltale</code></td>
+<td>Checks the telltale (warning indicator) status.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>LEDPulse</code></td>
+<td>Sets the LED blink period.</td>
+<td style="font-size:12px"><code>nPeriod</code>: Blink period (ms)</td>
+</tr>
+<tr>
+<td><code>LedTCU4</code></td>
+<td>Sets the TCU4 LED blink period.</td>
+<td style="font-size:12px"><code>nPeriod</code>: Blink period (ms)</td>
+</tr>
+<tr>
+<td><code>CheckLedTCU4</code></td>
+<td>Checks the TCU4 LED status.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>GetLEDPulse</code></td>
+<td>Reads the current LED pulse value.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>CheckLCD</code></td>
+<td>Checks the LCD display status.</td>
+<td style="font-size:12px"><code>nStatus</code>: Status value to check</td>
+</tr>
+<tr>
+<td><code>CheckLCDDimming</code></td>
+<td>Checks the LCD dimming (brightness control) status.</td>
+<td style="font-size:12px"><code>nStatus</code>: Status value to check</td>
+</tr>
+<tr>
+<td><code>SetLCDValue</code></td>
+<td>Sets the LCD value.</td>
+<td style="font-size:12px"><code>nLCDValue</code>: LCD value to set</td>
+</tr>
+<tr>
+<td><code>GetLCDValue</code></td>
+<td>Reads the current LCD value.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>CheckVoltage</code></td>
+<td>Checks whether voltage is within the specified range.</td>
+<td style="font-size:12px"><code>nMin</code>: Minimum voltage (V)<br><code>nMax</code>: Maximum voltage (V)</td>
+</tr>
+<tr>
+<td><code>CheckCurrent</code></td>
+<td>Checks whether current is within the specified range.</td>
+<td style="font-size:12px"><code>nMin</code>: Minimum current (A)<br><code>nMax</code>: Maximum current (A)</td>
+</tr>
+<tr>
+<td><code>ExtCheckCurrent</code></td>
+<td>Checks whether external current is within the specified range.</td>
+<td style="font-size:12px"><code>fMin</code>: Minimum current (A)<br><code>fMax</code>: Maximum current (A)</td>
+</tr>
+<tr>
+<td><code>EXT_CURRENT</code></td>
+<td>Checks external current within range after a delay.</td>
+<td style="font-size:12px"><code>min_current</code>: Minimum current (A)<br><code>max_current</code>: Maximum current (A)<br><code>check_delay</code>: Delay before check (seconds)</td>
+</tr>
+<tr>
+<td><code>GetEXTCurrent</code></td>
+<td>Reads the current external current value.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>CheckEXTCurrentList</code></td>
+<td>Checks whether collected external current values are within range.</td>
+<td style="font-size:12px"><code>nMin</code>: Minimum current (A)<br><code>nMax</code>: Maximum current (A)</td>
+</tr>
+<tr>
+<td><code>ClearEXTCurrentList</code></td>
+<td>Clears the collected external current list.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>CheckKeyOutVoltage</code></td>
+<td>Checks whether key output voltage is within range.</td>
+<td style="font-size:12px"><code>nMin</code>: Minimum voltage (V)<br><code>nMax</code>: Maximum voltage (V)</td>
+</tr>
+<tr>
+<td><code>ClearKeyOutVoltageList</code></td>
+<td>Clears the key output voltage list.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>CheckSound</code></td>
+<td>Checks the audio output status.</td>
+<td style="font-size:12px"><code>nStatus</code>: Status value to check</td>
+</tr>
+<tr>
+<td><code>PlaySound</code></td>
+<td>Plays a sound file on the bench.</td>
+<td style="font-size:12px"><code>strFileName</code>: File name to play<br><code>nFileNameLen</code>: File name length</td>
+</tr>
+<tr>
+<td><code>InitSoundUpdate</code></td>
+<td>Initializes the sound update.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>WaitSoundUpdate</code></td>
+<td>Waits until the sound update completes.</td>
+<td style="font-size:12px"><code>timeout</code>: Max wait time in seconds</td>
+</tr>
+<tr>
+<td><code>RequestLightSensorControl</code></td>
+<td>Controls the light sensor.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON<br><code>pbData</code>: PB data<br><code>twData</code>: TW data</td>
+</tr>
+<tr>
+<td><code>GetLightSensorData</code></td>
+<td>Reads light sensor data.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>CheckLightSensorResult</code></td>
+<td>Checks the light sensor result.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>TenButton</code></td>
+<td>Presses a button on the 10-button panel.</td>
+<td style="font-size:12px"><code>nButton</code>: Button number (0-9)<br><code>nDelay</code>: Button press duration (ms)</td>
+</tr>
+<tr>
+<td><code>ThreeButton</code></td>
+<td>Presses a button on the 3-button panel.</td>
+<td style="font-size:12px"><code>nButton</code>: Button number (0-2)<br><code>nDelay</code>: Button press duration (ms)</td>
+</tr>
+<tr>
+<td><code>ThreeButton_Front</code></td>
+<td>Presses a button on the front 3-button panel.</td>
+<td style="font-size:12px"><code>nButton</code>: Button number (0-2)<br><code>nDelay</code>: Button press duration (ms)</td>
+</tr>
+<tr>
+<td><code>ThreeButton_Rear</code></td>
+<td>Presses a button on the rear 3-button panel.</td>
+<td style="font-size:12px"><code>nButton</code>: Button number (0-2)<br><code>nDelay</code>: Button press duration (ms)</td>
+</tr>
+<tr>
+<td><code>TwoButton</code></td>
+<td>Presses a button on the 2-button panel.</td>
+<td style="font-size:12px"><code>nButton</code>: Button number (0-1)<br><code>nDelay</code>: Button press duration (ms)</td>
+</tr>
+<tr>
+<td><code>rf_btn_press</code></td>
+<td>Presses an RF button.</td>
+<td style="font-size:12px"><code>btnNum</code>: Button number<br><code>delay</code>: Press duration (ms)</td>
+</tr>
+<tr>
+<td><code>FileToSD</code></td>
+<td>Copies a file to the SD card.</td>
+<td style="font-size:12px"><code>userFilePath</code>: Source file path on PC<br><code>sdCardFileName</code>: File name to save on SD card</td>
+</tr>
+<tr>
+<td><code>Relay_10</code></td>
+<td>Controls relay 10.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>Relay_11</code></td>
+<td>Controls relay 11.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>Relay_12</code></td>
+<td>Controls relay 12.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>Relay_13</code></td>
+<td>Controls relay 13.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>Relay_14</code></td>
+<td>Controls relay 14.</td>
+<td style="font-size:12px"><code>nStatus</code>: 0 = OFF, 1 = ON</td>
+</tr>
+<tr>
+<td><code>RelayInitialization</code></td>
+<td>Resets all relays to their default values.</td>
+<td style="font-size:12px"><code>init_value</code>: Initialization value</td>
+</tr>
+<tr>
+<td><code>SetRelayConfig</code></td>
+<td>Sets the relay configuration.</td>
+<td style="font-size:12px"><code>nRelayCfg</code>: Relay configuration value</td>
+</tr>
+<tr>
+<td><code>CallRelayFunc</code></td>
+<td>Calls a relay function by index.</td>
+<td style="font-size:12px"><code>func_index</code>: Function index number<br><code>data</code>: Data to pass</td>
+</tr>
+<tr>
+<td><code>RequestRelayInitialStatus</code></td>
+<td>Requests the initial relay status.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>RequestRelaySet</code></td>
+<td>Sets relays using a command list.</td>
+<td style="font-size:12px"><code>nCmdList</code>: Relay command list</td>
+</tr>
+<tr>
+<td><code>SystemReset</code></td>
+<td>Resets the bench system.</td>
+<td style="font-size:12px"><code>nMs</code>: Wait time after reset (ms). Default: 1000</td>
+</tr>
+<tr>
+<td><code>SetSystemTime</code></td>
+<td>Sets the bench system time to the current PC time.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>RequestSystemVersion</code></td>
+<td>Requests the bench system version information.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>CalcCRC16</code></td>
+<td>Calculates a CRC-16 checksum. Used for communication data verification.</td>
+<td style="font-size:12px"><code>listData</code>: Data list<br><code>nLen</code>: Data length</td>
+</tr>
+<tr>
+<td><code>CalibrationStartOrStop</code></td>
+<td>Starts or stops calibration.</td>
+<td style="font-size:12px"><code>sensitivity</code>: Sensitivity value<br><code>threshold</code>: Threshold value</td>
+</tr>
+<tr>
+<td><code>AnnouncesAutoTestStartOrEnd</code></td>
+<td>Announces the start/end of an automated test.</td>
+<td style="font-size:12px"><code>bisStart</code>: True = test start, False = test end</td>
+</tr>
+<tr>
+<td><code>BATSwitchSETtoPC</code></td>
+<td>Switches the battery switch from SET to PC.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>BATSwitchUSBtoPC</code></td>
+<td>Switches the battery switch from USB to PC.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>RequestAudioFrequency</code></td>
+<td>Requests audio frequency measurement.</td>
+<td style="font-size:12px"><code>bStart</code>: True = start, False = stop<br><code>nMs</code>: Measurement interval (ms)</td>
+</tr>
+<tr>
+<td><code>RequestAudioStatusAndADCValue</code></td>
+<td>Requests audio status and ADC value.</td>
+<td style="font-size:12px"><code>nMs</code>: Response wait time (ms)</td>
+</tr>
+<tr>
+<td><code>RequestAudioStatusAndADCValuePeriodicallyNoti</code></td>
+<td>Receives periodic notifications of audio status and ADC value.</td>
+<td style="font-size:12px"><code>bStart</code>: True = start, False = stop<br><code>nPeriodMs</code>: Notification interval (ms)</td>
+</tr>
+<tr>
+<td><code>RequestAudioStatusPeriodicallyNoti</code></td>
+<td>Receives periodic notifications of audio status.</td>
+<td style="font-size:12px"><code>bStart</code>: True = start, False = stop<br><code>nPeriodMs</code>: Notification interval (ms)</td>
+</tr>
+<tr>
+<td><code>RequestCurrentPeriodicallyNoti</code></td>
+<td>Receives periodic notifications of current value.</td>
+<td style="font-size:12px"><code>bStart</code>: True = start, False = stop<br><code>nPeriodMs</code>: Notification interval (ms)</td>
+</tr>
+<tr>
+<td><code>RequestExtCurrentPeriodicallyNoti</code></td>
+<td>Receives periodic notifications of external current value.</td>
+<td style="font-size:12px"><code>bStart</code>: True = start, False = stop<br><code>nPeriodMs</code>: Notification interval (ms)</td>
+</tr>
+<tr>
+<td><code>RequestVoltagePeriodicallyNoti</code></td>
+<td>Receives periodic notifications of voltage value.</td>
+<td style="font-size:12px"><code>bStart</code>: True = start, False = stop<br><code>nPeriodMs</code>: Notification interval (ms)</td>
+</tr>
+<tr>
+<td><code>RequestKeyOutVoltagePeriodicallyNoti</code></td>
+<td>Receives periodic notifications of key output voltage.</td>
+<td style="font-size:12px"><code>bStart</code>: True = start, False = stop<br><code>nPeriodMs</code>: Notification interval (ms)</td>
+</tr>
+<tr>
+<td><code>RequestLCDStatus</code></td>
+<td>Requests LCD status.</td>
+<td style="font-size:12px"><code>bStart</code>: True = start, False = stop<br><code>nMs</code>: Response wait time (ms)</td>
+</tr>
+<tr>
+<td><code>RequestLCDIllumiSensorValue</code></td>
+<td>Requests LCD illumination sensor value.</td>
+<td style="font-size:12px"><code>bStart</code>: True = start, False = stop<br><code>nMs</code>: Response wait time (ms)</td>
+</tr>
+<tr>
+<td><code>RequestLCDStatusAndIllumiSensorValuePeriodicallyNoti</code></td>
+<td>Receives periodic notifications of LCD status and illumination sensor value.</td>
+<td style="font-size:12px"><code>bStart</code>: True = start, False = stop<br><code>nPeriodMs</code>: Notification interval (ms)</td>
+</tr>
+<tr>
+<td><code>RequestSoundFileInfo</code></td>
+<td>Requests sound file information.</td>
+<td style="font-size:12px"><code>nSoundType</code>: Sound type</td>
+</tr>
+<tr>
+<td><code>RequestSoundFileList</code></td>
+<td>Requests the sound file list.</td>
+<td style="font-size:12px"><code>nSoundType</code>: Sound type</td>
+</tr>
+<tr>
+<td><code>Read</code></td>
+<td>Reads data from the bench.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>Send</code></td>
+<td>Sends raw byte data to the bench.</td>
+<td style="font-size:12px"><code>listData</code>: Data list to send<br><code>nLen</code>: Data length</td>
+</tr>
+<tr>
+<td><code>WriteRawString</code></td>
+<td>Sends a raw string to the bench.</td>
+<td style="font-size:12px"><code>string</code>: String to send</td>
+</tr>
+<tr>
+<td><code>ReceiveStart</code></td>
+<td>Starts or stops bench data reception.</td>
+<td style="font-size:12px"><code>bStart</code>: True = start receiving, False = stop receiving<br><code>queue</code>: Queue to store received data (optional)</td>
+</tr>
+<tr>
+<td><code>timer_compare</code></td>
+<td>Compares timer values.</td>
+<td style="font-size:12px"><code>Time_Init</code>: Start time<br><code>Time_Check</code>: Time to compare</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="mod-SmartBench">SmartBench</h3>
+<div class="callout callout-info">Smart Bench TCP Control — Controls power, buttons, current, and LEDs on Smart Bench equipment via TCP socket</div>
+<table>
+<thead><tr><th style="width:220px">Function</th><th>Description</th><th style="width:40%">Parameters</th></tr></thead>
+<tbody>
+<tr>
+<td><code>Connect</code></td>
+<td>Connects to the Smart Bench via TCP.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>Disconnect</code></td>
+<td>Disconnects from the Smart Bench.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>Battery</code></td>
+<td>Controls the Battery (+B) relay.</td>
+<td style="font-size:12px"><code>status</code>: &#x27;on&#x27; or &#x27;off&#x27;</td>
+</tr>
+<tr>
+<td><code>ACC</code></td>
+<td>Controls the ACC relay.</td>
+<td style="font-size:12px"><code>status</code>: &#x27;on&#x27; or &#x27;off&#x27;</td>
+</tr>
+<tr>
+<td><code>IGN</code></td>
+<td>Controls the IGN relay.</td>
+<td style="font-size:12px"><code>status</code>: &#x27;on&#x27; or &#x27;off&#x27;</td>
+</tr>
+<tr>
+<td><code>IGN3</code></td>
+<td>Controls the IGN3 relay.</td>
+<td style="font-size:12px"><code>status</code>: &#x27;on&#x27; or &#x27;off&#x27;</td>
+</tr>
+<tr>
+<td><code>USB</code></td>
+<td>Controls the USB relay.</td>
+<td style="font-size:12px"><code>status</code>: &#x27;on&#x27; or &#x27;off&#x27;</td>
+</tr>
+<tr>
+<td><code>CheckCurrent</code></td>
+<td>Measures current and returns PASS if within range for 3 consecutive readings, FAIL on timeout.</td>
+<td style="font-size:12px"><code>min_current</code>: Minimum current (A). e.g. 0.5<br><code>max_current</code>: Maximum current (A). e.g. 2.0<br><code>check_delay</code>: Timeout (ms). e.g. 10000</td>
+</tr>
+<tr>
+<td><code>CheckCurrentMoment</code></td>
+<td>Measures instantaneous current and returns PASS if within range, FAIL if out of range for 3 consecutive readings.</td>
+<td style="font-size:12px"><code>min_current</code>: Minimum current (A)<br><code>max_current</code>: Maximum current (A)</td>
+</tr>
+<tr>
+<td><code>CheckCurrentMaintain</code></td>
+<td>Verifies that current stays within range for the specified duration.</td>
+<td style="font-size:12px"><code>min_current</code>: Minimum current (A)<br><code>max_current</code>: Maximum current (A)<br><code>check_delay</code>: Maintenance duration (ms)</td>
+</tr>
+<tr>
+<td><code>ButtonPress</code></td>
+<td>Presses a button.</td>
+<td style="font-size:12px"><code>button_num</code>: Button number (0=ECALL, etc.)<br><code>press_time</code>: Press duration (ms). e.g. 3000</td>
+</tr>
+<tr>
+<td><code>LEDCheck</code></td>
+<td>Verifies the LED status.</td>
+<td style="font-size:12px"><code>data</code>: LED verification data. e.g. &#x27;honda;4.0;GREEN;BLINK;RED;ON&#x27;</td>
+</tr>
+<tr>
+<td><code>Relay</code></td>
+<td>Directly controls a relay.</td>
+<td style="font-size:12px"><code>relay_num</code>: Relay number<br><code>status</code>: &#x27;on&#x27; or &#x27;off&#x27;</td>
+</tr>
+<tr>
+<td><code>SendRaw</code></td>
+<td>Sends a raw text command directly.</td>
+<td style="font-size:12px"><code>command</code>: Command string to send</td>
+</tr>
+<tr>
+<td><code>GetStatus</code></td>
+<td>Returns the current module status.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="mod-WoohyunBench">WoohyunBench</h3>
+<div class="callout callout-info">Woohyun Bench — Integrated UDP test bench: vehicle power control (IGN/ACC/Battery) + CAN FD signal transmission</div>
+<table>
+<thead><tr><th style="width:220px">Function</th><th>Description</th><th style="width:40%">Parameters</th></tr></thead>
+<tbody>
+<tr>
+<td><code>Connect</code></td>
+<td>Establishes a UDP network connection to the bench equipment. Automatically called when adding the device, so manual invocation is usually unnecessary.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>Disconnect</code></td>
+<td>Disconnects the UDP network connection from the bench equipment.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>IsConnected</code></td>
+<td>Checks whether the bench equipment is currently connected.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>IGN1</code></td>
+<td>Turns IGN1 (Ignition 1) power on or off. Corresponds to the vehicle&#x27;s ignition power.</td>
+<td style="font-size:12px"><code>on_off</code>: 0 = OFF, 1 = ON. Default: 1 (ON)</td>
+</tr>
+<tr>
+<td><code>IGN1_Read</code></td>
+<td>Reads the current IGN1 power state. Returns: 0=OFF, 1=ON, -1=read failure</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>IGN2</code></td>
+<td>Turns IGN2 (Ignition 2) power on or off. Corresponds to auxiliary ignition power.</td>
+<td style="font-size:12px"><code>on_off</code>: 0 = OFF, 1 = ON. Default: 1 (ON)</td>
+</tr>
+<tr>
+<td><code>IGN2_Read</code></td>
+<td>Reads the current IGN2 power state. Returns: 0=OFF, 1=ON, -1=read failure</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>ACC</code></td>
+<td>Turns ACC (Accessory) power on or off. Corresponds to the vehicle&#x27;s accessory power (radio, navigation, etc.).</td>
+<td style="font-size:12px"><code>on_off</code>: 0 = OFF, 1 = ON. Default: 1 (ON)</td>
+</tr>
+<tr>
+<td><code>ACC_Read</code></td>
+<td>Reads the current ACC power state. Returns: 0=OFF, 1=ON, -1=read failure</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>BATTERY</code></td>
+<td>Turns the battery relay on or off. When OFF, battery power is completely cut from the vehicle.</td>
+<td style="font-size:12px"><code>on_off</code>: 0 = OFF (disconnect battery), 1 = ON (connect battery). Default: 1 (ON)</td>
+</tr>
+<tr>
+<td><code>BATTERY_Read</code></td>
+<td>Reads the current battery relay state. Returns: 0=OFF, 1=ON, -1=read failure</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>BatterySet</code></td>
+<td>Sets the battery output voltage. Used for voltage fluctuation testing.</td>
+<td style="font-size:12px"><code>voltage</code>: Voltage to set (V, decimal allowed). e.g. 12.0, 14.4, 9.0. Default: 14.4V</td>
+</tr>
+<tr>
+<td><code>BatteryCheck</code></td>
+<td>Measures the current battery output voltage. Returns: voltage (V), -1.0 on failure</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>AmpereCheck</code></td>
+<td>Measures the current power consumption. Returns: current (A), -1.0 on failure</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>SendCommand</code></td>
+<td>Sends a raw UDP command to the bench. For advanced users; using the individual functions above is recommended.</td>
+<td style="font-size:12px"><code>cmd1</code>: Command code 1 (integer, e.g. 0x24 = 36)<br><code>cmd2</code>: Command code 2 (integer, e.g. 0x21 = 33)<br><code>data_hex</code>: Additional data (space-separated hex string). e.g. &#x27;FF 01&#x27;. Default: empty string</td>
+</tr>
+<tr>
+<td><code>GetInfo</code></td>
+<td>Returns the bench&#x27;s current connection information (IP, port, signal_file, loaded signal count, connection state).</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>LoadSignals</code></td>
+<td>Loads CAN FD signal definitions from an Excel (.xls/.xlsx) or XML (.CAN) file at runtime.</td>
+<td style="font-size:12px"><code>file_path</code>: Absolute path to the signal definition file</td>
+</tr>
+<tr>
+<td><code>SendSignal</code></td>
+<td>Sends a named CAN FD signal with the given physical value. Repeats 5 times at 200ms interval. Requires signal definitions to be loaded.</td>
+<td style="font-size:12px"><code>signal_name</code>: Signal name (e.g. &#x27;Warn_DrvDrSwSta&#x27;)<br><code>physical_value</code>: Physical value (int/float/hex string like &#x27;0xAB&#x27;)</td>
+</tr>
+<tr>
+<td><code>DoorTest</code></td>
+<td>Cycles the driver door switch signal (Warn_DrvDrSwSta) ON/OFF to verify door handling.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>TestAllSignals</code></td>
+<td>Sends every loaded CAN FD signal with its midpoint value. Useful for load/sanity testing.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>CheckSignals</code></td>
+<td>Dumps the loaded CAN FD signal definitions to the log.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>SendCanFd</code></td>
+<td>Sends a raw CAN FD frame directly (no signal definition needed). For low-level debugging.</td>
+<td style="font-size:12px"><code>can_id</code>: CAN ID (integer, e.g. 0x411 = 1041)<br><code>payload_hex</code>: Payload (hex string, spaces/commas allowed; e.g. &#x27;01 02 03&#x27;)</td>
+</tr>
+<tr>
+<td><code>ReinitCanFd</code></td>
+<td>Re-initialises the CAN FD bus (when baudrate / data bit time needs to change). Defaults 500k/2M.</td>
+<td style="font-size:12px"><code>baudrate</code>: Arbitration phase baudrate (2-byte integer, default 0x1F4)<br><code>databit_time</code>: Data phase bit time (2-byte integer, default 0x7D0)</td>
+</tr>
+</tbody>
+</table>
+
+
+
+<h2 id="cat-can">CAN Communication</h2>
+
+<h3 id="mod-CANOE">CANOE</h3>
+<div class="callout callout-info">CANoe Control — Controls Vector CANoe simulation software: start/stop, environment variables, and system variables</div>
+<table>
+<thead><tr><th style="width:220px">Function</th><th>Description</th><th style="width:40%">Parameters</th></tr></thead>
+<tbody>
+<tr>
+<td><code>open_simulation</code></td>
+<td>Opens a CANoe simulation (loads a .cfg file).</td>
+<td style="font-size:12px"><code>cfgname</code>: CANoe configuration file (.cfg) path. e.g. &#x27;C:/canoe/project.cfg&#x27;</td>
+</tr>
+<tr>
+<td><code>close_simulation</code></td>
+<td>Closes the CANoe simulation and exits the program.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>start_Measurement</code></td>
+<td>Starts CANoe measurement.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>stop_Measurement</code></td>
+<td>Stops CANoe measurement.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>get_EnvVar</code></td>
+<td>Reads a CANoe environment variable value.</td>
+<td style="font-size:12px"><code>var</code>: Environment variable name</td>
+</tr>
+<tr>
+<td><code>set_EnvVar</code></td>
+<td>Sets a CANoe environment variable value.</td>
+<td style="font-size:12px"><code>var</code>: Environment variable name<br><code>value</code>: Value to set (numeric)</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="mod-CANAT">CANAT</h3>
+<div class="callout callout-info">CANat Device — Sends and receives CAN bus messages via CANat hardware</div>
+<table>
+<thead><tr><th style="width:220px">Function</th><th>Description</th><th style="width:40%">Parameters</th></tr></thead>
+<tbody>
+<tr>
+<td><code>init</code></td>
+<td>Initializes and connects the CANat device.</td>
+<td style="font-size:12px"><code>comport</code>: COM port. e.g. &#x27;COM3&#x27;<br><code>log_path</code>: Log file save path<br><code>ch1_fd</code>: Channel 1 CAN FD mode. True (default) = FD, False = Classic<br><code>ch2_fd</code>: Channel 2 CAN FD mode. True = FD, False (default) = Classic</td>
+</tr>
+<tr>
+<td><code>disconnect</code></td>
+<td>Disconnects from the CANat device.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>send_can_message</code></td>
+<td>Sends a CAN message.</td>
+<td style="font-size:12px"><code>message_id</code>: CAN message ID<br><code>cycle_time</code>: Transmission interval (ms). 0 for one-shot<br><code>can_message</code>: Message data (hex)<br><code>bus_channel</code>: CAN channel<br><code>message_type</code>: &#x27;FD&#x27; (default) or &#x27;Classic&#x27;</td>
+</tr>
+<tr>
+<td><code>stop_can_message</code></td>
+<td>Stops periodic transmission of a specific CAN message.</td>
+<td style="font-size:12px"><code>message_id</code>: Message ID to stop<br><code>cycle_time</code>: Cycle time<br><code>can_message</code>: Message data<br><code>bus_channel</code>: CAN channel<br><code>message_type</code>: &#x27;FD&#x27; or &#x27;Classic&#x27;</td>
+</tr>
+<tr>
+<td><code>send_cam_message_all_stop</code></td>
+<td>Stops all CAN message transmissions.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>can_message_save_start</code></td>
+<td>Starts saving CAN messages to a file.</td>
+<td style="font-size:12px"><code>save_path</code>: Save path. Uses default path if empty</td>
+</tr>
+<tr>
+<td><code>can_message_save_stop</code></td>
+<td>Stops CAN message saving.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+</tbody>
+</table>
+
+
+
+<h2 id="cat-comm">Communication (Serial/SSH/UART/DLT)</h2>
+
+<h3 id="mod-SerialLogging">SerialLogging</h3>
+<div class="callout callout-info">Serial Logging — Captures and saves logs via serial port connection, with keyword-based fail detection.
+
+**⚠️ Usage: StartLogging and StopLogging MUST be used as a pair.**
+- If you call StartLogging without StopLogging: logs are NOT saved to file, and the serial port stays open, which can cause port-busy errors on the next run.
+- Place StartLogging at the beginning of your scenario and StopLogging at the end.
+- Cleanup will auto-call StopLogging if the scenario aborts, but you should still call it explicitly in the normal flow.
+
+Standard usage pattern:
+  1) StartLogging()                              ← first step
+  2) SendCommand / SendCommand_*_on_keyword ...  ← middle steps
+  3) StopLogging()                               ← last step (writes log file + releases port)</div>
+<table>
+<thead><tr><th style="width:220px">Function</th><th>Description</th><th style="width:40%">Parameters</th></tr></thead>
+<tbody>
+<tr>
+<td><code>StartLogging</code></td>
+<td>Connects to the serial port and starts capture (memory only, no file save). Viewer modal opens automatically. The port is stabilized and capture thread is ready by the time this returns.
+
+**⚠️ Must be paired with StopLogging.** Without StopLogging, the in-memory buffer is never flushed to disk and the serial port stays open. Always call StopLogging at the end of the scenario.</td>
+<td style="font-size:12px"><code>settle_ms</code>: Port stabilization wait after open (ms). Default 500. Ensures USB-Serial driver reset/buffer settle so the next step&#x27;s SendCommand isn&#x27;t dropped. Use 1500~2000 for DTR-reset boards (Arduino), 100~200 for fast industrial serial.</td>
+</tr>
+<tr>
+<td><code>StopLogging</code></td>
+<td>Stops serial capture, writes the memory buffer to a file, and releases the serial port. Auto path or explicit path.
+
+**⚠️ Must be paired with StartLogging.** This call is what:
+  • Flushes the in-memory log buffer to a .log file on disk
+  • Closes the serial port so it can be reused next run
+  • Tears down the capture thread to avoid resource leaks
+Even if the file-save step throws, the finally block guarantees the port is released.</td>
+<td style="font-size:12px"><code>save_path</code>: Save file path. Auto if empty (during playback: run_dir/logs/serial_*.log, step test: backend/results/Temp_logs/serial_*.log)</td>
+</tr>
+<tr>
+<td><code>SendCommand</code></td>
+<td>Sends a text command via the serial port.</td>
+<td style="font-size:12px"><code>command</code>: Command to send. e.g. &#x27;reboot&#x27;, &#x27;cat /proc/version&#x27;<br><code>encoding</code>: Encoding (default: utf-8)<br><code>append_newline</code>: Auto-append newline. true/false (default: true)</td>
+</tr>
+<tr>
+<td><code>SendCommand_fail_on_keyword</code></td>
+<td>Sends a command, then **FAILS if the keyword appears** in the response. Used to detect abnormal keywords like &#x27;ERROR&#x27;/&#x27;Fail&#x27;/&#x27;crash&#x27;. After sending, monitors only newly captured lines for &#x27;time&#x27; seconds; every matching line is appended as a fail row and displayed inline (Fail_Count_N). Returns PASS if no match.</td>
+<td style="font-size:12px"><code>command</code>: Command to send. e.g. &#x27;status&#x27;, &#x27;self_test&#x27;<br><code>keyword</code>: Substring that triggers FAIL. e.g. &#x27;ERROR&#x27;, &#x27;Fail&#x27;, &#x27;crash&#x27;<br><code>time</code>: Response monitoring duration (seconds). Default 5<br><code>encoding</code>: Encoding (default: utf-8)<br><code>append_newline</code>: Auto-append newline. true/false (default: true)</td>
+</tr>
+<tr>
+<td><code>SendCommand_pass_on_keyword</code></td>
+<td>Sends a command, then **PASSES if the keyword appears** in the response. Used for normal-response keywords like &#x27;OK&#x27;/&#x27;Pass&#x27;/&#x27;BootComplete&#x27;. Returns PASS immediately on first match (early exit). If not found within &#x27;time&#x27; seconds, appends one fail row and returns FAIL.</td>
+<td style="font-size:12px"><code>command</code>: Command to send. e.g. &#x27;ping&#x27;, &#x27;getversion&#x27;<br><code>keyword</code>: Substring required for PASS. e.g. &#x27;OK&#x27;, &#x27;Pass&#x27;, &#x27;BootComplete&#x27;<br><code>time</code>: Response wait duration (seconds). Default 5<br><code>encoding</code>: Encoding (default: utf-8)<br><code>append_newline</code>: Auto-append newline. true/false (default: true)</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="mod-SSHManager">SSHManager</h3>
+<div class="callout callout-info">SSH Connection — Connects to remote devices via SSH for command execution and file transfer</div>
+<table>
+<thead><tr><th style="width:220px">Function</th><th>Description</th><th style="width:40%">Parameters</th></tr></thead>
+<tbody>
+<tr>
+<td><code>create_ssh_client</code></td>
+<td>Creates an SSH connection.</td>
+<td style="font-size:12px"><code>hostname</code>: Remote device IP or hostname. e.g. &#x27;192.168.1.100&#x27;<br><code>username</code>: SSH username. e.g. &#x27;root&#x27;<br><code>password</code>: SSH password<br><code>key_filePath</code>: SSH key file path (alternative to password). Default: None</td>
+</tr>
+<tr>
+<td><code>close_ssh_client</code></td>
+<td>Closes the SSH connection.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>send_command</code></td>
+<td>Executes a command via SSH and returns the full output on completion (blocking). Korean Windows output is automatically handled via cp949/euc-kr encoding.</td>
+<td style="font-size:12px"><code>command</code>: Command to execute. e.g. &#x27;ls -al&#x27;, &#x27;cat /etc/version&#x27;</td>
+</tr>
+<tr>
+<td><code>send_command_stream</code></td>
+<td>Executes a command via SSH and immediately returns a [BG_TASK:bg_x] placeholder (non-blocking). Output streams in real time and can be observed via the polling endpoint. Useful for long-running commands (netstat, tail -f, etc.).</td>
+<td style="font-size:12px"><code>command</code>: Command to execute. e.g. &#x27;netstat -a&#x27;, &#x27;tail -f /var/log/syslog&#x27;</td>
+</tr>
+<tr>
+<td><code>send_file</code></td>
+<td>Transfers a local file to the remote device.</td>
+<td style="font-size:12px"><code>local_path</code>: File path on PC<br><code>remote_path</code>: Destination path on remote device</td>
+</tr>
+<tr>
+<td><code>get_file</code></td>
+<td>Downloads a file from the remote device to the PC.</td>
+<td style="font-size:12px"><code>remote_path</code>: File path on remote device<br><code>local_path</code>: Destination path on PC</td>
+</tr>
+<tr>
+<td><code>get_file_list_in_dir</code></td>
+<td>Lists files in a directory on the remote device.</td>
+<td style="font-size:12px"><code>path</code>: Directory path to list<br><code>_filter</code>: File filter pattern. Default: &#x27;*&#x27; (all). e.g. &#x27;*.log&#x27;</td>
+</tr>
+</tbody>
+</table>
+
+<h3 id="mod-DLTLogging">DLTLogging</h3>
+<div class="callout callout-info">DLT Logging — Captures and saves logs via direct TCP connection to the DLT daemon, with keyword-based PASS/FAIL evaluation (no GUI required)</div>
+<table>
+<thead><tr><th style="width:220px">Function</th><th>Description</th><th style="width:40%">Parameters</th></tr></thead>
+<tbody>
+<tr>
+<td><code>StartSave</code></td>
+<td>Connects to the DLT daemon and starts log capture + file saving in one step (connect -&gt; capture -&gt; save).</td>
+<td style="font-size:12px"><code>save_path</code>: Save file path. Auto-generates in backend/logs/ if empty</td>
+</tr>
+<tr>
+<td><code>StopSave</code></td>
+<td>Stops log file saving and disconnects from the DLT daemon.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>MarkStep</code></td>
+<td>Marks a step boundary at the current log position. Used with SearchRange for range-based searching.</td>
+<td style="font-size:12px"><code>step_index</code>: Step index number</td>
+</tr>
+<tr>
+<td><code>SearchAll</code></td>
+<td>Searches the entire log from the beginning to the current position for a keyword, returning PASS/FAIL.</td>
+<td style="font-size:12px"><code>keyword</code>: Search keyword (space-separated = AND condition). e.g. &#x27;BootComplete&#x27;, &#x27;ERROR crash&#x27;<br><code>count</code>: Maximum number of matching results (default: 5)</td>
+</tr>
+<tr>
+<td><code>SearchRange</code></td>
+<td>Searches for a keyword within the step range marked by MarkStep, returning PASS/FAIL.</td>
+<td style="font-size:12px"><code>keyword</code>: Search keyword (space-separated = AND condition)<br><code>from_step</code>: Start step index<br><code>to_step</code>: End step index<br><code>count</code>: Maximum number of matching results (default: 5)</td>
+</tr>
+<tr>
+<td><code>WaitLog</code></td>
+<td>Waits (blocking) until a log containing the keyword appears. Returns FAIL on timeout.</td>
+<td style="font-size:12px"><code>keyword</code>: Search keyword (space-separated = AND condition)<br><code>timeout</code>: Max wait time in seconds (default: 30)</td>
+</tr>
+<tr>
+<td><code>ExpectFound</code></td>
+<td>Periodically searches the entire log until the keyword is found. Searches immediately, then retries at intervals (timeout / max_retries). Returns PASS if found, FAIL if not found after all retries.</td>
+<td style="font-size:12px"><code>keyword</code>: Search keyword (space-separated = AND condition)<br><code>timeout</code>: Total wait time in seconds (default: 60)<br><code>max_retries</code>: Maximum retry count (default: 5). Interval = timeout / max_retries</td>
+</tr>
+<tr>
+<td><code>ExpectNotFound</code></td>
+<td>Periodically checks the entire log to confirm the keyword is absent. Returns FAIL immediately if found. Rechecks at intervals (timeout / max_retries). Returns PASS if not found after all checks.</td>
+<td style="font-size:12px"><code>keyword</code>: Search keyword (space-separated = AND condition)<br><code>timeout</code>: Total check time in seconds (default: 60)<br><code>max_retries</code>: Maximum check count (default: 5). Interval = timeout / max_retries</td>
+</tr>
+<tr>
+<td><code>GetStatus</code></td>
+<td>Returns the current module status (connection, capture, save, step marks, etc.).</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+<tr>
+<td><code>ClearLogs</code></td>
+<td>Clears the log buffer and step markings.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+</tbody>
+</table>
+
+
+
+<h2 id="cat-system">System & Utilities</h2>
+
+<h3 id="mod-CMD">CMD</h3>
+<div class="callout callout-info">Command Execution — Executes Windows command prompt (CMD) commands. Used for running external programs or system commands</div>
+<table>
+<thead><tr><th style="width:220px">Function</th><th>Description</th><th style="width:40%">Parameters</th></tr></thead>
+<tbody>
+<tr>
+<td><code>Run</code></td>
+<td>Executes a command and waits for completion (blocking). Returns the result.</td>
+<td style="font-size:12px"><code>command</code>: Command to execute. e.g. &#x27;ping 127.0.0.1 -n 3&#x27;, &#x27;ipconfig&#x27;<br><code>timeout</code>: Max wait time in seconds. Default: 300</td>
+</tr>
+<tr>
+<td><code>Check</code></td>
+<td>Executes a command and verifies the output against an expected string (blocking). Returns a &#x27;FAIL:&#x27; prefix on mismatch, which causes the step to be marked as fail.</td>
+<td style="font-size:12px"><code>command</code>: Command to execute<br><code>expected</code>: Expected substring or full match value<br><code>match_mode</code>: Comparison mode: &#x27;contains&#x27; (substring) or &#x27;exact&#x27; (full match). Default: contains<br><code>timeout</code>: Max wait time in seconds. Default: 300</td>
+</tr>
+<tr>
+<td><code>RunCapture</code></td>
+<td>Executes a command in the background and immediately returns a &#x27;[BG_TASK:bg_x]&#x27; placeholder (non-blocking). The actual output can be retrieved later via the polling endpoint.</td>
+<td style="font-size:12px"><code>command</code>: Command to execute</td>
+</tr>
+<tr>
+<td><code>CheckCapture</code></td>
+<td>Executes a command in the background and returns a &#x27;[BG_TASK:bg_x]&#x27; placeholder. On completion, the server evaluates expected/match_mode to determine the final pass/fail.</td>
+<td style="font-size:12px"><code>command</code>: Command to execute<br><code>expected</code>: Expected string<br><code>match_mode</code>: &#x27;contains&#x27; or &#x27;exact&#x27;. Default: contains</td>
+</tr>
+<tr>
+<td><code>RunBackground</code></td>
+<td>Spawns a subprocess fire-and-forget. Returns the PID but the output cannot be retrieved.</td>
+<td style="font-size:12px"><code>command</code>: Command to execute. e.g. &#x27;notepad&#x27;, &#x27;python script.py&#x27;</td>
+</tr>
+<tr>
+<td><code>Kill</code></td>
+<td>Terminates a background process.</td>
+<td style="font-size:12px"><code>pid</code>: PID of the process to terminate</td>
+</tr>
+<tr>
+<td><code>ListBackground</code></td>
+<td>Returns the list of running background processes.</td>
+<td style="font-size:12px"><span style="color:var(--text-muted)">(none)</span></td>
+</tr>
+</tbody>
+</table>
+
+
+
+  </div>
+</div>
+
+<script>
+function toggleTheme() {
+  const html = document.documentElement;
+  const current = html.getAttribute('data-theme');
+  html.setAttribute('data-theme', current === 'dark' ? '' : 'dark');
+  localStorage.setItem('theme', html.getAttribute('data-theme'));
+}
+(function() {
+  const saved = localStorage.getItem('theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+})();
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.querySelector('.overlay').classList.toggle('show');
+}
+
+document.querySelectorAll('.sidebar nav a').forEach(a => {
+  a.addEventListener('click', () => {
+    if (window.innerWidth <= 900) toggleSidebar();
+  });
+});
+
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.remove('active'));
+      const active = document.querySelector(`.sidebar nav a[href="#${entry.target.id}"]`);
+      if (active) active.classList.add('active');
+    }
+  });
+}, { rootMargin: '-20% 0px -70% 0px' });
+
+document.querySelectorAll('h1[id], h2[id], h3[id]').forEach(el => observer.observe(el));
+</script>
+
+</body>
+</html>

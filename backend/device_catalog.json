@@ -1,0 +1,253 @@
+{
+  "projects": [
+    {
+      "name": "HKMC",
+      "enabled": true,
+      "models": [
+        {
+          "value": "ccRC",
+          "enabled": true,
+          "agent": "HKMC Agent"
+        },
+        {
+          "value": "ccIC",
+          "enabled": true,
+          "agent": "HKMC Agent"
+        },
+        {
+          "value": "ccIC27",
+          "enabled": true,
+          "agent": "HKMC Agent"
+        },
+        {
+          "value": "Connect Wide",
+          "enabled": true,
+          "agent": "iSAP Agent"
+        },
+        {
+          "value": "CCU2",
+          "enabled": true,
+          "agent": "HKMC Agent"
+        },
+        {
+          "value": "Gen6 Premium",
+          "enabled": true,
+          "agent": "HKMC Agent"
+        },
+        {
+          "value": "Gen5 Standard (Wide)",
+          "enabled": true,
+          "agent": "HKMC5thWide Agent"
+        },
+        {
+          "value": "Gen5 Standard",
+          "enabled": true,
+          "agent": "HKMC5thWide Agent"
+        },
+        {
+          "value": "Gen5 Premium",
+          "enabled": true,
+          "agent": "HKMC5thWide Agent"
+        }
+      ]
+    },
+    {
+      "name": "GM",
+      "enabled": true,
+      "models": [
+        {
+          "value": "GVM",
+          "enabled": true,
+          "agent": "ADB"
+        },
+        {
+          "value": "Info4.0 VCU",
+          "enabled": false
+        }
+      ]
+    },
+    {
+      "name": "General",
+      "enabled": true,
+      "models": [
+        {
+          "value": "Android",
+          "enabled": true,
+          "agent": "ADB"
+        },
+        {
+          "value": "Phone",
+          "enabled": true,
+          "agent": "ADB"
+        }
+      ]
+    },
+    {
+      "name": "Nissan",
+      "enabled": true,
+      "models": [
+        {
+          "value": "CDC_High",
+          "enabled": true,
+          "agent": "ADB"
+        },
+        {
+          "value": "CDC_STD",
+          "enabled": true,
+          "agent": "ADB"
+        },
+        {
+          "value": "CCS2_DA2",
+          "enabled": true
+        },
+        {
+          "value": "Europe_New",
+          "enabled": true
+        }
+      ]
+    },
+    {
+      "name": "Renault",
+      "enabled": true,
+      "models": [
+        {
+          "value": "Latam",
+          "enabled": true,
+          "agent": "ADB"
+        },
+        {
+          "value": "EGG",
+          "enabled": true,
+          "agent": "ADB"
+        },
+        {
+          "value": "AUB",
+          "enabled": true,
+          "agent": "ADB"
+        },
+        {
+          "value": "CDC",
+          "enabled": true,
+          "agent": "ADB"
+        }
+      ]
+    },
+    {
+      "name": "VW",
+      "enabled": true,
+      "models": [
+        {
+          "value": "VW EU",
+          "enabled": true,
+          "agent": "MIB Agent"
+        }
+      ]
+    },
+    {
+      "name": "Camera",
+      "enabled": true,
+      "models": [
+        {
+          "value": "WebCam",
+          "enabled": true,
+          "agent": "Webcam"
+        },
+        {
+          "value": "VisionCamera",
+          "enabled": true,
+          "agent": "VisionCamera"
+        }
+      ]
+    },
+    {
+      "name": "ICAS",
+      "enabled": true,
+      "models": [
+        {
+          "value": "ICAS EU",
+          "enabled": true,
+          "agent": "ICAS Agent"
+        }
+      ]
+    },
+    {
+      "name": "ICAS3",
+      "enabled": true,
+      "models": [
+        {
+          "value": "ICAS3 CN",
+          "enabled": true,
+          "agent": "ICAS Agent"
+        }
+      ]
+    }
+  ],
+  "module_visibility": {
+    "Android": false,
+    "ImageProcessing": false,
+    "RIDEN": false,
+    "TigrisCheck": false,
+    "Trace": false,
+    "AudioLibrary": false,
+    "BENCH": false,
+    "COMMON_WINDOWS": false,
+    "KeysightPower": false,
+    "Uart": false,
+    "CAN": false,
+    "Ignition": false,
+    "POWER": false,
+    "WebcamDevice": false,
+    "VisionCameraClient": false,
+    "SP25Bench": false,
+    "PCANClient": false,
+    "MLP": false,
+    "SerialPlugin": false,
+    "DLTViewer": false,
+    "VisionCamera": false,
+    "CMD": false,
+    "HKMC6th": false,
+    "SerialLogging": true
+  },
+  "agents": [
+    {
+      "name": "ADB",
+      "type": "adb",
+      "enabled": true
+    },
+    {
+      "name": "HKMC Agent",
+      "type": "hkmc_agent",
+      "enabled": true
+    },
+    {
+      "name": "HKMC5thWide Agent",
+      "type": "hkmc5th_wide_agent",
+      "enabled": true
+    },
+    {
+      "name": "iSAP Agent",
+      "type": "isap_agent",
+      "enabled": true
+    },
+    {
+      "name": "ICAS Agent",
+      "type": "icas_agent",
+      "enabled": true
+    },
+    {
+      "name": "VisionCamera",
+      "type": "vision_camera",
+      "enabled": true
+    },
+    {
+      "name": "Webcam",
+      "type": "webcam",
+      "enabled": true
+    },
+    {
+      "name": "MIB Agent",
+      "type": "mib_agent",
+      "enabled": true
+    }
+  ]
+}

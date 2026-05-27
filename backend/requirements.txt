@@ -1,0 +1,30 @@
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+websockets==12.0
+opencv-python-headless==4.9.0.80
+scikit-image==0.22.0
+numpy==1.26.4
+Pillow==10.2.0
+pydantic==2.5.3
+aiofiles==23.2.1
+python-multipart==0.0.6
+openpyxl==3.1.5
+av>=12.0.0
+harvesters>=1.4.0
+paramiko>=3.4.0
+scp>=0.14.5
+psutil>=5.9.0
+# WinControl 디바이스 (backend/app/services/wincontrol_service.py) — Windows 전용
+pywin32>=305; sys_platform == "win32"
+# UDP_CANFD 공용 라이브러리 의존성 (backend/app/lib/UDP_CANFD.py)
+# — 원본 코드를 수정하지 않고 import 성공을 보장하기 위함
+pandas>=2.0
+xlrd>=2.0.1
+robotframework>=6.1
+# OCR 기능 (backend/app/services/ocr_service.py)
+rapidocr-onnxruntime>=1.3.0
+rapidfuzz>=3.0.0
+# CANoe 보조 디바이스 (backend/app/plugins/CANoe_RBS.py, CANoe_Ctrl.py)
+py-canoe>=26.0.0
+can-isotp>=2.0
+python-can>=4.6.0
